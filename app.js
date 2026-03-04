@@ -1292,3 +1292,8 @@ function renderCSBoard() {
         csTableBody.appendChild(tr);
     });
 }
+// Expose functions to global scope (to be used in HTML onclick)
+window.deleteTask = deleteTask;
+window.completeTask = completeTask;
+window.sendWhatsappCobrança = sendWhatsappCobrança;
+window.openEditCsModal = openEditCsModal;

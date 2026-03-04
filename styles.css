@@ -167,14 +167,14 @@ body {
 }
 
 .header-titles h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 2rem;
+    font-weight: 700;
     margin-bottom: 0.25rem;
 }
 
 .header-titles p {
     color: var(--text-muted);
-    font-size: 0.875rem;
+    font-size: 1rem;
 }
 
 /* Buttons */
@@ -245,7 +245,7 @@ body {
 }
 
 .kanban-column {
-    flex: 0 0 320px;
+    flex: 0 0 450px;
     display: flex;
     flex-direction: column;
     background: var(--col-bg);
