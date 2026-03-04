@@ -99,45 +99,8 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
     } catch (error) {
         console.error('Erro na rota /api/demandas:', error.message);
-
-        let errorDetails = error.message;
-        let apiData = null;
-
-        if (error.response) {
-            apiData = error.response.data;
-            console.error('Status:', error.response.status);
-            console.error('Data:', JSON.stringify(apiData, null, 2));
-        }
-
-        res.status(500).json({
-            error: 'Falha ao buscar demandas',
-            message: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-            apiResponse: apiData
-        });
+        res.status(500).json({ error: 'Falha ao buscar demandas', details: error.message });
     }
-});
-
-app.get(['/api/debug', '/debug'], (req, res) => {
-    res.json({
-        url: req.url,
-        path: req.path,
-        env: {
-            NODE_ENV: process.env.NODE_ENV,
-            VERCEL: !!process.env.VERCEL
-        }
-    });
-});
-
-app.get(['/api/health', '/health'], (req, res) => {
-    res.json({
-        status: 'ok',
-        vercel: !!process.env.VERCEL,
-        hasToken: !!process.env.TIFLUX_API_TOKEN,
-        tokenPrefix: process.env.TIFLUX_API_TOKEN ? process.env.TIFLUX_API_TOKEN.substring(0, 5) + '...' : 'none',
-        apiUrl: TIFLUX_API_URL,
-        timestamp: new Date().toISOString()
-    });
 });
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
