@@ -105,6 +105,17 @@
                     <p>Gerencie chamados de Análise, QP, Adhoc e CS</p>
                 </div>
                 <div class="header-actions" style="display: flex; gap: 0.5rem;">
+                    <button id="btnSyncTiFlux" class="btn btn-secondary" title="Sincronizar com TiFlux">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="icon-sync">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                            <path d="M21 3v5h-5" />
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                            <path d="M3 21v-5h5" />
+                        </svg>
+                        <span>Sincronizar</span>
+                    </button>
                     <button id="btnNewTask" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -138,6 +149,21 @@
                     <option value="perto">⚠️ Perto do Venc. (Hoje/Amanhã)</option>
                     <option value="longe">✅ No Prazo</option>
                 </select>
+                <div id="lastSyncContainer"
+                    style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem; width: 100%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4" />
+                        <path d="m16.2 7.8 2.9-2.9" />
+                        <path d="M18 12h4" />
+                        <path d="m16.2 16.2 2.9 2.9" />
+                        <path d="M12 18v4" />
+                        <path d="m4.9 19.1 2.9-2.9" />
+                        <path d="M2 12h4" />
+                        <path d="m4.9 4.9 2.9 2.9" />
+                    </svg>
+                    <span>Última sincronização: <span id="lastSyncTime">Buscando...</span></span>
+                </div>
             </div>
 
             <!-- Kanban Board -->

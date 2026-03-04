@@ -653,7 +653,8 @@ select {
 
 input,
 select {
-    height: 42px; /* Força altura idêntica para inputs e selects */
+    height: 42px;
+    /* Força altura idêntica para inputs e selects */
 }
 
 input:focus,
@@ -863,4 +864,19 @@ textarea {
 .btn-icon.success:hover {
     color: var(--status-normal);
     background: rgba(16, 185, 129, 0.1);
+
+    /* Sync Animation */
+    .icon-sync.rotating {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
 }

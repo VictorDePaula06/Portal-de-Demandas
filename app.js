@@ -27,7 +27,16 @@ db.collection('csClients').onSnapshot((snapshot) => {
 
 // Function to fetch demands from the new backend API
 async function fetchDemandasDaAPI() {
+    const syncButton = document.getElementById('btnSyncTiFlux');
+    const syncIcon = syncButton?.querySelector('.icon-sync');
+    const lastSyncLabel = document.getElementById('lastSyncTime');
+
     try {
+        // Visual Feedback: Start Rotation & Disable Button
+        if (syncIcon) syncIcon.classList.add('rotating');
+        if (syncButton) syncButton.disabled = true;
+        if (lastSyncLabel) lastSyncLabel.innerText = 'Sincronizando...';
+
         let response = await fetch('/api/demandas');
         if (!response.ok) {
             // Fallback para caso a Vercel esteja limpando o prefixo /api
@@ -84,14 +93,32 @@ async function fetchDemandasDaAPI() {
 
             if (hasChanges) {
                 await batch.commit();
-                if (newTasksCount > 0 || updatedTasksCount > 0) {
-                    showToast(`${newTasksCount} novos e ${updatedTasksCount} atualizados via TiFlux!`);
-                }
             }
+
+            // Atualiza hora da última sincronização
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (lastSyncLabel) lastSyncLabel.innerText = timeStr;
+
+            if (newTasksCount > 0 || updatedTasksCount > 0) {
+                showToast(`${newTasksCount} novos e ${updatedTasksCount} atualizados via TiFlux!`);
+            } else {
+                showToast('TiFlux verificado: sem novos chamados.');
+            }
+        } else {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (lastSyncLabel) lastSyncLabel.innerText = timeStr;
+            showToast('Nenhum chamado encontrado no TiFlux no momento.');
         }
     } catch (error) {
         console.error('Erro de integração:', error);
         showToast('Erro ao sincronizar com TiFlux (Servidor offline?)');
+        if (lastSyncLabel) lastSyncLabel.innerText = 'Erro ao sincronizar';
+    } finally {
+        // Visual Feedback: Stop Rotation & Enable Button
+        if (syncIcon) syncIcon.classList.remove('rotating');
+        if (syncButton) syncButton.disabled = false;
     }
 }
 
@@ -99,6 +126,8 @@ async function fetchDemandasDaAPI() {
 const btnNewTask = document.getElementById('btnNewTask');
 const modal = document.getElementById('taskModal');
 const btnCloseModal = document.getElementById('btnCloseModal');
+const btnSyncTiFlux = document.getElementById('btnSyncTiFlux');
+const lastSyncTime = document.getElementById('lastSyncTime');
 const btnCancelModal = document.getElementById('btnCancelModal');
 const taskForm = document.getElementById('taskForm');
 const toast = document.getElementById('toast');
@@ -236,6 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem(SIDEBAR_STATE_KEY, isCollapsed ? 'collapsed' : 'expanded');
     });
+
+    // Manual Sync Button Listener
+    if (btnSyncTiFlux) {
+        btnSyncTiFlux.addEventListener('click', fetchDemandasDaAPI);
+    }
 });
 
 // Auth Logic
