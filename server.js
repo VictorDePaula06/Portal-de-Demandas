@@ -106,7 +106,14 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 });
 
 app.get(['/api/health', '/health'], (req, res) => {
-    res.json({ status: 'ok', vercel: !!process.env.VERCEL, timestamp: new Date().toISOString() });
+    res.json({
+        status: 'ok',
+        vercel: !!process.env.VERCEL,
+        hasToken: !!process.env.TIFLUX_API_TOKEN,
+        tokenPrefix: process.env.TIFLUX_API_TOKEN ? process.env.TIFLUX_API_TOKEN.substring(0, 5) + '...' : 'none',
+        apiUrl: TIFLUX_API_URL,
+        timestamp: new Date().toISOString()
+    });
 });
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
