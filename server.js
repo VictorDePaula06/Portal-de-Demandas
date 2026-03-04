@@ -18,7 +18,7 @@ const TIFLUX_API_TOKEN = process.env.TIFLUX_API_TOKEN || 'SEU_TOKEN_AQUI';
 /**
  * Rota para buscar os chamados no TiFlux (QP e Analise)
  */
-app.get('/api/demandas', async (req, res) => {
+app.get(['/api/demandas', '/demandas'], async (req, res) => {
     try {
         // --- CÓDIGO DE INTEGRAÇÃO REAL (Comentado) ---
         // Adicionando limit=150 para que ele puxe mais chamados que possam estar em páginas anteriores do TiFlux
