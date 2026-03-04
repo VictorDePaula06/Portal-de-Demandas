@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Demandas | CS & Suporte</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-container">
+                    <div class="logo-icon"></div>
+                    <h2>PortalCS</h2>
+                </div>
+                <button id="btnToggleSidebar" class="btn-icon" title="Recolher Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                </button>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" id="btnViewDemandas">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <line x1="3" x2="21" y1="9" y2="9" />
+                        <line x1="9" x2="9" y1="9" y2="21" />
+                    </svg>
+                    <span>Quadro Demandas</span>
+                </a>
+                <a href="#" class="nav-item" id="btnViewCS">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" x2="19" y1="8" y2="14" />
+                        <line x1="22" x2="16" y1="11" y2="11" />
+                    </svg>
+                    <span>Clientes CS</span>
+                </a>
+                <a href="#" class="nav-item" id="btnViewConcluidas">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    <span>Demandas Concluídas</span>
+                </a>
+                <a href="#" class="nav-item" id="btnViewRelatorios">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    <span>Relatórios</span>
+                </a>
+                <a href="#" class="nav-item" id="btnViewConfig">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1h.09a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer" id="sidebarFooter" style="margin-top: auto; display: none;">
+                <div class="user-info"
+                    style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <div class="user-avatar"
+                        style="width: 32px; height: 32px; min-width: 32px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.875rem;">
+                        ?</div>
+                    <span id="currentUserName"
+                        style="font-weight: 500; font-size: 0.875rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">User</span>
+                </div>
+                <button class="nav-item btn-logout" id="btnLogout"
+                    style="width: 100%; border: none; background: transparent; cursor: pointer; text-align: left; opacity: 0.7; font-size: 0.875rem; padding-left: 0.5rem; margin-top: 0.5rem; color: var(--text-muted);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-titles">
+                    <h1>Demandas e Fluxos</h1>
+                    <p>Gerencie chamados de Análise, QP, Adhoc e CS</p>
+                </div>
+                <div class="header-actions" style="display: flex; gap: 0.5rem;">
+                    <button id="btnNewTask" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14" />
+                            <path d="M12 5v14" />
+                        </svg>
+                        Nova Demanda
+                    </button>
+                    <button id="btnNewCS" class="btn btn-primary" style="display: none; background-color: #8b5cf6;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <line x1="19" x2="19" y1="8" y2="14" />
+                            <line x1="22" x2="16" y1="11" y2="11" />
+                        </svg>
+                        Novo Cliente CS
+                    </button>
+                </div>
+            </header>
+
+            <!-- Filter Bar for Demandas -->
+            <div class="filter-bar" id="demandasFilterBar"
+                style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; padding: 0 1rem;">
+                <input type="text" id="searchInput" placeholder="Buscar por número, título ou cliente..."
+                    style="flex: 1; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); min-width: 250px; font-family: inherit;">
+                <select id="slaFilter"
+                    style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); min-width: 200px; font-family: inherit; font-weight: 500;">
+                    <option value="all">Filtro de SLA: Todas</option>
+                    <option value="vencidas">⏰ Vencidas</option>
+                    <option value="perto">⚠️ Perto do Venc. (Hoje/Amanhã)</option>
+                    <option value="longe">✅ No Prazo</option>
+                </select>
+            </div>
+
+            <!-- Kanban Board -->
+            <div class="kanban-board">
+                <!-- Column Análise -->
+                <div class="kanban-column" data-status="Analise" data-view="demandas">
+                    <div class="column-header">
+                        <h3>Análise <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-Analise"></div>
+                </div>
+
+                <!-- Column QP -->
+                <div class="kanban-column" data-status="QP" data-view="demandas">
+                    <div class="column-header">
+                        <h3>QP <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-QP"></div>
+                </div>
+
+                <!-- Column Adhoc -->
+                <div class="kanban-column" data-status="Adhoc" data-view="demandas">
+                    <div class="column-header">
+                        <h3>Adhoc <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-Adhoc"></div>
+                </div>
+
+                <!-- COLUMNS FOR COMPLETED VIEW -->
+
+                <div class="kanban-column" data-status="Analise Concluida" data-view="concluidas"
+                    style="display: none;">
+                    <div class="column-header">
+                        <h3>Análise Concluída <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-Analise Concluida"></div>
+                </div>
+
+                <div class="kanban-column" data-status="QP Concluida" data-view="concluidas" style="display: none;">
+                    <div class="column-header">
+                        <h3>QP Concluída <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-QP Concluida"></div>
+                </div>
+
+                <div class="kanban-column" data-status="Adhoc Concluida" data-view="concluidas" style="display: none;">
+                    <div class="column-header">
+                        <h3>Adhoc Concluída <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-Adhoc Concluida"></div>
+                </div>
+
+            </div>
+
+            <!-- CS Board (Table View) -->
+            <div class="cs-board" id="csBoard" style="display: none; padding: 2rem; overflow-y: auto; flex: 1;">
+                <div class="table-container"
+                    style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; overflow-x: auto;">
+                    <table class="cs-table"
+                        style="width: 100%; border-collapse: collapse; min-width: 1000px; text-align: left;">
+                        <thead style="background: rgba(0,0,0,0.2);">
+                            <tr>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Cliente</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Contato</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Últ. Contato</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Venc. CS</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Interação</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Grow</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Engage</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Risco</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="csTableBody">
+                            <!-- CS Rows rendered via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Dashboard Relatórios -->
+            <div id="relatoriosBoard"
+                style="display: none; padding: 2rem; width: 100%; box-sizing: border-box; flex: 1; overflow-y: auto; padding-bottom: 4rem;">
+                <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Emissão de Relatórios (PDF)</h2>
+
+                <div
+                    style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; max-width: 600px; display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label
+                                style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">Mês
+                                de Referência (Fechamento)</label>
+                            <input type="month" id="reportMonth"
+                                style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label
+                                style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">Filtrar
+                                Prazos / Status</label>
+                            <select id="reportSLAFilter"
+                                style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                                <option value="all">Todas as Demandas Fechadas no Mês</option>
+                                <option value="ontime">Apenas Fechadas No Prazo ✅</option>
+                                <option value="overdue">Apenas Fechadas Atrasadas ⏰</option>
+                                <option value="open_overdue">Demandas Atuais (Abertas) e Atrasadas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="btnGeneratePDF" class="btn"
+                        style="width: 100%; margin-top: 1rem; padding: 1rem; display: flex; justify-content: center; background: var(--accent-color); color: white; border: none; font-weight: 600;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="margin-right: 8px;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" x2="12" y1="15" y2="3" />
+                        </svg>
+                        Gerar e Fazer Download do PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configurações (Acesso de Senhas) -->
+            <div id="configBoard"
+                style="display: none; padding: 2rem; width: 100%; box-sizing: border-box; flex: 1; overflow-y: auto; padding-bottom: 4rem;">
+                <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Configurações de Acesso</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 700px;">
+                    Gerencie os usuários e senhas que têm permissão para acessar este portal e fazer alterações
+                    críticas, como excluir demandas ou concluir tarefas.
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 900px;">
+                    <!-- Formulário de Cadastro -->
+                    <div
+                        style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem;">
+                        <h3
+                            style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                            Cadastrar Novo Usuário</h3>
+                        <form id="userAdminForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <input type="hidden" id="adminUserId">
+                            <div class="form-group">
+                                <label>Nome do Usuário</label>
+                                <input type="text" id="adminUserName" required placeholder="Ex: Victor M."
+                                    style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                            </div>
+                            <div class="form-group">
+                                <label>E-mail (Login)</label>
+                                <input type="email" id="adminUserEmail" required placeholder="Ex: victor@empresa.com"
+                                    style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                            </div>
+                            <div class="form-group">
+                                <label>Senha de Acesso</label>
+                                <input type="password" id="adminUserPass" required placeholder="Digite uma senha forte"
+                                    style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                            </div>
+                            <div class="form-group">
+                                <label>WhatsApp (Para Receber Cobranças)</label>
+                                <input type="text" id="adminUserWhatsapp"
+                                    placeholder="Ex: 5521999999999 (Somente Números, c/ DDI e DDD)"
+                                    style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: inherit;">
+                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Se
+                                    preenchido, o botão "Cobrar" nos cartões abrirá direto o WhatsApp deste número para
+                                    este usuário.</small>
+                            </div>
+                            <div class="form-group"
+                                style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                <input type="checkbox" id="adminUserIsAdmin" style="width: 18px; height: 18px;">
+                                <label for="adminUserIsAdmin" style="margin-bottom: 0; cursor: pointer;">Este usuário
+                                    terá papel de Administrador?</label>
+                            </div>
+                            <button type="submit" class="btn" style="margin-top: 1rem; padding: 0.75rem;">Salvar
+                                Usuário</button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Usuários -->
+                    <div
+                        style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column;">
+                        <h3
+                            style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                            Usuários Cadastrados</h3>
+                        <div id="userAdminList" style="flex: 1; overflow-y: auto; max-height: 300px;">
+                            <!-- Populated by JS -->
+                            <div style="color: var(--text-secondary); text-align: center; padding: 2rem;">Carregando
+                                usuários...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    </main>
+    </div>
+
+    <!-- Login Overlay -->
+    <div class="login-overlay active" id="loginOverlay">
+        <div class="login-box">
+            <div class="logo justify-center">
+                <div class="logo-icon"></div>
+                <h2>PortalCS</h2>
+            </div>
+            <p>Faça login para gerenciar demandas</p>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">Seu E-mail</label>
+                    <input type="email" id="loginEmail" placeholder="Ex: victor@empresa.com.br" required
+                        autocomplete="email">
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="loginPass">Sua Senha</label>
+                    <input type="password" id="loginPass" placeholder="******" required autocomplete="current-password">
+                </div>
+                <div id="loginErrorMsg"
+                    style="color: var(--status-critical); font-size: 0.85rem; margin-top: 0.5rem; text-align: center; display: none;">
+                    Credenciais inválidas. Tente novamente.</div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nova Demanda -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cadastrar Demanda</h2>
+                <button class="btn-close" id="btnCloseModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskNumber">Número TiFlux</label>
+                        <input type="text" id="taskNumber" placeholder="Ex: 22626" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskQuality">Número Quality</label>
+                        <input type="text" id="taskQuality" placeholder="Ex: 12345">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskCliente">Cliente</label>
+                    <input type="text" id="taskCliente" placeholder="Ex: POSTO VARGEM ALTA" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskSolicitante">Nome do Solicitante</label>
+                        <input type="text" id="taskSolicitante" placeholder="Ex: João">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskContato">Telefone</label>
+                        <input type="text" id="taskContato" placeholder="Ex: 21 9999-9999">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskDesc">Título / Descrição</label>
+                    <textarea id="taskDesc" rows="3"
+                        placeholder="Ex: Análise Webposto - 32110 - IRRF não está destacando..." required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskResponsavel">Responsável</label>
+                        <input type="text" id="taskResponsavel" placeholder="Nome">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPrioridade">Prioridade</label>
+                        <select id="taskPrioridade">
+                            <option value="Baixa">Baixa</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Urgente">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskCreatedAt">Data de Abertura</label>
+                        <input type="date" id="taskCreatedAt" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDate">Data de Vencimento (SLA)</label>
+                        <input type="date" id="taskDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskStatus">Status / Estágio</label>
+                        <select id="taskStatus" required>
+                            <option value="Analise">Análise</option>
+                            <option value="QP">QP</option>
+                            <option value="Adhoc">Adhoc</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveTask">Salvar Demanda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Resolver Demanda -->
+    <div class="modal-overlay" id="resolveModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Concluir Demanda</h2>
+                <button class="btn-close" id="btnCloseResolveModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="resolveForm">
+                <input type="hidden" id="resolveTaskId">
+                <div class="form-group">
+                    <label for="taskResolvedVersion">Versão da Solução (Opcional)</label>
+                    <input type="text" id="taskResolvedVersion" placeholder="Ex: 11.0.320">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Informar a versão ou
+                        pacote em que o problema foi resolvido.</small>
+                </div>
+                <div class="form-group">
+                    <label for="taskResolvedValidator">Validado por (Opcional)</label>
+                    <input type="text" id="taskResolvedValidator" placeholder="Ex: Maria">
+                </div>
+                <div class="form-group">
+                    <label for="taskResolvedDesc">Descrição da Solução (Opcional)</label>
+                    <textarea id="taskResolvedDesc" rows="3"
+                        placeholder="Detalhes sobre como o problema foi resolvido..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelResolveModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"
+                        style="background-color: var(--status-normal); border-color: var(--status-normal);">Confirmar
+                        Conclusão</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Novo Cliente CS -->
+    <div class="modal-overlay" id="csModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Cadastrar Cliente CS</h2>
+                <button class="btn-close" id="btnCloseCsModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="csForm">
+                <input type="hidden" id="csId">
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="csName">Cliente</label>
+                        <input type="text" id="csName" placeholder="Ex: AUTO POSTO ALASKA LTDA" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="csCnpj">CNPJ</label>
+                        <input type="text" id="csCnpj" placeholder="00.000.000/0000-00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="csContact">Contato (Telefone | Nome)</label>
+                    <input type="text" id="csContact" placeholder="Ex: (21) 99820-6348 | João" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="csDateImpl">Data Implantação</label>
+                        <input type="date" id="csDateImpl">
+                    </div>
+                    <div class="form-group">
+                        <label for="csDateStart">Data CS Start</label>
+                        <input type="date" id="csDateStart">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="csDateLastContact">Data do Último Contato</label>
+                        <input type="date" id="csDateLastContact">
+                    </div>
+                    <div class="form-group">
+                        <label for="csDateDue">Vencimento do CS</label>
+                        <input type="date" id="csDateDue">
+                    </div>
+                </div>
+
+                <div class="form-row"
+                    style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2);">
+                    <div class="form-group">
+                        <label for="csInteracao" style="color: #a78bfa;">Interação</label>
+                        <select id="csInteracao">
+                            <option value="">Selecione...</option>
+                            <option value="Ótimo">Ótimo</option>
+                            <option value="Baixo">Baixo</option>
+                            <option value="Resistência">Resistência</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csGrow" style="color: #a78bfa;">CS Grow</label>
+                        <select id="csGrow">
+                            <option value="">Selecione...</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Em andamento">Em andamento</option>
+                            <option value="Estagnado/Sem contato">Estagnado/Sem contato</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csEngage" style="color: #a78bfa;">CS Engage</label>
+                        <select id="csEngage">
+                            <option value="">Selecione...</option>
+                            <option value="Satisfeito">Satisfeito</option>
+                            <option value="Neutro">Neutro</option>
+                            <option value="Em risco">Em risco</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row"
+                    style="background: rgba(245, 158, 11, 0.05); padding: 1rem; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2); margin-top: 1rem;">
+                    <div class="form-group">
+                        <label for="csReclamacoes" style="color: #d97706;">Reclamações Recorrentes?</label>
+                        <select id="csReclamacoes">
+                            <option value="N">Não</option>
+                            <option value="S">Sim</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csAvaliacaoGrow" style="color: #d97706;">1ª Avaliação Grow</label>
+                        <select id="csAvaliacaoGrow">
+                            <option value="">N/A</option>
+                            <option value="1">1 (Muito Ruim)</option>
+                            <option value="2">2 (Ruim)</option>
+                            <option value="3">3 (Regular)</option>
+                            <option value="4">4 (Bom)</option>
+                            <option value="5">5 (Ótimo)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csAvaliacaoEngage" style="color: #d97706;">2ª Avaliação Engage</label>
+                        <select id="csAvaliacaoEngage">
+                            <option value="">N/A</option>
+                            <option value="1">1 (Muito Ruim)</option>
+                            <option value="2">2 (Ruim)</option>
+                            <option value="3">3 (Regular)</option>
+                            <option value="4">4 (Bom)</option>
+                            <option value="5">5 (Ótimo)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" id="btnCancelCsModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #8b5cf6;">Salvar
+                        Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

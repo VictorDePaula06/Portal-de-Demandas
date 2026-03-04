@@ -1,0 +1,20 @@
+{
+  "name": "portal-demandas",
+  "version": "1.0.0",
+  "description": "Portal para gerenciar demandas de clientes",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server.js"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}
