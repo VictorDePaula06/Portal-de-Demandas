@@ -28,7 +28,11 @@ db.collection('csClients').onSnapshot((snapshot) => {
 // Function to fetch demands from the new backend API
 async function fetchDemandasDaAPI() {
     try {
-        const response = await fetch('/api/demandas');
+        let response = await fetch('/api/demandas');
+        if (!response.ok) {
+            // Fallback para caso a Vercel esteja limpando o prefixo /api
+            response = await fetch('/demandas');
+        }
         if (!response.ok) {
             throw new Error('Falha ao buscar demandas do servidor');
         }
