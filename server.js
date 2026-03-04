@@ -93,15 +93,23 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         return res.json(filteredDemands);
 
     } catch (error) {
+        console.error('Erro na rota /api/demandas:', error.message);
+
+        let errorDetails = error.message;
+        let apiData = null;
+
         if (error.response) {
-            console.error('=== ERRO TIFLUX API ===');
+            apiData = error.response.data;
             console.error('Status:', error.response.status);
-            console.error('Data:', JSON.stringify(error.response.data, null, 2));
-            console.error('Headers:', error.response.headers);
-        } else {
-            console.error('Erro ao buscar demandas no TiFlux:', error.message);
+            console.error('Data:', JSON.stringify(apiData, null, 2));
         }
-        res.status(500).json({ error: 'Falha ao buscar demandas', details: error.message });
+
+        res.status(500).json({
+            error: 'Falha ao buscar demandas',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            apiResponse: apiData
+        });
     }
 });
 
