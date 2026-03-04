@@ -106,3 +106,5 @@ app.listen(PORT, () => {
     console.log(`🌐 API de Demandas: http://localhost:${PORT}/api/demandas`);
     console.log(`⚠️ ATENÇÃO: Configure seu TIFLUX_API_TOKEN no arquivo .env para ativar a integração real.`);
 });
+
+export default app;

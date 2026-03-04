@@ -28,7 +28,7 @@ db.collection('csClients').onSnapshot((snapshot) => {
 // Function to fetch demands from the new backend API
 async function fetchDemandasDaAPI() {
     try {
-        const response = await fetch('http://localhost:3000/api/demandas');
+        const response = await fetch('/api/demandas');
         if (!response.ok) {
             throw new Error('Falha ao buscar demandas do servidor');
         }
