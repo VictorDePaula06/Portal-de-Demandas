@@ -42,6 +42,11 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             console.log('-----------------------------------');
         }
 
+        if (!Array.isArray(rawTickets)) {
+            console.error('TiFlux retornou formato não-array:', rawTickets);
+            return res.json([]); // Retorna vazio se não for array
+        }
+
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
             const rawStage = (ticket.stage?.name || '').toLowerCase();
@@ -111,6 +116,17 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             apiResponse: apiData
         });
     }
+});
+
+app.get(['/api/debug', '/debug'], (req, res) => {
+    res.json({
+        url: req.url,
+        path: req.path,
+        env: {
+            NODE_ENV: process.env.NODE_ENV,
+            VERCEL: !!process.env.VERCEL
+        }
+    });
 });
 
 app.get(['/api/health', '/health'], (req, res) => {
