@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // API Key TiFlux (Configurar no arquivo .env)
-const TIFLUX_API_URL = process.env.TIFLUX_API_URL || 'https://api.tiflux.com.br/api/v1';
+const TIFLUX_API_URL = process.env.TIFLUX_API_URL || 'https://api.tiflux.com/api/v2';
 const TIFLUX_API_TOKEN = process.env.TIFLUX_API_TOKEN || 'SEU_TOKEN_AQUI';
 
 /**
