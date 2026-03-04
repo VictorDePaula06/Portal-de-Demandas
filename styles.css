@@ -885,3 +885,71 @@ textarea {
         }
     }
 }
+
+/* Collapsible Header */
+.collapsible-section {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0, 1, 0, 1), opacity 0.3s ease, padding 0.3s ease;
+    opacity: 1;
+}
+
+.collapsible-section.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    padding: 0 !important;
+}
+
+.toggle-header-container {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 5;
+    margin-top: -10px;
+}
+
+.btn-toggle-header {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    width: 36px;
+    height: 20px;
+    border-radius: 0 0 10px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-top: none;
+}
+
+.btn-toggle-header:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    height: 24px;
+}
+
+.chevron-icon {
+    transition: transform 0.4s ease;
+}
+
+.collapsed+.toggle-header-container .chevron-icon {
+    transform: rotate(180deg);
+}
+
+/* Sidebar Sync Small */
+#lastSyncContainer {
+    border-top: 1px solid var(--border-color);
+    margin-top: auto !important;
+    /* Forces it above logout if needed, but we placed it above */
+}
+
+.sidebar.collapsed #lastSyncContainer span {
+    display: none;
+}
+
+.sidebar.collapsed #lastSyncContainer {
+    justify-content: center;
+    padding: 1rem 0;
+}

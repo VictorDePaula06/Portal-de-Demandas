@@ -84,6 +84,18 @@
                     <span id="currentUserName"
                         style="font-weight: 500; font-size: 0.875rem; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">User</span>
                 </div>
+                <div id="lastSyncContainer"
+                    style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.7rem; padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="icon-sync">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                        <path d="M3 21v-5h5" />
+                    </svg>
+                    <span>Última sincronização: <span id="lastSyncTime">Buscando...</span></span>
+                </div>
                 <button class="nav-item btn-logout" id="btnLogout"
                     style="width: 100%; border: none; background: transparent; cursor: pointer; text-align: left; opacity: 0.7; font-size: 0.875rem; padding-left: 0.5rem; margin-top: 0.5rem; color: var(--text-muted);">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -99,71 +111,72 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <header class="top-header">
-                <div class="header-titles">
-                    <h1>Demandas e Fluxos</h1>
-                    <p>Gerencie chamados de Análise, QP, Adhoc e CS</p>
-                </div>
-                <div class="header-actions" style="display: flex; gap: 0.5rem;">
-                    <button id="btnSyncTiFlux" class="btn btn-secondary" title="Sincronizar com TiFlux">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="icon-sync">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                            <path d="M21 3v5h-5" />
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                            <path d="M3 21v-5h5" />
-                        </svg>
-                        <span>Sincronizar</span>
-                    </button>
-                    <button id="btnNewTask" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M5 12h14" />
-                            <path d="M12 5v14" />
-                        </svg>
-                        Nova Demanda
-                    </button>
-                    <button id="btnNewCS" class="btn btn-primary" style="display: none; background-color: #8b5cf6;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <line x1="19" x2="19" y1="8" y2="14" />
-                            <line x1="22" x2="16" y1="11" y2="11" />
-                        </svg>
-                        Novo Cliente CS
-                    </button>
-                </div>
-            </header>
+            <!-- Collapsible Header Section -->
+            <div id="collapsibleHeader" class="collapsible-section">
+                <header class="top-header">
+                    <div class="header-titles">
+                        <h1>Demandas e Fluxos</h1>
+                        <p>Gerencie chamados de Análise, QP, Adhoc e CS</p>
+                    </div>
+                    <div class="header-actions" style="display: flex; gap: 0.5rem;">
+                        <button id="btnSyncTiFlux" class="btn btn-secondary" title="Sincronizar com TiFlux">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="icon-sync">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                <path d="M21 3v5h-5" />
+                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                                <path d="M3 21v-5h5" />
+                            </svg>
+                            <span>Sincronizar</span>
+                        </button>
+                        <button id="btnNewTask" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M5 12h14" />
+                                <path d="M12 5v14" />
+                            </svg>
+                            Nova Demanda
+                        </button>
+                        <button id="btnNewCS" class="btn btn-primary" style="display: none; background-color: #8b5cf6;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <line x1="19" x2="19" y1="8" y2="14" />
+                                <line x1="22" x2="16" y1="11" y2="11" />
+                            </svg>
+                            Novo Cliente CS
+                        </button>
+                    </div>
+                </header>
 
-            <!-- Filter Bar for Demandas -->
-            <div class="filter-bar" id="demandasFilterBar"
-                style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; padding: 0 1rem;">
-                <input type="text" id="searchInput" placeholder="Buscar por número, título ou cliente..."
-                    style="flex: 1; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); min-width: 250px; font-family: inherit;">
-                <select id="slaFilter"
-                    style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); min-width: 200px; font-family: inherit; font-weight: 500;">
-                    <option value="all">Filtro de SLA: Todas</option>
-                    <option value="vencidas">⏰ Vencidas</option>
-                    <option value="perto">⚠️ Perto do Venc. (Hoje/Amanhã)</option>
-                    <option value="longe">✅ No Prazo</option>
-                </select>
-                <div id="lastSyncContainer"
-                    style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem; width: 100%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v4" />
-                        <path d="m16.2 7.8 2.9-2.9" />
-                        <path d="M18 12h4" />
-                        <path d="m16.2 16.2 2.9 2.9" />
-                        <path d="M12 18v4" />
-                        <path d="m4.9 19.1 2.9-2.9" />
-                        <path d="M2 12h4" />
-                        <path d="m4.9 4.9 2.9 2.9" />
-                    </svg>
-                    <span>Última sincronização: <span id="lastSyncTime">Buscando...</span></span>
+                <!-- Filter Bar for Demandas -->
+                <div class="filter-bar" id="demandasFilterBar"
+                    style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; padding: 0 1rem;">
+                    <input type="text" id="searchInput" placeholder="Buscar por número, título ou cliente..."
+                        style="flex: 1; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); min-width: 250px; font-family: inherit;">
+                    <select id="slaFilter"
+                        style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); min-width: 200px; font-family: inherit; font-weight: 500;">
+                        <option value="all">Filtro de SLA: Todas</option>
+                        <option value="vencidas">⏰ Vencidas</option>
+                        <option value="perto">⚠️ Perto do Venc. (Hoje/Amanhã)</option>
+                        <option value="longe">✅ No Prazo</option>
+                    </select>
                 </div>
+            </div>
+
+            <!-- Toggle Header Button -->
+            <div class="toggle-header-container">
+                <button id="btnToggleHeader" class="btn-toggle-header" title="Mudar Visualização">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="chevron-icon">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                </button>
             </div>
 
             <!-- Kanban Board -->

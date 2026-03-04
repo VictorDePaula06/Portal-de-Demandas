@@ -128,6 +128,8 @@ const modal = document.getElementById('taskModal');
 const btnCloseModal = document.getElementById('btnCloseModal');
 const btnSyncTiFlux = document.getElementById('btnSyncTiFlux');
 const lastSyncTime = document.getElementById('lastSyncTime');
+const btnToggleHeader = document.getElementById('btnToggleHeader');
+const collapsibleHeader = document.getElementById('collapsibleHeader');
 const btnCancelModal = document.getElementById('btnCancelModal');
 const taskForm = document.getElementById('taskForm');
 const toast = document.getElementById('toast');
@@ -265,6 +267,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem(SIDEBAR_STATE_KEY, isCollapsed ? 'collapsed' : 'expanded');
     });
+
+    // Header Collapse Logic
+    const HEADER_STATE_KEY = 'portalCS_header';
+    if (localStorage.getItem(HEADER_STATE_KEY) === 'collapsed' && collapsibleHeader) {
+        collapsibleHeader.classList.add('collapsed');
+    }
+
+    if (btnToggleHeader && collapsibleHeader) {
+        btnToggleHeader.addEventListener('click', () => {
+            collapsibleHeader.classList.toggle('collapsed');
+            const isCollapsed = collapsibleHeader.classList.contains('collapsed');
+            localStorage.setItem(HEADER_STATE_KEY, isCollapsed ? 'collapsed' : 'expanded');
+        });
+    }
 
     // Manual Sync Button Listener
     if (btnSyncTiFlux) {
