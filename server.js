@@ -101,6 +101,10 @@ app.get(['/api/demandas', '/demandas'], async (req, res) => {
     }
 });
 
+app.get(['/api/health', '/health'], (req, res) => {
+    res.json({ status: 'ok', vercel: !!process.env.VERCEL, timestamp: new Date().toISOString() });
+});
+
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     app.listen(PORT, () => {
         console.log(`✅ Servidor rodando na porta ${PORT}`);
