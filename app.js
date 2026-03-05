@@ -319,38 +319,78 @@ function renderUserAdminList() {
                     <span style="color: var(--text-primary); font-weight: 500;">${u.name}</span>
                     ${isAdminBadge}
                 </div>
-                <button onclick="deleteCustomUser('${u.id}')" style="background: none; border: none; cursor: pointer; color: var(--status-critical);">Excluir</button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="openEditUserModal('${u.id}')" style="background: none; border: none; cursor: pointer; color: var(--accent-primary);">Editar</button>
+                    <button onclick="deleteCustomUser('${u.id}')" style="background: none; border: none; cursor: pointer; color: var(--status-critical);">Excluir</button>
+                </div>
             </div>
         `;
     });
     listContainer.innerHTML = html;
 }
 
+window.openEditUserModal = function (id) {
+    const user = customUsers.find(u => u.id === id);
+    if (user) {
+        document.getElementById('adminUserId').value = user.id;
+        document.getElementById('adminUserName').value = user.name;
+        document.getElementById('adminUserEmail').value = user.email;
+        document.getElementById('adminUserPass').value = user.pass;
+        document.getElementById('adminUserIsAdmin').checked = user.isAdmin || false;
+
+        // Change button text or title to indicate editing
+        const submitBtn = userAdminForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = 'Atualizar Usuário';
+
+        const formTitle = userAdminForm.previousElementSibling;
+        if (formTitle) formTitle.textContent = 'Editar Usuário';
+    }
+};
+
 const userAdminForm = document.getElementById('userAdminForm');
 if (userAdminForm) {
     userAdminForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        const id = document.getElementById('adminUserId').value;
         const name = document.getElementById('adminUserName').value.trim();
         const email = document.getElementById('adminUserEmail').value.trim().toLowerCase();
         const pass = document.getElementById('adminUserPass').value.trim();
-        const whatsapp = document.getElementById('adminUserWhatsapp').value.trim().replace(/\D/g, ''); // keep only numbers
         const isAdmin = document.getElementById('adminUserIsAdmin').checked;
 
         if (!name || !email || !pass) return;
 
-        const newUser = {
+        const userData = {
             name: name,
             email: email,
             pass: pass,
-            whatsapp: whatsapp,
             isAdmin: isAdmin
         };
 
-        db.collection('customUsers').add(newUser).then(() => {
-            showToast('Usuário cadastrado com sucesso!');
-            userAdminForm.reset();
-        });
+        if (id) {
+            // Update existing user
+            db.collection('customUsers').doc(id).update(userData).then(() => {
+                showToast('Usuário atualizado com sucesso!');
+                resetUserForm();
+            });
+        } else {
+            // Add new user
+            db.collection('customUsers').add(userData).then(() => {
+                showToast('Usuário cadastrado com sucesso!');
+                resetUserForm();
+            });
+        }
     });
+
+    function resetUserForm() {
+        userAdminForm.reset();
+        document.getElementById('adminUserId').value = '';
+
+        const submitBtn = userAdminForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = 'Salvar Usuário';
+
+        const formTitle = userAdminForm.previousElementSibling;
+        if (formTitle) formTitle.textContent = 'Cadastrar Novo Usuário';
+    }
 }
 
 window.deleteCustomUser = function (id) {
@@ -393,7 +433,6 @@ loginForm.addEventListener('submit', (e) => {
         if (email === 'admin@admin.com' && pass === 'admin') {
             localStorage.setItem(USER_STORAGE_KEY, 'Admin Master');
             localStorage.setItem('portalCS_isAdmin', 'true');
-            localStorage.setItem('portalCS_userWhatsapp', '');
             loginEmailInput.value = '';
             loginPassInput.value = '';
             checkAuth();
@@ -407,7 +446,6 @@ loginForm.addEventListener('submit', (e) => {
         if (validUser) {
             localStorage.setItem(USER_STORAGE_KEY, validUser.name);
             localStorage.setItem('portalCS_isAdmin', validUser.isAdmin ? 'true' : 'false');
-            localStorage.setItem('portalCS_userWhatsapp', validUser.whatsapp || '');
             loginEmailInput.value = '';
             loginPassInput.value = '';
             checkAuth();
@@ -421,7 +459,6 @@ loginForm.addEventListener('submit', (e) => {
 btnLogout.addEventListener('click', () => {
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem('portalCS_isAdmin');
-    localStorage.removeItem('portalCS_userWhatsapp');
     checkAuth();
     showToast('Sessão encerrada.');
 });
@@ -1214,14 +1251,7 @@ function sendWhatsappCobrança(id) {
     }
 
     const encodedMsg = encodeURIComponent(message);
-    const userWhatsapp = localStorage.getItem('portalCS_userWhatsapp');
-
     let whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMsg}`;
-
-    // Se o usuário atual cadastrou um WhatsApp na aba Configurações, envia pra ele.
-    if (userWhatsapp) {
-        whatsappUrl = `https://api.whatsapp.com/send?phone=${userWhatsapp}&text=${encodedMsg}`;
-    }
 
     // Open in new tab
     window.open(whatsappUrl, '_blank');
