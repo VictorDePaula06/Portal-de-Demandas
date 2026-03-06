@@ -58,7 +58,7 @@ async function fetchDemandasDaAPI() {
         if (apiTasks.length > 0) {
             let newTasksCount = 0;
             let updatedTasksCount = 0;
-            let syncdItemsText = [];
+            let syncdItems = [];
 
             const batch = db.batch();
             let hasChanges = false;
@@ -78,7 +78,7 @@ async function fetchDemandasDaAPI() {
                     const taskRef = db.collection('tasks').doc(apiTask.id);
                     batch.set(taskRef, apiTask);
                     hasChanges = true;
-                    syncdItemsText.push(`#${apiTask.number} (Novo)`);
+                    syncdItems.push({ number: apiTask.number || 'N/A', type: 'Novo', client: apiTask.cliente });
                 } else {
                     // Proteção CRÍTICA contra sobrescrita de demandas já concluídas localmente
                     const isLocalCompleted = localTask.status && localTask.status.includes('Concluida');
@@ -105,7 +105,7 @@ async function fetchDemandasDaAPI() {
                         const taskRef = db.collection('tasks').doc(apiTask.id);
                         batch.set(taskRef, apiTask, { merge: true });
                         hasChanges = true;
-                        syncdItemsText.push(`#${apiTask.number} (Atu.)`);
+                        syncdItems.push({ number: apiTask.number || 'N/A', type: 'Atu.', client: apiTask.cliente });
                     }
                 }
             });
@@ -120,14 +120,8 @@ async function fetchDemandasDaAPI() {
             if (lastSyncLabel) lastSyncLabel.innerText = timeStr;
 
             if (newTasksCount > 0 || updatedTasksCount > 0) {
-                let msg = `TiFlux: ${newTasksCount} novos e ${updatedTasksCount} atualizados!`;
-
-                if (syncdItemsText.length > 0 && syncdItemsText.length <= 15) {
-                    alert(`Demandas Sincronizadas:\n${syncdItemsText.join('\\n')}`);
-                } else if (syncdItemsText.length > 15) {
-                    alert(`Foram sincronizadas ${syncdItemsText.length} demandas nesta rodada.\\nExemplos:\\n${syncdItemsText.slice(0, 10).join('\\n')}...`);
-                }
-                showToast(msg);
+                showSyncResultsModal(newTasksCount, updatedTasksCount, syncdItems);
+                showToast(`TiFlux: ${newTasksCount} novos e ${updatedTasksCount} atualizados!`);
             } else {
                 showToast('TiFlux verificado: sem novos chamados.');
             }
@@ -147,6 +141,37 @@ async function fetchDemandasDaAPI() {
         if (syncButton) syncButton.disabled = false;
     }
 }
+
+// Sync Results Modal Logic
+function showSyncResultsModal(newCount, updatedCount, items) {
+    const modal = document.getElementById('syncResultsModal');
+    const summary = document.getElementById('syncSummaryText');
+    const list = document.getElementById('syncResultsList');
+
+    summary.innerHTML = `Foram encontrados <strong>${newCount}</strong> novos chamados e <strong>${updatedCount}</strong> atualizados no TiFlux.`;
+
+    list.innerHTML = items.map(item => `
+        <div class="sync-item ${item.type === 'Novo' ? 'new' : 'updated'}">
+            <div style="display: flex; flex-direction: column;">
+                <span class="sync-item-number">#${item.number}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${item.client}</span>
+            </div>
+            <span class="sync-badge ${item.type === 'Novo' ? 'new' : 'updated'}">${item.type}</span>
+        </div>
+    `).join('');
+
+    modal.classList.add('active');
+}
+
+const btnCloseSyncResults = document.getElementById('btnCloseSyncResults');
+const btnOkSyncResults = document.getElementById('btnOkSyncResults');
+const syncResultsModal = document.getElementById('syncResultsModal');
+
+if (btnCloseSyncResults) btnCloseSyncResults.addEventListener('click', () => syncResultsModal.classList.remove('active'));
+if (btnOkSyncResults) btnOkSyncResults.addEventListener('click', () => syncResultsModal.classList.remove('active'));
+if (syncResultsModal) syncResultsModal.addEventListener('click', (e) => {
+    if (e.target === syncResultsModal) syncResultsModal.classList.remove('active');
+});
 
 // DOM Elements Demandas
 const btnNewTask = document.getElementById('btnNewTask');

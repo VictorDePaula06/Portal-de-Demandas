@@ -1014,3 +1014,61 @@ textarea {
 .nav-item.active .sidebar-badge {
     box-shadow: 0 0 8px var(--status-critical);
 }
+
+/* Sync Results UI */
+.sync-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+}
+
+.sync-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.sync-item.new {
+    border-left: 3px solid var(--status-normal);
+}
+
+.sync-item.updated {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.sync-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.sync-badge.new {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--status-normal);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.sync-badge.updated {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-primary);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.sync-item-number {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.sync-summary {
+    background: rgba(var(--accent-primary-rgb), 0.05);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
