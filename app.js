@@ -367,16 +367,28 @@ function renderUserAdminList() {
 
     let html = '';
     customUsers.forEach(u => {
-        const isAdminBadge = u.isAdmin ? `<span style="background: var(--status-critical); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">ADMIN</span>` : '';
+        const isAdminBadge = u.isAdmin ? `<span class="sync-badge updated" style="margin-left: 8px; font-size: 0.6rem;">ADMIN</span>` : '';
+        const initials = u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
+
         html += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-                <div>
-                    <span style="color: var(--text-primary); font-weight: 500;">${u.name}</span>
-                    ${isAdminBadge}
+            <div class="user-card">
+                <div style="display: flex; align-items: center;">
+                    <div class="user-avatar">${initials}</div>
+                    <div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem;">${u.name}</span>
+                            ${isAdminBadge}
+                        </div>
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">${u.email}</span>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="openEditUserModal('${u.id}')" style="background: none; border: none; cursor: pointer; color: var(--accent-primary);">Editar</button>
-                    <button onclick="deleteCustomUser('${u.id}')" style="background: none; border: none; cursor: pointer; color: var(--status-critical);">Excluir</button>
+                <div style="display: flex; gap: 4px;">
+                    <button class="action-btn edit" onclick="openEditUserModal('${u.id}')" title="Editar Usuário">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    </button>
+                    <button class="action-btn delete" onclick="deleteCustomUser('${u.id}')" title="Excluir Usuário">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
                 </div>
             </div>
         `;
