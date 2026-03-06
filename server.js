@@ -28,28 +28,30 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // Adicionando limit=150 para que ele puxe mais chamados que possam estar em páginas anteriores do TiFlux
         // Dispara requisições em paralelo para otimizar o tempo de resposta
         // O TiFlux V2 retorna erro HTTP 400 se as queries de listagem limitarem mais que 100 por conta.
-        // O parâmetro correto para paginação é "offset" (ex: offset=100) e ele deve ser estritamente > 0.
-        // Vamos varrer os 300 últimos chamados fechados para cobrir chamados de dias anteriores.
+        // O parâmetro correto para paginação é "offset" (ex: offset=100).
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
-        const [openRes, closedRes1, closedRes2, closedRes3] = await Promise.all([
+        // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
+        const [openTI, closedTI1, closedTI2, openGeneral, closedGeneral] = await Promise.all([
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&offset=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&offset=200`, { headers })
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
         ]);
 
-        let openTickets = openRes.data?.data || openRes.data || [];
-        let closedTickets1 = closedRes1.data?.data || closedRes1.data || [];
-        let closedTickets2 = closedRes2.data?.data || closedRes2.data || [];
-        let closedTickets3 = closedRes3.data?.data || closedRes3.data || [];
+        let ticketsTI_O = openTI.data?.data || openTI.data || [];
+        let ticketsTI_C1 = closedTI1.data?.data || closedTI1.data || [];
+        let ticketsTI_C2 = closedTI2.data?.data || closedTI2.data || [];
+        let ticketsGen_O = openGeneral.data?.data || openGeneral.data || [];
+        let ticketsGen_C = closedGeneral.data?.data || closedGeneral.data || [];
 
-        let closedTickets = [...closedTickets1, ...closedTickets2, ...closedTickets3];
-
-        if (!Array.isArray(openTickets)) openTickets = [];
-        if (!Array.isArray(closedTickets)) closedTickets = [];
-
-        // Junta as preventivas e chamados abertos + recém-fechados
-        const rawTickets = [...openTickets, ...closedTickets];
+        // Combinar todos removendo duplicatas por ticket_number
+        const allRaw = [...ticketsTI_O, ...ticketsTI_C1, ...ticketsTI_C2, ...ticketsGen_O, ...ticketsGen_C];
+        const uniqueMap = new Map();
+        allRaw.forEach(t => {
+            if (t && t.ticket_number) uniqueMap.set(t.ticket_number, t);
+        });
+        const rawTickets = Array.from(uniqueMap.values());
 
         if (rawTickets.length > 0) {
             console.log(`TiFlux retornou ${openTickets.length} abertos e ${closedTickets.length} fechados (Total: ${rawTickets.length}).`);
@@ -62,9 +64,10 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
-            if (String(ticket.ticket_number) === '27109') {
-                console.log('--- ENCONTRADO TICKET 27109 ---');
+            if (String(ticket.ticket_number) === '27109' || String(ticket.ticket_number) === '27069') {
+                console.log(`--- ENCONTRADO TICKET ${ticket.ticket_number} ---`);
                 console.log('is_closed:', ticket.is_closed);
+                console.log('title:', ticket.title);
                 console.log('stage:', JSON.stringify(ticket.stage));
                 console.log('status:', JSON.stringify(ticket.status));
                 console.log('updated_at:', ticket.updated_at);
