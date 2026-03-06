@@ -389,7 +389,7 @@
                         <p>Visão geral de tickets fechados, SLAs e desempenho mensal da equipe.</p>
 
                         <div class="report-form-group">
-                            <div class="report-form-row">
+                            <div class="report-form-row" style="grid-template-columns: 1fr 1fr 1fr;">
                                 <div class="form-group">
                                     <label>Mês Referência</label>
                                     <input type="month" id="reportMonth">
@@ -401,6 +401,16 @@
                                         <option value="ontime">No Prazo ✅</option>
                                         <option value="overdue">Atrasadas ⏰</option>
                                         <option value="open_overdue">Abertas/Atrasadas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tipo de Demanda</label>
+                                    <select id="reportTypeFilter">
+                                        <option value="demandas_all">Geral (exceto Prev.)</option>
+                                        <option value="QP - Melhoria">QP - Melhoria</option>
+                                        <option value="QP - Correção">QP - Correção</option>
+                                        <option value="Adhoc">Adhoc</option>
+                                        <option value="all">Tudo (incluindo Prev.)</option>
                                     </select>
                                 </div>
                             </div>

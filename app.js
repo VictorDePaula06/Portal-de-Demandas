@@ -804,6 +804,7 @@ if (btnGeneratePDF) {
     btnGeneratePDF.addEventListener('click', () => {
         const reportMonth = document.getElementById('reportMonth').value;
         const reportSLAFilter = document.getElementById('reportSLAFilter').value;
+        const reportTypeFilter = document.getElementById('reportTypeFilter').value;
 
         if (!reportMonth && reportSLAFilter !== 'open_overdue') {
             alert("Por favor, selecione o 'Mês de Referência' para gerar relatórios fechados.");
@@ -812,6 +813,18 @@ if (btnGeneratePDF) {
 
         // Filtra as tarefas baseadas nos critérios da tela de relatórios
         let reportData = tasks.filter(t => {
+            // Filtro de Tipo de Demanda
+            if (reportTypeFilter === 'demandas_all') {
+                // Geral: remove Preventivas
+                if (t.status.includes('Preventiva')) return false;
+            } else if (reportTypeFilter !== 'all') {
+                // Filtro específico (QP - Melhoria, QP - Correção, Adhoc)
+                if (t.status !== reportTypeFilter && !t.status.startsWith(reportTypeFilter + ' ')) {
+                    // Check for exact match or start of concluded status
+                    if (!t.status.includes(reportTypeFilter)) return false;
+                }
+            }
+
             // Se for open_overdue, pega demandas NÃO concluídas e atrasadas
             if (reportSLAFilter === 'open_overdue') {
                 if (t.status.includes('Concluida')) return false;
@@ -854,7 +867,7 @@ if (btnGeneratePDF) {
         doc.setFontSize(18);
         doc.text("Relatório de Demandas - PortalCS", 14, 15);
         doc.setFontSize(11);
-        doc.text(`Filtro: ${reportSLAFilter} | Período: ${reportMonth || 'Abertas'}`, 14, 23);
+        doc.text(`Tipo: ${reportTypeFilter} | Filtro: ${reportSLAFilter} | Período: ${reportMonth || 'Abertas'}`, 14, 23);
         doc.text(`Total de Registros: ${reportData.length}`, 14, 29);
 
         // Preparar Dados da Tabela
