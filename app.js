@@ -896,6 +896,161 @@ if (btnGeneratePDF) {
     });
 }
 
+// Relatório de Preventivas (PDF)
+const btnGeneratePreventivasPDF = document.getElementById('btnGeneratePreventivasPDF');
+if (btnGeneratePreventivasPDF) {
+    btnGeneratePreventivasPDF.addEventListener('click', () => {
+        const filterVal = document.getElementById('reportPreventivaFilter').value;
+        const preventivasByClient = {};
+
+        // Coletar dados de preventivas (similar à lógica da aba de preventivas)
+        tasks.forEach(task => {
+            if (task.status.includes('Preventiva')) {
+                const clientName = task.cliente || 'Sem Cliente';
+                if (!preventivasByClient[clientName]) {
+                    preventivasByClient[clientName] = [];
+                }
+                preventivasByClient[clientName].push(task);
+            }
+        });
+
+        const clients = Object.keys(preventivasByClient).sort();
+        const reportRows = [];
+
+        const sanitizeForPDF = (str) => {
+            if (!str) return '';
+            return String(str).replace(/[^\x00-\xFF]/g, '');
+        };
+
+        const formatDate = (dateStr) => {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateStr;
+        };
+
+        clients.forEach(clientName => {
+            const clientTasks = preventivasByClient[clientName].sort((a, b) => {
+                const dateA = new Date(a.closedAt || a.createdAt || a.date || '1970-01-01');
+                const dateB = new Date(b.closedAt || b.createdAt || b.date || '1970-01-01');
+                return dateB - dateA;
+            });
+
+            const lastTask = clientTasks[0];
+            let badgeClass = 'No Prazo';
+            let proxPreventiva = '-';
+
+            if (lastTask.closedAt) {
+                const closedDate = new Date(lastTask.closedAt + 'T12:00:00');
+                closedDate.setDate(closedDate.getDate() + 90);
+                proxPreventiva = `${String(closedDate.getDate()).padStart(2, '0')}/${String(closedDate.getMonth() + 1).padStart(2, '0')}/${closedDate.getFullYear()}`;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const diff = closedDate - today;
+                const daysToMaintenance = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+                if (daysToMaintenance <= 0) badgeClass = 'Vencida';
+                else if (daysToMaintenance <= 15) badgeClass = 'Proxima (15d)';
+            } else {
+                badgeClass = 'Em Aberto';
+                proxPreventiva = 'Pendente';
+            }
+
+            // Aplicar Filtro do Relatório
+            if (filterVal === 'vencidas' && badgeClass !== 'Vencida') return;
+            if (filterVal === 'perto' && badgeClass !== 'Proxima (15d)') return;
+
+            reportRows.push([
+                sanitizeForPDF(clientName),
+                sanitizeForPDF(lastTask.responsavel || '-'),
+                formatDate(lastTask.closedAt),
+                proxPreventiva,
+                badgeClass
+            ]);
+        });
+
+        if (reportRows.length === 0) {
+            alert("Nenhuma preventiva encontrada para exportação com estes filtros.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        doc.setFontSize(18);
+        doc.text("Relatório de Status de Preventivas", 14, 15);
+        doc.setFontSize(11);
+        doc.text(`Filtro: ${filterVal === 'all' ? 'Todas' : (filterVal === 'vencidas' ? 'Apenas Vencidas' : 'Próximas 15 dias')}`, 14, 23);
+
+        doc.autoTable({
+            head: [["Cliente / Posto", "Últ. Responsável", "Últ. Realizada", "Próxima Visita", "Status"]],
+            body: reportRows,
+            startY: 30,
+            theme: 'striped',
+            headStyles: { fillColor: [16, 185, 129] }, // Verde para preventivas
+            styles: { fontSize: 10 }
+        });
+
+        doc.save(`relatorio_preventivas_${filterVal}.pdf`);
+        showToast("Relatório de Preventivas Gerado!");
+    });
+}
+
+// Relatório de CS (PDF)
+const btnGenerateCSPDF = document.getElementById('btnGenerateCSPDF');
+if (btnGenerateCSPDF) {
+    btnGenerateCSPDF.addEventListener('click', () => {
+        const filterVal = document.getElementById('reportCSFilter').value;
+        const reportRows = [];
+
+        const sanitizeForPDF = (str) => {
+            if (!str) return '';
+            return String(str).replace(/[^\x00-\xFF]/g, '');
+        };
+
+        csClients.forEach(client => {
+            const risk = client.risk || 'Baixo';
+
+            // Filtro
+            if (filterVal === 'alto' && risk !== 'Alto') return;
+            if (filterVal === 'medio' && risk !== 'Médio' && risk !== 'Medio') return;
+
+            reportRows.push([
+                sanitizeForPDF(client.name),
+                sanitizeForPDF(client.interacao || '-'),
+                sanitizeForPDF(client.grow || '-'),
+                sanitizeForPDF(client.engage || '-'),
+                sanitizeForPDF(risk)
+            ]);
+        });
+
+        if (reportRows.length === 0) {
+            alert("Nenhum cliente CS encontrado para exportação.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF(); // Retrato para CS parece ok
+        doc.setFontSize(18);
+        doc.text("Relatório de Saúde Customer Success", 14, 15);
+        doc.setFontSize(11);
+        doc.text(`Filtrando por Risco: ${filterVal === 'all' ? 'Todos' : filterVal}`, 14, 23);
+
+        doc.autoTable({
+            head: [["Cliente", "Interação", "CS Grow", "CS Engage", "Índice de Risco"]],
+            body: reportRows,
+            startY: 30,
+            theme: 'striped',
+            headStyles: { fillColor: [139, 92, 246] }, // Roxo
+            styles: { fontSize: 9 }
+        });
+
+        doc.save(`relatorio_saude_cs_${filterVal}.pdf`);
+        showToast("Relatório de CS Gerado!");
+    });
+}
+
+
 // Delete Task (Secured)
 function deleteTask(id) {
     // Check if user is in hardcoded list
