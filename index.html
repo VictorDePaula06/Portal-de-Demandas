@@ -282,6 +282,9 @@
                                     Risco</th>
                                 <th
                                     style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Observações</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
                                     Ações</th>
                             </tr>
                         </thead>
@@ -623,6 +626,10 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="taskObs">Observações Internas (Resumo p/ Kanban)</label>
+                    <textarea id="taskObs" rows="2" placeholder="Notas importantes sobre esta demanda..."></textarea>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btnSaveTask">Salvar Demanda</button>
@@ -787,6 +794,12 @@
                             <option value="5">5 (Ótimo)</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="csObs">Observações Gerais do Cliente</label>
+                    <textarea id="csObs" rows="3"
+                        placeholder="Histórico, notas de reuniões ou observações críticas..."></textarea>
                 </div>
 
                 <div class="modal-footer" style="margin-top: 1.5rem;">

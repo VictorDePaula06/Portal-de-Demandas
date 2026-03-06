@@ -574,6 +574,9 @@ function openEditModal(id) {
         document.getElementById('taskDate').value = task.date;
         document.getElementById('taskStatus').value = task.status;
 
+        const taskObs = document.getElementById('taskObs');
+        if (taskObs) taskObs.value = task.obs || '';
+
         modal.classList.add('active');
     }
 }
@@ -603,6 +606,9 @@ function openCsModal() {
 
     document.getElementById('csReclamacoes').value = 'N';
 
+    const csObs = document.getElementById('csObs');
+    if (csObs) csObs.value = '';
+
     csModal.classList.add('active');
 }
 
@@ -623,6 +629,9 @@ function openEditCsModal(id) {
         document.getElementById('csReclamacoes').value = client.reclamacoes || 'N';
         document.getElementById('csAvaliacaoGrow').value = client.avaliacaoGrow || '';
         document.getElementById('csAvaliacaoEngage').value = client.avaliacaoEngage || '';
+
+        const csObs = document.getElementById('csObs');
+        if (csObs) csObs.value = client.obs || '';
 
         csModal.classList.add('active');
     }
@@ -670,18 +679,19 @@ taskForm.addEventListener('submit', (e) => {
 
     const date = document.getElementById('taskDate').value;
     const status = document.getElementById('taskStatus').value;
+    const obs = document.getElementById('taskObs').value;
 
     const isNew = !document.getElementById('taskId').value;
 
     if (isNew) {
         const finalResponsavel = responsavel || currentUser;
-        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status };
+        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs };
         db.collection('tasks').doc(taskDataNew.id).set(taskDataNew).then(() => {
             showToast('Demanda criada com sucesso!');
         });
     } else {
         const taskObj = tasks.find(t => t.id === id) || {};
-        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status };
+        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs };
         db.collection('tasks').doc(id).set(updatedTask).then(() => {
             showToast('Demanda atualizada!');
         });
@@ -749,12 +759,14 @@ csForm.addEventListener('submit', (e) => {
     const avaliacaoGrow = document.getElementById('csAvaliacaoGrow').value;
     const avaliacaoEngage = document.getElementById('csAvaliacaoEngage').value;
 
+    const obs = document.getElementById('csObs').value;
+
     const isNew = !document.getElementById('csId').value;
 
     const clientData = {
         id, name, cnpj, contact, dateImpl, dateStart,
         dateLastContact, dateDue, interacao, grow, engage,
-        reclamacoes, avaliacaoGrow, avaliacaoEngage
+        reclamacoes, avaliacaoGrow, avaliacaoEngage, obs
     };
 
     clientData.risk = calculateCSRisk(clientData);
@@ -1173,6 +1185,13 @@ function renderBoard() {
             contatoTexto = ` | ${nom}${sep}${tel}`;
         }
 
+        const obsHtml = task.obs ? `
+            <div style="margin-top: 8px; padding: 6px 8px; background: rgba(0,0,0,0.1); border-radius: 4px; font-size: 0.7rem; color: var(--text-muted); font-style: italic; display: flex; align-items: flex-start; gap: 4px; border: 1px dashed rgba(255,255,255,0.1);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span style="overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${task.obs}</span>
+            </div>
+        ` : '';
+
         const cardHTML = `
             <div class="task-card ${sla.class} ${isCompleted ? 'completed-card' : ''}" draggable="${!isCompleted}" data-id="${task.id}">
                 <div class="card-header">
@@ -1200,6 +1219,7 @@ function renderBoard() {
                     Data Abertura: ${createdDisplay}
                 </div>
                 <div class="task-desc">${task.desc}</div>
+                ${obsHtml}
                 ${(isCompleted && (task.resolvedValidator || task.resolvedDesc)) ? `
                 <div class="task-resolution-info" style="margin-top: 8px; padding: 6px 8px; background: rgba(0,0,0,0.2); border-left: 2px solid var(--status-success); border-radius: 4px; font-size: 0.75rem;">
                     ${task.resolvedValidator ? `<div style="color: var(--text-color); margin-bottom: 2px;"><b>Validado por:</b> ${task.resolvedValidator}</div>` : ''}
@@ -1437,6 +1457,7 @@ function renderCSBoard() {
             <td style="padding: 1rem;">${growBadge}</td>
             <td style="padding: 1rem;">${engageBadge}</td>
             <td style="padding: 1rem;">${riskBadge}</td>
+            <td style="padding: 1rem; font-size: 0.75rem; color: var(--text-muted); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${client.obs || ''}">${client.obs || '-'}</td>
             <td style="padding: 1rem; white-space: nowrap;">
                 <button class="btn-icon" onclick="openEditCsModal('${client.id}')" title="Editar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
