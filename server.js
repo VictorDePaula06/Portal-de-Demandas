@@ -54,7 +54,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         const rawTickets = Array.from(uniqueMap.values());
 
         if (rawTickets.length > 0) {
-            console.log(`TiFlux retornou ${openTickets.length} abertos e ${closedTickets.length} fechados (Total: ${rawTickets.length}).`);
+            console.log(`TiFlux retornou ${rawTickets.length} chamados únicos.`);
         }
 
         if (rawTickets.length === 0) {
