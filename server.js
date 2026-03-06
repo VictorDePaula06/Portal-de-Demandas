@@ -27,18 +27,23 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // --- CÓDIGO DE INTEGRAÇÃO REAL (Comentado) ---
         // Adicionando limit=150 para que ele puxe mais chamados que possam estar em páginas anteriores do TiFlux
         // Dispara requisições em paralelo para otimizar o tempo de resposta
-        // Adicionando requisições com paginação para puxar chamados fechados mais antigos
+        // O TiFlux V2 retorna erro HTTP 400 se as queries de listagem limitarem mais que 100 por conta.
+        // O parâmetro correto para paginação é "offset" (ex: offset=100) e ele deve ser estritamente > 0.
+        // Vamos varrer os 300 últimos chamados fechados para cobrir chamados de dias anteriores.
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
-
-        // O TiFlux V2 retorna erro HTTP 400 se as queries de listagem com página ou limite maior que 100, dependendo da conta, forem utilizados no endpoint "is_closed=true".
-        // A forma mais segura para não dar erro é usar o limit 100 sem paginação por enquanto.
-        const [openRes, closedRes] = await Promise.all([
+        const [openRes, closedRes1, closedRes2, closedRes3] = await Promise.all([
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&offset=200`, { headers })
         ]);
 
         let openTickets = openRes.data?.data || openRes.data || [];
-        let closedTickets = closedRes.data?.data || closedRes.data || [];
+        let closedTickets1 = closedRes1.data?.data || closedRes1.data || [];
+        let closedTickets2 = closedRes2.data?.data || closedRes2.data || [];
+        let closedTickets3 = closedRes3.data?.data || closedRes3.data || [];
+
+        let closedTickets = [...closedTickets1, ...closedTickets2, ...closedTickets3];
 
         if (!Array.isArray(openTickets)) openTickets = [];
         if (!Array.isArray(closedTickets)) closedTickets = [];
