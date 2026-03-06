@@ -72,11 +72,19 @@ body {
     padding: 1.5rem 1rem;
 }
 
-.sidebar.collapsed .logo h2,
+.sidebar.collapsed .sidebar-logo-img,
 .sidebar.collapsed .nav-item span {
     opacity: 0;
     width: 0;
     display: none;
+}
+
+.sidebar-logo-collapsed {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-logo-collapsed {
+    display: block;
 }
 
 .logo {
@@ -85,6 +93,32 @@ body {
     gap: 0.75rem;
     margin-bottom: 2.5rem;
     justify-content: space-between;
+    overflow: hidden;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.login-header {
+    text-align: center;
+    animation: fadeInDown 0.6s ease;
+    width: 100%;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .logo-container {
