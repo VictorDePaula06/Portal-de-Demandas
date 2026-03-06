@@ -953,3 +953,24 @@ textarea {
     justify-content: center;
     padding: 1rem 0;
 }
+
+/* Sidebar Badges */
+.sidebar-badge {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--status-critical);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.nav-item.active .sidebar-badge {
+    box-shadow: 0 0 8px var(--status-critical);
+}

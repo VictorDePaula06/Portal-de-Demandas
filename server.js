@@ -26,29 +26,45 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
     try {
         // --- CÓDIGO DE INTEGRAÇÃO REAL (Comentado) ---
         // Adicionando limit=150 para que ele puxe mais chamados que possam estar em páginas anteriores do TiFlux
-        const response = await axios.get(`${TIFLUX_API_URL}/tickets?limit=150`, {
-            headers: { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` }
-        });
+        // Dispara requisições em paralelo para otimizar o tempo de resposta
+        // Adicionando requisições com paginação para puxar chamados fechados mais antigos
+        const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
 
-        // Log do primeiro item para descobrir os nomes exatos dos campos da API v2!
-        let rawTickets = response.data;
-        if (response.data && response.data.data) { // Paginação padrão v2
-            rawTickets = response.data.data;
-        }
+        // O TiFlux V2 retorna erro HTTP 400 se as queries de listagem com página ou limite maior que 100, dependendo da conta, forem utilizados no endpoint "is_closed=true".
+        // A forma mais segura para não dar erro é usar o limit 100 sem paginação por enquanto.
+        const [openRes, closedRes] = await Promise.all([
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
+        ]);
+
+        let openTickets = openRes.data?.data || openRes.data || [];
+        let closedTickets = closedRes.data?.data || closedRes.data || [];
+
+        if (!Array.isArray(openTickets)) openTickets = [];
+        if (!Array.isArray(closedTickets)) closedTickets = [];
+
+        // Junta as preventivas e chamados abertos + recém-fechados
+        const rawTickets = [...openTickets, ...closedTickets];
 
         if (rawTickets.length > 0) {
-            console.log('--- ESTRUTURA TICKETS DO TIFLUX ---');
-            console.log(JSON.stringify(rawTickets[0], null, 2));
-            console.log('-----------------------------------');
+            console.log(`TiFlux retornou ${openTickets.length} abertos e ${closedTickets.length} fechados (Total: ${rawTickets.length}).`);
         }
 
-        if (!Array.isArray(rawTickets)) {
-            console.error('TiFlux retornou formato não-array:', rawTickets);
-            return res.json([]); // Retorna vazio se não for array
+        if (rawTickets.length === 0) {
+            console.error('Nenhum ticket retornado.');
+            return res.json([]);
         }
 
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
+            if (String(ticket.ticket_number) === '27109') {
+                console.log('--- ENCONTRADO TICKET 27109 ---');
+                console.log('is_closed:', ticket.is_closed);
+                console.log('stage:', JSON.stringify(ticket.stage));
+                console.log('status:', JSON.stringify(ticket.status));
+                console.log('updated_at:', ticket.updated_at);
+            }
+
             const rawStage = (ticket.stage?.name || '').toLowerCase();
             const rawTitle = (ticket.title || '').toLowerCase();
             let finalStatus = 'Analise'; // Default fallback
@@ -58,6 +74,8 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 finalStatus = 'QP';
             } else if (rawStage.includes('nális') || rawStage.includes('nalis') || rawStage.includes('analise') || rawTitle.includes('análise') || rawTitle.includes('analise')) {
                 finalStatus = 'Analise';
+            } else if (rawTitle.includes('preventiva')) {
+                finalStatus = 'Preventiva';
             } else {
                 finalStatus = ticket.stage?.name || 'Outros';
             }
@@ -88,17 +106,31 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 responsavel: ticket.responsible?.name || 'Não atribuído',
                 createdAt: createdAtFormatted,
                 date: formattedDate,
-                status: finalStatus
+                status: finalStatus,
+                closedAt: ticket.closed_at ? ticket.closed_at.split('T')[0].split(' ')[0] : (
+                    ticket.is_closed ||
+                        ticket.stage?.name?.toLowerCase().includes('concluido') ||
+                        ticket.stage?.name?.toLowerCase().includes('fechado') ||
+                        ticket.status?.name?.toLowerCase().includes('fechado') ||
+                        ticket.status?.name?.toLowerCase().includes('concluido') ||
+                        ticket.stage?.name?.toLowerCase().includes('closed') ||
+                        ticket.status?.name?.toLowerCase().includes('closed') ?
+                        (ticket.updated_at ? ticket.updated_at.split('T')[0].split(' ')[0] : new Date().toISOString().split('T')[0]) : null
+                )
             };
         });
 
-        // O usuário pediu especificamente "QP" e "Análise"
-        const filteredDemands = demands.filter(d => d.status === 'Analise' || d.status === 'QP');
+        // O usuário pediu especificamente "QP", "Análise" e agora incluir "Preventiva" para controle
+        const filteredDemands = demands.filter(d => d.status === 'Analise' || d.status === 'QP' || d.status === 'Preventiva');
 
         return res.json(filteredDemands);
 
     } catch (error) {
-        console.error('Erro na rota /api/demandas:', error.message);
+        if (error.response) {
+            console.error('Erro na resposta do TiFlux:', error.response.status, JSON.stringify(error.response.data));
+        } else {
+            console.error('Erro na requisição ao TiFlux:', error.message);
+        }
         res.status(500).json({ error: 'Falha ao buscar demandas', details: error.message });
     }
 });

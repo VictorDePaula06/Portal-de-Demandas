@@ -18,6 +18,8 @@ let csClients = [];
 db.collection('tasks').onSnapshot((snapshot) => {
     tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderBoard();
+    if (typeof renderMaintenanceBoard === 'function') renderMaintenanceBoard();
+    if (typeof updateBadgePreventivas === 'function') updateBadgePreventivas();
 });
 
 db.collection('csClients').onSnapshot((snapshot) => {
@@ -56,6 +58,7 @@ async function fetchDemandasDaAPI() {
         if (apiTasks.length > 0) {
             let newTasksCount = 0;
             let updatedTasksCount = 0;
+            let syncdItemsText = [];
 
             const batch = db.batch();
             let hasChanges = false;
@@ -67,6 +70,7 @@ async function fetchDemandasDaAPI() {
                     const taskRef = db.collection('tasks').doc(apiTask.id);
                     batch.set(taskRef, apiTask);
                     hasChanges = true;
+                    syncdItemsText.push(`#${apiTask.number} (Novo)`);
                 } else {
                     // Proteção CRÍTICA contra sobrescrita de demandas já concluídas localmente
                     const isLocalCompleted = localTask.status && localTask.status.includes('Concluida');
@@ -80,13 +84,17 @@ async function fetchDemandasDaAPI() {
                         apiTask.prioridade !== localTask.prioridade ||
                         apiTask.responsavel !== localTask.responsavel ||
                         apiTask.cliente !== localTask.cliente ||
-                        apiTask.quality !== localTask.quality;
+                        apiTask.quality !== localTask.quality ||
+                        apiTask.closedAt !== localTask.closedAt ||
+                        apiTask.createdAt !== localTask.createdAt ||
+                        apiTask.date !== localTask.date;
 
                     if (hasDifferences) {
                         updatedTasksCount++;
                         const taskRef = db.collection('tasks').doc(apiTask.id);
                         batch.set(taskRef, apiTask, { merge: true });
                         hasChanges = true;
+                        syncdItemsText.push(`#${apiTask.number} (Atu.)`);
                     }
                 }
             });
@@ -101,7 +109,14 @@ async function fetchDemandasDaAPI() {
             if (lastSyncLabel) lastSyncLabel.innerText = timeStr;
 
             if (newTasksCount > 0 || updatedTasksCount > 0) {
-                showToast(`${newTasksCount} novos e ${updatedTasksCount} atualizados via TiFlux!`);
+                let msg = `TiFlux: ${newTasksCount} novos e ${updatedTasksCount} atualizados!`;
+
+                if (syncdItemsText.length > 0 && syncdItemsText.length <= 15) {
+                    alert(`Demandas Sincronizadas:\n${syncdItemsText.join('\\n')}`);
+                } else if (syncdItemsText.length > 15) {
+                    alert(`Foram sincronizadas ${syncdItemsText.length} demandas nesta rodada.\\nExemplos:\\n${syncdItemsText.slice(0, 10).join('\\n')}...`);
+                }
+                showToast(msg);
             } else {
                 showToast('TiFlux verificado: sem novos chamados.');
             }
@@ -170,6 +185,8 @@ let currentUser = localStorage.getItem(USER_STORAGE_KEY);
 const kanbanBoard = document.querySelector('.kanban-board');
 const searchInput = document.getElementById('searchInput');
 const slaFilter = document.getElementById('slaFilter');
+const maintenanceSearch = document.getElementById('maintenanceSearch');
+const maintenanceFilter = document.getElementById('maintenanceFilter');
 
 // Configuração de Permissões (Simulada)
 // Na vida real isso viria do backend/TiFlux. Aqui vamos definir que apenas "Victor" pode excluir.
@@ -177,6 +194,8 @@ const ADMIN_USERS = ['Victor', 'victor', 'Gerente', 'Admin'];
 
 if (searchInput) searchInput.addEventListener('input', renderBoard);
 if (slaFilter) slaFilter.addEventListener('change', renderBoard);
+if (maintenanceSearch) maintenanceSearch.addEventListener('input', renderMaintenanceBoard);
+if (maintenanceFilter) maintenanceFilter.addEventListener('change', renderMaintenanceBoard);
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -203,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.number === 'undefined' || data.number === 'N/A' || data.cliente === 'Cliente TiFlux') {
                 doc.ref.delete();
             }
-            if (!['Analise', 'QP', 'Adhoc', 'Analise Concluida', 'QP Concluida', 'Adhoc Concluida'].includes(data.status)) {
+            if (!['Analise', 'QP', 'Adhoc', 'Analise Concluida', 'QP Concluida', 'Adhoc Concluida', 'Preventiva', 'Preventiva Concluida'].includes(data.status)) {
                 doc.ref.delete();
             }
             // Limpa os 14 Invasores do teste curinga passado
@@ -934,16 +953,18 @@ function checkSLA(dateStr) {
 const btnViewDemandas = document.getElementById('btnViewDemandas');
 const btnViewCS = document.getElementById('btnViewCS');
 const btnViewConcluidas = document.getElementById('btnViewConcluidas');
+const btnViewCSMaintenance = document.getElementById('btnViewCSMaintenance');
 const btnViewRelatorios = document.getElementById('btnViewRelatorios');
 const btnViewConfig = document.getElementById('btnViewConfig');
 
 const demandasFilterBar = document.getElementById('demandasFilterBar');
 const relatoriosBoard = document.getElementById('relatoriosBoard');
 const configBoard = document.getElementById('configBoard');
+const maintenanceBoard = document.getElementById('maintenanceBoard');
 
 function switchView(viewName) {
     // Update active class on nav
-    [btnViewDemandas, btnViewCS, btnViewConcluidas, btnViewRelatorios, btnViewConfig].forEach(btn => {
+    [btnViewDemandas, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig].forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
 
@@ -954,6 +975,7 @@ function switchView(viewName) {
     csBoard.style.display = 'none';
     relatoriosBoard.style.display = 'none';
     configBoard.style.display = 'none';
+    if (maintenanceBoard) maintenanceBoard.style.display = 'none';
     if (demandasFilterBar) demandasFilterBar.style.display = 'none';
 
     if (viewName === 'demandas' && btnViewDemandas) {
@@ -967,6 +989,11 @@ function switchView(viewName) {
         btnViewCS.classList.add('active');
         btnNewCS.style.display = 'inline-flex';
         csBoard.style.display = 'block';
+    }
+    else if (viewName === 'maintenance' && btnViewCSMaintenance) {
+        btnViewCSMaintenance.classList.add('active');
+        if (maintenanceBoard) maintenanceBoard.style.display = 'block';
+        if (typeof renderMaintenanceBoard === 'function') renderMaintenanceBoard();
     }
     else if (viewName === 'concluidas' && btnViewConcluidas) {
         btnViewConcluidas.classList.add('active');
@@ -1002,6 +1029,7 @@ function switchView(viewName) {
 
 if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); switchView('demandas'); });
 if (btnViewCS) btnViewCS.addEventListener('click', (e) => { e.preventDefault(); switchView('cs'); });
+if (btnViewCSMaintenance) btnViewCSMaintenance.addEventListener('click', (e) => { e.preventDefault(); switchView('maintenance'); });
 if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); switchView('concluidas'); });
 if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); switchView('relatorios'); });
 if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); switchView('config'); });
@@ -1320,11 +1348,43 @@ function renderCSBoard() {
         const engageBadge = client.engage ? `<span class="cs-badge ${getBadgeClass(client.engage, 'engage')}">${client.engage}</span>` : '-';
         const riskBadge = client.risk ? `<span class="cs-badge ${getBadgeClass(client.risk, 'risk')}">${client.risk}</span>` : '-';
 
+        // Lógica de Preventiva
+        // Busca o último chamado de preventiva para este cliente
+        const lastPreventiva = tasks
+            .filter(t => t.cliente === client.name && t.status.includes('Preventiva') && t.closedAt)
+            .sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt))[0];
+
+        let proxPreventiva = '-';
+        let preventivaStatusClass = '';
+
+        if (lastPreventiva && lastPreventiva.closedAt) {
+            const closedDate = new Date(lastPreventiva.closedAt + 'T12:00:00'); // Use noon to avoid TZ issues
+            closedDate.setDate(closedDate.getDate() + 90);
+
+            const y = closedDate.getFullYear();
+            const m = String(closedDate.getMonth() + 1).padStart(2, '0');
+            const d = String(closedDate.getDate()).padStart(2, '0');
+            proxPreventiva = `${d}/${m}/${y}`;
+
+            // Check if upcoming
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diff = closedDate - today;
+            const daysToMaintenance = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+            if (daysToMaintenance <= 0) preventivaStatusClass = 'badge-critical';
+            else if (daysToMaintenance <= 15) preventivaStatusClass = 'badge-warning';
+            else preventivaStatusClass = 'badge-success';
+        }
+
+        const maintenanceBadge = proxPreventiva !== '-' ? `<span class="cs-badge ${preventivaStatusClass}">${proxPreventiva}</span>` : '<span class="cs-badge badge-neutral">Não agendada</span>';
+
         tr.innerHTML = `
             <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">${client.name}</td>
             <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${client.contact || '-'}</td>
             <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${formatDate(client.dateLastContact)}</td>
             <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${formatDate(client.dateDue)}</td>
+            <td style="padding: 1rem;">${maintenanceBadge}</td>
             <td style="padding: 1rem;">${interacaoBadge}</td>
             <td style="padding: 1rem;">${growBadge}</td>
             <td style="padding: 1rem;">${engageBadge}</td>
@@ -1338,6 +1398,166 @@ function renderCSBoard() {
         csTableBody.appendChild(tr);
     });
 }
+
+function renderMaintenanceBoard() {
+    const tableBody = document.getElementById('maintenanceTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    const preventivasByClient = {};
+    const searchVal = document.getElementById('maintenanceSearch')?.value.toLowerCase() || '';
+    const filterVal = document.getElementById('maintenanceFilter')?.value || 'all';
+
+    tasks.forEach(task => {
+        if (task.status.includes('Preventiva')) {
+            const clientName = task.cliente || 'Sem Cliente';
+            if (!preventivasByClient[clientName]) {
+                preventivasByClient[clientName] = [];
+            }
+            preventivasByClient[clientName].push(task);
+        }
+    });
+
+    const clients = Object.keys(preventivasByClient).sort();
+
+    if (clients.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhuma preventiva encontrada</td></tr>';
+        return;
+    }
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const [y, m, d] = parts;
+            return `${d}/${m}/${y}`;
+        }
+        return dateStr;
+    };
+
+    let count = 0;
+
+    clients.forEach(clientName => {
+        const clientTasks = preventivasByClient[clientName];
+
+        clientTasks.sort((a, b) => {
+            const dateA = new Date(a.closedAt || a.createdAt || a.date || '1970-01-01');
+            const dateB = new Date(b.closedAt || b.createdAt || b.date || '1970-01-01');
+            return dateB - dateA;
+        });
+
+        const lastTask = clientTasks[0];
+
+        let proxPreventiva = '-';
+        let badgeClass = 'badge-neutral';
+        let dataRealizada = '-';
+
+        if (lastTask.closedAt) {
+            dataRealizada = formatDate(lastTask.closedAt);
+            const closedDate = new Date(lastTask.closedAt + 'T12:00:00');
+            closedDate.setDate(closedDate.getDate() + 90);
+
+            const y = closedDate.getFullYear();
+            const m = String(closedDate.getMonth() + 1).padStart(2, '0');
+            const d = String(closedDate.getDate()).padStart(2, '0');
+            proxPreventiva = `${d}/${m}/${y}`;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diff = closedDate - today;
+            const daysToMaintenance = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+            if (daysToMaintenance <= 0) badgeClass = 'badge-critical';
+            else if (daysToMaintenance <= 15) badgeClass = 'badge-warning';
+            else badgeClass = 'badge-success';
+        } else {
+            dataRealizada = 'Em andamento (Aberta)';
+            badgeClass = 'badge-neutral';
+            proxPreventiva = 'Aguardando conclusão';
+        }
+
+        const responsavel = lastTask.responsavel || '';
+        const matchSearch = clientName.toLowerCase().includes(searchVal) || responsavel.toLowerCase().includes(searchVal);
+
+        let matchStatus = true;
+        if (filterVal === 'vencidas' && badgeClass !== 'badge-critical') matchStatus = false;
+        if (filterVal === 'perto' && badgeClass !== 'badge-warning') matchStatus = false;
+        if (filterVal === 'longe' && badgeClass !== 'badge-success' && badgeClass !== 'badge-neutral') matchStatus = false;
+
+        if (matchSearch && matchStatus) {
+            count++;
+            const tr = document.createElement('tr');
+            tr.className = 'cs-table-row';
+            tr.style.borderBottom = '1px solid var(--border-color)';
+
+            const maintenanceBadge = `<span class="cs-badge ${badgeClass}">${proxPreventiva}</span>`;
+
+            tr.innerHTML = `
+                <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;"><a href="#" onclick="window.openEditCsModal('${lastTask.id}')" style="color: var(--accent-color); text-decoration: none;">#${lastTask.number}</a></td>
+                <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">${clientName}</td>
+                <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${responsavel || '-'}</td>
+                <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${dataRealizada}</td>
+                <td style="padding: 1rem;">${maintenanceBadge}</td>
+            `;
+            tableBody.appendChild(tr);
+        }
+    });
+
+    if (count === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhuma preventiva encontrada para os filtros atuais.</td></tr>';
+    }
+}
+
+function updateBadgePreventivas() {
+    const badge = document.getElementById('badgePreventivas');
+    if (!badge) return;
+
+    let totalAlerts = 0;
+    const preventivasByClient = {};
+
+    tasks.forEach(task => {
+        if (task.status.includes('Preventiva')) {
+            const clientName = task.cliente || 'Sem Cliente';
+            if (!preventivasByClient[clientName]) {
+                preventivasByClient[clientName] = [];
+            }
+            preventivasByClient[clientName].push(task);
+        }
+    });
+
+    Object.keys(preventivasByClient).forEach(clientName => {
+        const clientTasks = preventivasByClient[clientName];
+        clientTasks.sort((a, b) => {
+            const dateA = new Date(a.closedAt || a.createdAt || a.date || '1970-01-01');
+            const dateB = new Date(b.closedAt || b.createdAt || b.date || '1970-01-01');
+            return dateB - dateA;
+        });
+
+        const lastTask = clientTasks[0];
+
+        if (lastTask && lastTask.closedAt) {
+            const closedDate = new Date(lastTask.closedAt + 'T12:00:00');
+            closedDate.setDate(closedDate.getDate() + 90);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diff = closedDate - today;
+            const daysToMaintenance = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+            if (daysToMaintenance <= 15) {
+                totalAlerts++;
+            }
+        }
+    });
+
+    if (totalAlerts > 0) {
+        badge.textContent = totalAlerts;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
 // Expose functions to global scope (to be used in HTML onclick)
 window.deleteTask = deleteTask;
 window.completeTask = completeTask;
