@@ -1283,9 +1283,41 @@ input:checked+.slider:before {
 }
 
 .report-form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-end;
+    /* Alinha o rodapé dos grupos */
+    width: 100%;
+}
+
+.report-form-row .form-group {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.report-form-row label {
+    margin-bottom: 8px;
+    display: block;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Força paridade absoluta entre month e select */
+.report-form-row input[type="month"],
+.report-form-row select {
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+    font-size: 0.85rem !important;
+    line-height: 44px !important;
+    /* Ajuda no alinhamento vertical de texto interno */
 }
 
 .report-btn {

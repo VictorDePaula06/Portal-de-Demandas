@@ -389,22 +389,23 @@
                         <p>Visão geral de tickets fechados, SLAs e desempenho mensal da equipe.</p>
 
                         <div class="report-form-group">
-                            <div class="report-form-row" style="display: flex; flex-wrap: wrap; gap: 1rem;">
-                                <div class="form-group" style="flex: 1; min-width: 140px;">
-                                    <label>Mês Referência</label>
+                            <div class="report-form-row">
+                                <div class="form-group">
+                                    <label>Mês de Referência</label>
                                     <input type="month" id="reportMonth">
                                 </div>
-                                <div class="form-group" style="flex: 1;">
-                                    <label>Filtro SLA / Status</label>
+                                <div class="form-group">
+                                    <label>Filtro Status / SLA</label>
                                     <select id="reportSLAFilter">
-                                        <option value="all">Apenas Concluídas (Geral)</option>
                                         <option value="both">Tudo (Abertas + Concluídas)</option>
+                                        <option value="open_all">Apenas Abertas (Geral)</option>
+                                        <option value="open_overdue">Abertas e Atrasadas ⏰</option>
+                                        <option value="all">Apenas Concluídas (Geral)</option>
                                         <option value="ontime">Concluídas No Prazo ✅</option>
                                         <option value="overdue">Concluídas Atrasadas ⏰</option>
-                                        <option value="open_overdue">Abertas e Atrasadas</option>
                                     </select>
                                 </div>
-                                <div class="form-group" style="flex: 1;">
+                                <div class="form-group">
                                     <label>Tipo de Demanda</label>
                                     <select id="reportTypeFilter">
                                         <option value="demandas_all">Geral (exceto Prev.)</option>
@@ -447,7 +448,7 @@
                         </div>
                         <p>Controle de manutenções realizadas e próximas visitas agendadas por cliente.</p>
 
-                        <div class="report-form-group">
+                        <div class="report-form-row">
                             <div class="form-group">
                                 <label>Filtrar por Status</label>
                                 <select id="reportPreventivaFilter">
@@ -486,7 +487,7 @@
                         </div>
                         <p>Índices de engajamento, risco de churn e análise de interação com os clientes.</p>
 
-                        <div class="report-form-group">
+                        <div class="report-form-row">
                             <div class="form-group">
                                 <label>Filtro de Risco</label>
                                 <select id="reportCSFilter">

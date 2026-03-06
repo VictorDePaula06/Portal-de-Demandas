@@ -806,54 +806,53 @@ if (btnGeneratePDF) {
         const reportSLAFilter = document.getElementById('reportSLAFilter').value;
         const reportTypeFilter = document.getElementById('reportTypeFilter').value;
 
-        if (!reportMonth && reportSLAFilter !== 'open_overdue') {
-            alert("Por favor, selecione o 'Mês de Referência' para gerar relatórios fechados.");
+        // Se for filtro de concluídas, o mês é obrigatório para evitar relatórios gigantes
+        const isClosedOnly = ['all', 'ontime', 'overdue'].includes(reportSLAFilter);
+        if (!reportMonth && isClosedOnly) {
+            alert("Por favor, selecione o 'Mês de Referência' para gerar relatórios de demandas concluídas.");
             return;
         }
 
         // Filtra as tarefas baseadas nos critérios da tela de relatórios
         let reportData = tasks.filter(t => {
-            // Filtro de Tipo de Demanda
+            // 1. Filtro de Tipo de Demanda
             if (reportTypeFilter === 'demandas_all') {
-                // Geral: remove Preventivas
                 if (t.status.includes('Preventiva')) return false;
             } else if (reportTypeFilter !== 'all') {
-                // Filtro específico (Análise, QP - Melhoria, QP - Correção, Adhoc)
-                // Usamos include para pegar tanto no Kanban (Status puro) quanto na aba de concluídas (Status + ' Concluida')
-                if (!t.status.includes(reportTypeFilter)) return false;
+                // Normaliza para comparação (remove acentos para evitar Analise vs Análise)
+                const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                if (!normalize(t.status).includes(normalize(reportTypeFilter))) return false;
             }
 
-            // Se for open_overdue, pega demandas NÃO concluídas e atrasadas
-            if (reportSLAFilter === 'open_overdue') {
-                if (t.status.includes('Concluida')) return false;
+            // 2. Filtro de Status / SLA
+            const isConcluida = t.status.includes('Concluida');
+
+            if (reportSLAFilter === 'open_all') {
+                if (isConcluida) return false;
+            } else if (reportSLAFilter === 'open_overdue') {
+                if (isConcluida) return false;
                 const sla = checkSLA(t.date);
-                return sla.text === 'Vencido' || sla.text === 'Vence Hoje';
-            }
-
-            // Se for 'both', permite qualquer status (concluída ou não)
-            if (reportSLAFilter === 'both') {
-                // No action needed, stays in the list
+                if (sla.text !== 'Vencido' && sla.text !== 'Vence Hoje') return false;
+            } else if (reportSLAFilter === 'both') {
+                // Tudo: não filtra por status
             } else {
-                // Para os outros (all, ontime, overdue), a demanda DEVE estar concluída
-                if (!t.status.includes('Concluida')) return false;
-            }
-
-            // Filtro de Mês pelo campo date (Vencimento)
-
-            // Filtro de Mês pelo campo date (Vencimento) ou criacao etc. 
-            // Vamos usar a data do SLA (task.date) como base para o filtro mensal por enquanto.
-            if (reportMonth && t.date) {
-                if (!t.date.startsWith(reportMonth)) return false; // Verifica YYYY-MM
-            }
-
-            // Filtro de Qualidade SLA na conclusão (Vamos assumir que atrasou se SLAs falham)
-            if (reportSLAFilter !== 'all') {
-                const sla = checkSLA(t.date);
-                if (reportSLAFilter === 'ontime' && (sla.text === 'Vencido' || sla.text === 'Vence Hoje' || sla.text.includes('Faltam'))) {
-                    return false; // Se não estava no verde/neutro
+                // all, ontime, overdue
+                if (!isConcluida) return false;
+                if (reportSLAFilter !== 'all') {
+                    const sla = checkSLA(t.date);
+                    if (reportSLAFilter === 'ontime' && (sla.text === 'Vencido' || sla.text === 'Vence Hoje')) return false;
+                    if (reportSLAFilter === 'overdue' && sla.text === 'No prazo') return false;
                 }
-                if (reportSLAFilter === 'overdue' && sla.text === 'No prazo') {
-                    return false; // Se entregou em dia, mas pediu as atrasadas
+            }
+
+            // 3. Filtro de Mês (Opcional para Abertas, Prioriza Data de Fechamento para Concluídas)
+            if (reportMonth) {
+                // Se for "Abertas e Atrasadas", ignoramos o filtro de mês para mostrar TUDO que está atrasado hoje
+                if (reportSLAFilter === 'open_overdue') {
+                    // ignora filtro de mês
+                } else {
+                    const targetDate = isConcluida ? (t.closedAt || t.date) : (t.createdAt || t.date);
+                    if (!targetDate || !targetDate.startsWith(reportMonth)) return false;
                 }
             }
 
@@ -1003,10 +1002,19 @@ if (btnGeneratePreventivasPDF) {
         doc.autoTable({
             head: [["Cliente / Posto", "Últ. Responsável", "Últ. Realizada", "Próxima Visita", "Status"]],
             body: reportRows,
-            startY: 30,
+            startY: 35,
             theme: 'striped',
-            headStyles: { fillColor: [16, 185, 129] }, // Verde para preventivas
-            styles: { fontSize: 10 }
+            headStyles: { fillColor: [16, 185, 129], fontStyle: 'bold' }, // Verde para preventivas
+            styles: { fontSize: 9, cellPadding: 2.5 },
+            alternateRowStyles: { fillColor: [240, 253, 244] },
+            didDrawPage: function (data) {
+                const str = "Página " + doc.internal.getNumberOfPages();
+                const now = new Date().toLocaleDateString('pt-BR');
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 15, doc.internal.pageSize.height - 10);
+            }
         });
 
         doc.save(`relatorio_preventivas_${filterVal}.pdf`);
@@ -1057,10 +1065,19 @@ if (btnGenerateCSPDF) {
         doc.autoTable({
             head: [["Cliente", "Interação", "CS Grow", "CS Engage", "Índice de Risco"]],
             body: reportRows,
-            startY: 30,
+            startY: 35,
             theme: 'striped',
-            headStyles: { fillColor: [139, 92, 246] }, // Roxo
-            styles: { fontSize: 9 }
+            headStyles: { fillColor: [139, 92, 246], fontStyle: 'bold' }, // Roxo
+            styles: { fontSize: 9, cellPadding: 2.5 },
+            alternateRowStyles: { fillColor: [245, 247, 250] },
+            didDrawPage: function (data) {
+                const str = "Página " + doc.internal.getNumberOfPages();
+                const now = new Date().toLocaleDateString('pt-BR');
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 15, doc.internal.pageSize.height - 10);
+            }
         });
 
         doc.save(`relatorio_saude_cs_${filterVal}.pdf`);
