@@ -268,10 +268,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // ATUALIZAÇÃO RETROATIVA DE SLA E DATA DE ABERTURA
-            if (data.status === 'Analise' || data.status === 'QP') {
+            if (data.status === 'Analise' || data.status === 'QP - Melhoria' || data.status === 'QP - Correção') {
                 let daysToAdd = 0;
                 if (data.status === 'Analise') daysToAdd = 7;
-                else if (data.status === 'QP') daysToAdd = 30;
+                else if (data.status.includes('QP')) daysToAdd = 30;
 
                 // O problema foi as corridas anteriores do script se atropelarem.
                 // Para corrigir 100%, vamos forçar o recálculo baseado se a "Data Abertura" é nula ou igual a SLA
@@ -944,7 +944,8 @@ resolveForm.addEventListener('submit', (e) => {
         if (!finalStatus) {
             const currentStatus = tasks[index].status;
             if (currentStatus === 'Analise') finalStatus = 'Analise Concluida';
-            else if (currentStatus === 'QP') finalStatus = 'QP Concluida';
+            else if (currentStatus === 'QP - Melhoria') finalStatus = 'QP - Melhoria Concluida';
+            else if (currentStatus === 'QP - Correção') finalStatus = 'QP - Correção Concluida';
             else if (currentStatus === 'Adhoc') finalStatus = 'Adhoc Concluida';
             else finalStatus = 'Analise Concluida'; // Fallback
         }

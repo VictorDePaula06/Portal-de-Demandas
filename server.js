@@ -79,7 +79,12 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
             // Mapeamento Rígido Analisando Título e Estágio
             if (rawStage.includes('qp') || rawTitle.includes('qp')) {
-                finalStatus = 'QP';
+                // Tenta diferenciar Melhoria de Correção por palavras-chave no título
+                if (rawTitle.includes('[m]') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
+                    finalStatus = 'QP - Melhoria';
+                } else {
+                    finalStatus = 'QP - Correção';
+                }
             } else if (rawStage.includes('nális') || rawStage.includes('nalis') || rawStage.includes('analise') || rawTitle.includes('análise') || rawTitle.includes('analise')) {
                 finalStatus = 'Analise';
             } else if (rawTitle.includes('preventiva')) {
@@ -98,7 +103,8 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
             if (isActuallyClosed) {
                 if (finalStatus === 'Analise') finalStatus = 'Analise Concluida';
-                else if (finalStatus === 'QP') finalStatus = 'QP Concluida';
+                else if (finalStatus === 'QP - Melhoria') finalStatus = 'QP - Melhoria Concluida';
+                else if (finalStatus === 'QP - Correção') finalStatus = 'QP - Correção Concluida';
                 else if (finalStatus === 'Preventiva') finalStatus = 'Preventiva Concluida';
             }
 
@@ -112,7 +118,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             let daysToAdd = 0;
             if (finalStatus === 'Analise') {
                 daysToAdd = 7;
-            } else if (finalStatus === 'QP') {
+            } else if (finalStatus.includes('QP')) {
                 daysToAdd = 30;
             }
             defaultDate.setDate(defaultDate.getDate() + daysToAdd);
@@ -145,7 +151,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // O usuário pediu especificamente "QP", "Análise" e agora incluir "Preventiva" para controle
         // Incluímos as versões "Concluida" para que o app.js possa atualizar o status local se o ticket fechar no TiFlux
         const filteredDemands = demands.filter(d =>
-            ['Analise', 'QP', 'Preventiva', 'Analise Concluida', 'QP Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
+            ['Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
 
         return res.json(filteredDemands);

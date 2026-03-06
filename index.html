@@ -203,12 +203,20 @@
                     <div class="column-content" id="col-Analise"></div>
                 </div>
 
-                <!-- Column QP -->
-                <div class="kanban-column" data-status="QP" data-view="demandas">
+                <!-- Column QP Melhoria -->
+                <div class="kanban-column" data-status="QP - Melhoria" data-view="demandas">
                     <div class="column-header">
-                        <h3>QP <span class="counter">0</span></h3>
+                        <h3>QP - Melhoria <span class="counter">0</span></h3>
                     </div>
-                    <div class="column-content" id="col-QP"></div>
+                    <div class="column-content" id="col-QP - Melhoria"></div>
+                </div>
+
+                <!-- Column QP Correção -->
+                <div class="kanban-column" data-status="QP - Correção" data-view="demandas">
+                    <div class="column-header">
+                        <h3>QP - Correção <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-QP - Correção"></div>
                 </div>
 
                 <!-- Column Adhoc -->
@@ -229,11 +237,20 @@
                     <div class="column-content" id="col-Analise Concluida"></div>
                 </div>
 
-                <div class="kanban-column" data-status="QP Concluida" data-view="concluidas" style="display: none;">
+                <div class="kanban-column" data-status="QP - Melhoria Concluida" data-view="concluidas"
+                    style="display: none;">
                     <div class="column-header">
-                        <h3>QP Concluída <span class="counter">0</span></h3>
+                        <h3>QP Melh. Concluída <span class="counter">0</span></h3>
                     </div>
-                    <div class="column-content" id="col-QP Concluida"></div>
+                    <div class="column-content" id="col-QP - Melhoria Concluida"></div>
+                </div>
+
+                <div class="kanban-column" data-status="QP - Correção Concluida" data-view="concluidas"
+                    style="display: none;">
+                    <div class="column-header">
+                        <h3>QP Corr. Concluída <span class="counter">0</span></h3>
+                    </div>
+                    <div class="column-content" id="col-QP - Correção Concluida"></div>
                 </div>
 
                 <div class="kanban-column" data-status="Adhoc Concluida" data-view="concluidas" style="display: none;">
@@ -621,7 +638,8 @@
                         <label for="taskStatus">Status / Estágio</label>
                         <select id="taskStatus" required>
                             <option value="Analise">Análise</option>
-                            <option value="QP">QP</option>
+                            <option value="QP - Melhoria">QP - Melhoria</option>
+                            <option value="QP - Correção">QP - Correção</option>
                             <option value="Adhoc">Adhoc</option>
                         </select>
                     </div>
