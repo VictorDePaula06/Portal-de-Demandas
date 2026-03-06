@@ -818,11 +818,9 @@ if (btnGeneratePDF) {
                 // Geral: remove Preventivas
                 if (t.status.includes('Preventiva')) return false;
             } else if (reportTypeFilter !== 'all') {
-                // Filtro específico (QP - Melhoria, QP - Correção, Adhoc)
-                if (t.status !== reportTypeFilter && !t.status.startsWith(reportTypeFilter + ' ')) {
-                    // Check for exact match or start of concluded status
-                    if (!t.status.includes(reportTypeFilter)) return false;
-                }
+                // Filtro específico (Análise, QP - Melhoria, QP - Correção, Adhoc)
+                // Usamos include para pegar tanto no Kanban (Status puro) quanto na aba de concluídas (Status + ' Concluida')
+                if (!t.status.includes(reportTypeFilter)) return false;
             }
 
             // Se for open_overdue, pega demandas NÃO concluídas e atrasadas
@@ -832,8 +830,15 @@ if (btnGeneratePDF) {
                 return sla.text === 'Vencido' || sla.text === 'Vence Hoje';
             }
 
-            // Para os outros, a demanda DEVE estar concluída
-            if (!t.status.includes('Concluida')) return false;
+            // Se for 'both', permite qualquer status (concluída ou não)
+            if (reportSLAFilter === 'both') {
+                // No action needed, stays in the list
+            } else {
+                // Para os outros (all, ontime, overdue), a demanda DEVE estar concluída
+                if (!t.status.includes('Concluida')) return false;
+            }
+
+            // Filtro de Mês pelo campo date (Vencimento)
 
             // Filtro de Mês pelo campo date (Vencimento) ou criacao etc. 
             // Vamos usar a data do SLA (task.date) como base para o filtro mensal por enquanto.

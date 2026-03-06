@@ -389,24 +389,26 @@
                         <p>Visão geral de tickets fechados, SLAs e desempenho mensal da equipe.</p>
 
                         <div class="report-form-group">
-                            <div class="report-form-row" style="grid-template-columns: 1fr 1fr 1fr;">
-                                <div class="form-group">
+                            <div class="report-form-row" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                                <div class="form-group" style="flex: 1; min-width: 140px;">
                                     <label>Mês Referência</label>
                                     <input type="month" id="reportMonth">
                                 </div>
-                                <div class="form-group">
-                                    <label>Filtro SLA</label>
+                                <div class="form-group" style="flex: 1;">
+                                    <label>Filtro SLA / Status</label>
                                     <select id="reportSLAFilter">
-                                        <option value="all">Todas</option>
-                                        <option value="ontime">No Prazo ✅</option>
-                                        <option value="overdue">Atrasadas ⏰</option>
-                                        <option value="open_overdue">Abertas/Atrasadas</option>
+                                        <option value="all">Apenas Concluídas (Geral)</option>
+                                        <option value="both">Tudo (Abertas + Concluídas)</option>
+                                        <option value="ontime">Concluídas No Prazo ✅</option>
+                                        <option value="overdue">Concluídas Atrasadas ⏰</option>
+                                        <option value="open_overdue">Abertas e Atrasadas</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group" style="flex: 1;">
                                     <label>Tipo de Demanda</label>
                                     <select id="reportTypeFilter">
                                         <option value="demandas_all">Geral (exceto Prev.)</option>
+                                        <option value="Análise">Análise</option>
                                         <option value="QP - Melhoria">QP - Melhoria</option>
                                         <option value="QP - Correção">QP - Correção</option>
                                         <option value="Adhoc">Adhoc</option>
