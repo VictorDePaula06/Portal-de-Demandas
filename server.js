@@ -32,10 +32,10 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
         // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
         const [openTI, closedTI1, closedTI2, openGeneral, closedGeneral] = await Promise.all([
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=200&desk_id=67231`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=200`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
         ]);
 
@@ -78,7 +78,8 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             let finalStatus = 'Analise'; // Default fallback
 
             // Mapeamento Rígido Analisando Título e Estágio
-            if (rawStage.includes('qp') || rawTitle.includes('qp')) {
+            // Se tiver "Melhoria" ou "QP" no título/estágio, consideramos como QP (Melhoria ou Correção)
+            if (rawStage.includes('qp') || rawTitle.includes('qp') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
                 // Tenta diferenciar Melhoria de Correção por palavras-chave no título
                 if (rawTitle.includes('[m]') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
                     finalStatus = 'QP - Melhoria';
@@ -135,6 +136,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 createdAt: createdAtFormatted,
                 date: formattedDate,
                 status: finalStatus,
+                obs: '', // Adicionando campo de obs para evitar undefined no frontend vindo do sync
                 closedAt: ticket.closed_at ? ticket.closed_at.split('T')[0].split(' ')[0] : (
                     ticket.is_closed ||
                         ticket.stage?.name?.toLowerCase().includes('concluido') ||
