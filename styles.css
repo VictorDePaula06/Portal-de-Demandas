@@ -1284,18 +1284,18 @@ input:checked+.slider:before {
 
 .report-form-row {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.25rem;
     align-items: flex-end;
-    /* Alinha o rodapé dos grupos */
     width: 100%;
 }
 
 .report-form-row .form-group {
     flex: 1;
+    /* Todos os itens ganham o mesmo peso horizontal */
     min-width: 0;
+    /* Permite que o flex-item encolha se necessário */
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
 }
 
 .report-form-row label {
@@ -1306,18 +1306,23 @@ input:checked+.slider:before {
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Força paridade absoluta entre month e select */
+/* Paridade absoluta para inputs e selects */
 .report-form-row input[type="month"],
 .report-form-row select {
+    width: 100% !important;
     height: 44px !important;
     margin: 0 !important;
     padding: 0 12px !important;
     box-sizing: border-box !important;
     font-size: 0.85rem !important;
-    line-height: 44px !important;
-    /* Ajuda no alinhamento vertical de texto interno */
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
 }
 
 .report-btn {
