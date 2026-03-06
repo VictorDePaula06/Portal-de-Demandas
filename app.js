@@ -254,57 +254,71 @@ document.addEventListener('DOMContentLoaded', () => {
     db.collection('tasks').get().then(snap => {
         snap.forEach(doc => {
             const data = doc.data();
+            let deleted = false;
+
             // Limpa se for "undefined", "N/A" ou se estiver com um status invisível pro Kanban original
-            if (data.number === 'undefined' || data.number === 'N/A' || data.cliente === 'Cliente TiFlux') {
+            if (data.number === 'undefined' || data.number === 'N/A' || data.cliente === 'Cliente TiFlux' || data.number === undefined) {
                 doc.ref.delete();
+                deleted = true;
             }
-            if (!['Analise', 'QP', 'Adhoc', 'Analise Concluida', 'QP Concluida', 'Adhoc Concluida', 'Preventiva', 'Preventiva Concluida'].includes(data.status)) {
-                doc.ref.delete();
+
+            const allowedStatuses = [
+                'Analise', 'QP - Melhoria', 'QP - Correção', 'Adhoc',
+                'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida',
+                'Adhoc Concluida', 'Preventiva', 'Preventiva Concluida'
+            ];
+
+            if (!deleted && !allowedStatuses.includes(data.status)) {
+                // Se o status for o antigo "QP", vamos primeiro tentar migrar para "QP - Correção" em vez de deletar
+                if (data.status === 'QP') {
+                    doc.ref.update({ status: 'QP - Correção' });
+                } else if (data.status === 'QP Concluida') {
+                    doc.ref.update({ status: 'QP - Correção Concluida' });
+                } else {
+                    doc.ref.delete();
+                    deleted = true;
+                }
             }
+
             // Limpa os 14 Invasores do teste curinga passado
             const titleLower = (data.desc || '').toLowerCase();
-            if (data.status === 'Analise' && !titleLower.includes('analise') && !titleLower.includes('análise') && !titleLower.includes('qp')) {
+            if (!deleted && data.status === 'Analise' && !titleLower.includes('analise') && !titleLower.includes('análise') && !titleLower.includes('qp')) {
                 doc.ref.delete();
+                deleted = true;
             }
 
             // ATUALIZAÇÃO RETROATIVA DE SLA E DATA DE ABERTURA
-            if (data.status === 'Analise' || data.status === 'QP - Melhoria' || data.status === 'QP - Correção') {
+            if (!deleted && (data.status === 'Analise' || data.status === 'QP - Melhoria' || data.status === 'QP - Correção')) {
                 let daysToAdd = 0;
                 if (data.status === 'Analise') daysToAdd = 7;
                 else if (data.status.includes('QP')) daysToAdd = 30;
 
-                // O problema foi as corridas anteriores do script se atropelarem.
-                // Para corrigir 100%, vamos forçar o recálculo baseado se a "Data Abertura" é nula ou igual a SLA
                 if (!data.createdAt || data.createdAt === data.date || !data.slaUpdated) {
-
-                    // Assumimos que a data atual em data.date era a ABERTURA original (se !slaUpdated)
-                    // OU que ela já é a SLA (se já atualizou e igualou createdAt). 
-                    // Porém, muitos já estão no painel como SLA.
-
-                    // Para não errar, vamos confiar na premissa: Se a task já tem slaUpdated: true, 
-                    // data.date é o SLA final garantido. Então, para achar o createdAt, eu volto no tempo.
                     if (data.slaUpdated) {
                         const [y, m, d] = data.date.split('-');
-                        const sla = new Date(y, m - 1, d); // Mês é 0-indexed
+                        const sla = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
                         sla.setDate(sla.getDate() - daysToAdd);
-                        const newCreatedAt = sla.getFullYear() + '-' + String(sla.getMonth() + 1).padStart(2, '0') + '-' + String(sla.getDate()).padStart(2, '0');
+                        const mStr = String(sla.getMonth() + 1).padStart(2, '0');
+                        const dStr = String(sla.getDate()).padStart(2, '0');
+                        const newCreatedAt = `${sla.getFullYear()}-${mStr}-${dStr}`;
 
-                        doc.ref.update({
-                            createdAt: newCreatedAt
-                        });
+                        doc.ref.update({ createdAt: newCreatedAt });
                     } else {
-                        // Nunca rodou, então data.date é de fato a abertura original
                         const originalDate = data.date;
-                        const [y, m, d] = originalDate.split('-');
-                        const sla = new Date(y, m - 1, d);
-                        sla.setDate(sla.getDate() + daysToAdd);
-                        const newSlaDate = sla.getFullYear() + '-' + String(sla.getMonth() + 1).padStart(2, '0') + '-' + String(sla.getDate()).padStart(2, '0');
+                        if (originalDate && originalDate.includes('-')) {
+                            const [y, m, d] = originalDate.split('-');
+                            const sla = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                            sla.setDate(sla.getDate() + daysToAdd);
+                            const mStr = String(sla.getMonth() + 1).padStart(2, '0');
+                            const dStr = String(sla.getDate()).padStart(2, '0');
+                            const newSlaDate = `${sla.getFullYear()}-${mStr}-${dStr}`;
 
-                        doc.ref.update({
-                            date: newSlaDate,
-                            createdAt: originalDate,
-                            slaUpdated: true
-                        });
+                            doc.ref.update({
+                                date: newSlaDate,
+                                createdAt: originalDate,
+                                slaUpdated: true
+                            });
+                        }
                     }
                 }
             }
