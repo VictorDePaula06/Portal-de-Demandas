@@ -65,7 +65,15 @@ async function fetchDemandasDaAPI() {
 
             apiTasks.forEach(apiTask => {
                 const localTask = currentTasksMap.get(apiTask.id);
+                const isApiTaskCompleted = apiTask.status && apiTask.status.includes('Concluida');
+
                 if (!localTask) {
+                    // Se o chamado já vem fechado do TiFlux e não é uma Preventiva, não adicionamos como "Novo"
+                    // para evitar poluir o portal com chamados que já foram resolvidos antes de entrarem aqui.
+                    if (isApiTaskCompleted && apiTask.status !== 'Preventiva Concluida') {
+                        return;
+                    }
+
                     newTasksCount++;
                     const taskRef = db.collection('tasks').doc(apiTask.id);
                     batch.set(taskRef, apiTask);
@@ -74,11 +82,14 @@ async function fetchDemandasDaAPI() {
                 } else {
                     // Proteção CRÍTICA contra sobrescrita de demandas já concluídas localmente
                     const isLocalCompleted = localTask.status && localTask.status.includes('Concluida');
+
+                    // Se já está concluído localmente, só atualizamos campos auxiliares, mas mantemos o status concluído
                     if (isLocalCompleted) {
-                        return; // Pula sincronização se já foi fechada no portal
+                        return;
                     }
 
-                    // Check to avoid unnecessary writes - update if different
+                    // Se no TiFlux o chamado agora está concluído, mas no portal ainda está aberto
+                    // nós permitimos a atualização para que ele mova para a aba de concluídos.
                     const hasDifferences = apiTask.status !== localTask.status ||
                         apiTask.desc !== localTask.desc ||
                         apiTask.prioridade !== localTask.prioridade ||

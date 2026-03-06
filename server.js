@@ -88,6 +88,20 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 finalStatus = ticket.stage?.name || 'Outros';
             }
 
+            // Se o chamado estiver fechado no TiFlux, ajustamos o status para a aba de concluídos
+            const isActuallyClosed = ticket.is_closed ||
+                (ticket.closed_at) ||
+                rawStage.includes('concluido') ||
+                rawStage.includes('fechado') ||
+                rawStage.includes('finalizado') ||
+                rawStage.includes('encerrado');
+
+            if (isActuallyClosed) {
+                if (finalStatus === 'Analise') finalStatus = 'Analise Concluida';
+                else if (finalStatus === 'QP') finalStatus = 'QP Concluida';
+                else if (finalStatus === 'Preventiva') finalStatus = 'Preventiva Concluida';
+            }
+
             // Extracao Dinamica do Num. da Quality (Ex: [QP 33230] ou Análise Webposto - 27403)
             const titleMatch = rawTitle.match(/\[?(?:qp|quality|an[áa]lise(?:.*?-)?)\s*(\d+)\]?/i);
             const numQuality = titleMatch ? titleMatch[1] : '';
@@ -129,7 +143,10 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         });
 
         // O usuário pediu especificamente "QP", "Análise" e agora incluir "Preventiva" para controle
-        const filteredDemands = demands.filter(d => d.status === 'Analise' || d.status === 'QP' || d.status === 'Preventiva');
+        // Incluímos as versões "Concluida" para que o app.js possa atualizar o status local se o ticket fechar no TiFlux
+        const filteredDemands = demands.filter(d =>
+            ['Analise', 'QP', 'Preventiva', 'Analise Concluida', 'QP Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
+        );
 
         return res.json(filteredDemands);
 
