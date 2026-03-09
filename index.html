@@ -916,9 +916,21 @@
                     <label for="taskObs">Observações Internas (Resumo p/ Kanban)</label>
                     <textarea id="taskObs" rows="2" placeholder="Notas importantes sobre esta demanda..."></textarea>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="btnSaveTask">Salvar Demanda</button>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-secondary" id="btnResendEmail"
+                        style="display: none; background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="margin-right: 6px;">
+                            <path d="m22 2-7 20-4-9-9-4Z" />
+                            <path d="M22 2 11 13" />
+                        </svg>
+                        Reenviar E-mail
+                    </button>
+                    <div style="display: flex; gap: 8px; margin-left: auto;">
+                        <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveTask">Salvar Demanda</button>
+                    </div>
                 </div>
             </form>
         </div>

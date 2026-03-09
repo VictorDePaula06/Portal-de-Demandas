@@ -247,7 +247,8 @@ app.post('/api/send-overdue-emails', async (req, res) => {
 
         for (const task of overdueTasks) {
             // Verificar se o chamado já foi notificado recentemente para evitar spam
-            if (task.notified) continue;
+            // Se force: true, ignoramos essa trava (reenvio individual)
+            if (task.notified && !task.force) continue;
 
             if (!task.clientEmail || !emailRegex.test(task.clientEmail)) {
                 console.log(`[E-mail Skip] Chamado #${task.number} ignorado por e-mail inválido: "${task.clientEmail}"`);

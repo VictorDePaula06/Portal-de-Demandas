@@ -399,6 +399,7 @@ const btnCancelModal = document.getElementById('btnCancelModal');
 const taskForm = document.getElementById('taskForm');
 const toast = document.getElementById('toast');
 const taskStatusInput = document.getElementById('taskStatus');
+const btnResendEmail = document.getElementById('btnResendEmail');
 
 // DOM Elements Implantações
 const btnViewImplantacoes = document.getElementById('btnViewImplantacoes');
@@ -924,6 +925,7 @@ function openModal() {
         document.getElementById('taskResponsavel').value = currentUser;
     }
 
+    if (btnResendEmail) btnResendEmail.style.display = 'none';
     modal.classList.add('active');
 }
 
@@ -957,6 +959,44 @@ function openEditModal(id) {
 
         const taskObs = document.getElementById('taskObs');
         if (taskObs) taskObs.value = task.obs || '';
+
+        // Lógica do botão de reenvio individual
+        if (btnResendEmail) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const hasValidEmail = task.clientEmail && emailRegex.test(task.clientEmail);
+            btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
+
+            // Remove listener anterior para não acumular
+            btnResendEmail.onclick = async () => {
+                const updatedTask = tasks.find(t => t.id === task.id); // Pega a tarefa com e-mail atualizado do formulário se necessário
+                const emailVal = document.getElementById('taskContatoEmail')?.value || updatedTask.clientEmail; // Placeholder caso houver campo de email futuro
+
+                btnResendEmail.disabled = true;
+                btnResendEmail.innerHTML = 'Enviando...';
+
+                try {
+                    const response = await fetch('/api/send-overdue-emails', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tasks: [{ ...updatedTask, force: true }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        showToast('E-mail reenviado com sucesso!');
+                    } else {
+                        showToast('Erro ao reenviar e-mail.', 'critical');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast('Erro de conexão.', 'critical');
+                } finally {
+                    btnResendEmail.disabled = false;
+                    btnResendEmail.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Reenviar E-mail';
+                }
+            };
+        }
 
         modal.classList.add('active');
     }
