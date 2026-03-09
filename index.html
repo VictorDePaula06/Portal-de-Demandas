@@ -50,6 +50,15 @@
                     </svg>
                     <span>Clientes CS</span>
                 </a>
+                <a href="#" class="nav-item" id="btnViewImplantacoes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
+                        <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9" />
+                        <path d="M12 3v6" />
+                    </svg>
+                    <span>Implantações</span>
+                </a>
                 <a href="#" class="nav-item" id="btnViewConcluidas">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -163,6 +172,16 @@
                                 <line x1="22" x2="16" y1="11" y2="11" />
                             </svg>
                             Novo Cliente CS
+                        </button>
+                        <button id="btnNewImplantation" class="btn btn-primary"
+                            style="display: none; background-color: #10b981;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M5 12h14" />
+                                <path d="M12 5v14" />
+                            </svg>
+                            Nova Implantação
                         </button>
                     </div>
                 </header>
@@ -354,6 +373,55 @@
                             </tr>
                         </thead>
                         <tbody id="maintenanceTableBody">
+                            <!-- JS vai popular -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Implantações Board (Table View) -->
+            <div class="cs-board" id="implantacoesBoard"
+                style="display: none; padding: 2rem; overflow-y: auto; flex: 1; padding-bottom: 4rem;">
+                <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Controle de Implantações</h2>
+                <div class="table-container"
+                    style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; overflow-x: auto;">
+                    <table class="cs-table"
+                        style="width: 100%; border-collapse: collapse; min-width: 1100px; text-align: left;">
+                        <thead style="background: rgba(0,0,0,0.2);">
+                            <tr>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Rede</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Unidade (Posto/Loja)</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    CNPJ</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Previsão</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Tipo</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Contrato</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Implantador</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Status</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Qualidade</th>
+                                <th
+                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
+                                    Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="implantacoesTableBody">
                             <!-- JS vai popular -->
                         </tbody>
                     </table>
@@ -886,6 +954,77 @@
                     <button type="submit" class="btn btn-primary"
                         style="background-color: var(--status-normal); border-color: var(--status-normal);">Confirmar
                         Conclusão</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nova Implantação -->
+    <div class="modal-overlay" id="implantationModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Cadastrar Implantação</h2>
+                <button class="btn-close" id="btnCloseImplantationModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="implantationForm">
+                <input type="hidden" id="impId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="impRede">Rede</label>
+                        <input type="text" id="impRede" placeholder="Ex: IMPERIAL" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="impUnidade">Unidade (Posto/Loja/Jetoil)</label>
+                    <input type="text" id="impUnidade" placeholder="Ex: AUTO POSTO IMPERIAL" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="impCnpj">CNPJ</label>
+                        <input type="text" id="impCnpj" placeholder="00.000.000/0000-00">
+                    </div>
+                    <div class="form-group">
+                        <label for="impPrevisao">Previsão</label>
+                        <input type="date" id="impPrevisao" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="impTipo">Tipo de Implantação</label>
+                        <select id="impTipo">
+                            <option value="Presencial">Presencial</option>
+                            <option value="Remota">Remota</option>
+                            <option value="Híbrida">Híbrida</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="impContrato">Contrato</label>
+                        <input type="text" id="impContrato" placeholder="Ex: WEBPOSTO (POSTO)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="impImplantador">Implantador</label>
+                        <input type="text" id="impImplantador" placeholder="Ex: JOHANN">
+                    </div>
+                    <div class="form-group">
+                        <label for="impStatus">Status</label>
+                        <input type="text" id="impStatus" placeholder="Ex: Em andamento">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="impQualidade">Qualidade Implantação</label>
+                    <input type="text" id="impQualidade" placeholder="Feedback / Score">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelImplantationModal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Implantação</button>
                 </div>
             </form>
         </div>

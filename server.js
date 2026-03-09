@@ -199,7 +199,11 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
  */
 app.post('/api/send-overdue-emails', async (req, res) => {
     if (!db) {
-        return res.status(500).json({ error: 'Firebase Admin não configurado.' });
+        return res.status(503).json({
+            success: false,
+            error: 'Firebase Admin não configurado.',
+            details: 'Configure FIREBASE_SERVICE_ACCOUNT no .env para habilitar notificações.'
+        });
     }
 
     try {

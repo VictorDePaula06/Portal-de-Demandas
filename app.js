@@ -13,6 +13,7 @@ const db = firebase.firestore();
 
 let tasks = [];
 let csClients = [];
+let implantacoes = [];
 
 // Realtime listeners for Firestore
 db.collection('tasks').onSnapshot((snapshot) => {
@@ -25,6 +26,11 @@ db.collection('tasks').onSnapshot((snapshot) => {
 db.collection('csClients').onSnapshot((snapshot) => {
     csClients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     if (typeof renderCSBoard === 'function') renderCSBoard();
+});
+
+db.collection('implantacoes').onSnapshot((snapshot) => {
+    implantacoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (typeof renderImplantacoesBoard === 'function') renderImplantacoesBoard();
 });
 
 // Function to fetch demands from the new backend API
@@ -172,9 +178,15 @@ async function checkAndSendOverdueEmails() {
             body: JSON.stringify({ tasks: overdueToNotify })
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.warn('Automação de e-mail não disponível ou erro no servidor:', errorText);
+            return;
+        }
+
         const result = await response.json();
         if (result.success) {
-            const sentCount = result.results.filter(r => r.status === 'sent').length;
+            const sentCount = result.results ? result.results.filter(r => r.status === 'sent').length : 0;
             if (sentCount > 0) {
                 showToast(`${sentCount} e-mails de alerta enviados aos clientes!`);
             }
@@ -228,13 +240,14 @@ const taskForm = document.getElementById('taskForm');
 const toast = document.getElementById('toast');
 const taskStatusInput = document.getElementById('taskStatus');
 
-// DOM Elements CS
-const btnNewCS = document.getElementById('btnNewCS');
-const csModal = document.getElementById('csModal');
-const btnCloseCsModal = document.getElementById('btnCloseCsModal');
-const btnCancelCsModal = document.getElementById('btnCancelCsModal');
-const csForm = document.getElementById('csForm');
-const csBoard = document.getElementById('csBoard');
+// DOM Elements Implantações
+const btnViewImplantacoes = document.getElementById('btnViewImplantacoes');
+const implantacoesBoard = document.getElementById('implantacoesBoard');
+const btnNewImplantation = document.getElementById('btnNewImplantation');
+const implantationModal = document.getElementById('implantationModal');
+const btnCloseImplantationModal = document.getElementById('btnCloseImplantationModal');
+const btnCancelImplantationModal = document.getElementById('btnCancelImplantationModal');
+const implantationForm = document.getElementById('implantationForm');
 
 // DOM Elements Resolve
 const resolveModal = document.getElementById('resolveModal');
@@ -400,6 +413,51 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSyncTiFlux) {
         btnSyncTiFlux.addEventListener('click', fetchDemandasDaAPI);
     }
+
+    // Navigation Switch Logic
+    const btnViewDemandas = document.getElementById('btnViewDemandas');
+    const btnViewCS = document.getElementById('btnViewCS');
+    const btnViewMaintenance = document.getElementById('btnViewMaintenance');
+    const btnViewRelatorios = document.getElementById('btnViewRelatorios');
+    const btnViewConfig = document.getElementById('btnViewConfig');
+
+    const boards = [
+        { btn: btnViewDemandas, board: kanbanBoard },
+        { btn: btnViewCS, board: csBoard },
+        { btn: btnViewImplantacoes, board: implantacoesBoard },
+        { btn: btnViewMaintenance, board: document.getElementById('maintenanceBoard') },
+        { btn: btnViewRelatorios, board: document.getElementById('relatoriosBoard') },
+        { btn: btnViewConfig, board: document.getElementById('configBoard') }
+    ];
+
+    function showBoard(targetBoardId) {
+        boards.forEach(b => {
+            if (b.board) {
+                b.board.style.display = b.board.id === targetBoardId ? 'block' : 'none';
+                if (b.board.id === 'maintenanceBoard') b.board.style.display = b.board.id === targetBoardId ? 'flex' : 'none';
+            }
+            if (b.btn) b.btn.classList.toggle('active', b.board?.id === targetBoardId);
+        });
+
+        // Toggle Header Buttons visibility
+        if (btnNewTask) btnNewTask.style.display = targetBoardId === 'kanbanBoard' ? 'flex' : 'none';
+        if (btnNewCS) btnNewCS.style.display = targetBoardId === 'csBoard' ? 'flex' : 'none';
+        if (btnNewImplantation) btnNewImplantation.style.display = targetBoardId === 'implantacoesBoard' ? 'flex' : 'none';
+
+        // Extra adjustments for flex containers
+        if (targetBoardId === 'kanbanBoard') kanbanBoard.style.display = 'flex';
+
+        // Refresh specific boards if needed
+        if (targetBoardId === 'csBoard') renderCSBoard();
+        if (targetBoardId === 'implantacoesBoard') renderImplantacoesBoard();
+    }
+
+    if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); showBoard('kanbanBoard'); });
+    if (btnViewCS) btnViewCS.addEventListener('click', (e) => { e.preventDefault(); showBoard('csBoard'); });
+    if (btnViewImplantacoes) btnViewImplantacoes.addEventListener('click', (e) => { e.preventDefault(); showBoard('implantacoesBoard'); });
+    if (btnViewMaintenance) btnViewMaintenance.addEventListener('click', (e) => { e.preventDefault(); showBoard('maintenanceBoard'); });
+    if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); showBoard('relatoriosBoard'); });
+    if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); showBoard('configBoard'); });
 });
 
 // Auth Logic
@@ -753,6 +811,72 @@ btnCancelCsModal.addEventListener('click', closeCsModal);
 csModal.addEventListener('click', (e) => {
     if (e.target === csModal) closeCsModal();
 });
+
+// Modal Implantações Actions
+function openImplantationModal(id = null) {
+    implantationForm.reset();
+    document.getElementById('impId').value = '';
+
+    if (id) {
+        const imp = implantacoes.find(i => i.id === id);
+        if (imp) {
+            document.getElementById('impId').value = imp.id;
+            document.getElementById('impRede').value = imp.rede || '';
+            document.getElementById('impUnidade').value = imp.unidade || '';
+            document.getElementById('impCnpj').value = imp.cnpj || '';
+            document.getElementById('impPrevisao').value = imp.previsao || '';
+            document.getElementById('impTipo').value = imp.tipo || 'Presencial';
+            document.getElementById('impContrato').value = imp.contrato || '';
+            document.getElementById('impImplantador').value = imp.implantador || '';
+            document.getElementById('impStatus').value = imp.status || '';
+            document.getElementById('impQualidade').value = imp.qualidade || '';
+
+            implantationModal.querySelector('h2').textContent = 'Editar Implantação';
+        }
+    } else {
+        implantationModal.querySelector('h2').textContent = 'Cadastrar Implantação';
+    }
+
+    implantationModal.classList.add('active');
+}
+
+function closeImplantationModal() {
+    implantationModal.classList.remove('active');
+}
+
+if (btnNewImplantation) btnNewImplantation.addEventListener('click', () => openImplantationModal());
+if (btnCloseImplantationModal) btnCloseImplantationModal.addEventListener('click', closeImplantationModal);
+if (btnCancelImplantationModal) btnCancelImplantationModal.addEventListener('click', closeImplantationModal);
+if (implantationModal) implantationModal.addEventListener('click', (e) => {
+    if (e.target === implantationModal) closeImplantationModal();
+});
+
+// Save Implantação
+if (implantationForm) {
+    implantationForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('impId').value || Date.now().toString();
+        const data = {
+            rede: document.getElementById('impRede').value.trim(),
+            unidade: document.getElementById('impUnidade').value.trim(),
+            cnpj: document.getElementById('impCnpj').value.trim(),
+            previsao: document.getElementById('impPrevisao').value,
+            tipo: document.getElementById('impTipo').value,
+            contrato: document.getElementById('impContrato').value.trim(),
+            implantador: document.getElementById('impImplantador').value.trim(),
+            status: document.getElementById('impStatus').value.trim(),
+            qualidade: document.getElementById('impQualidade').value.trim()
+        };
+
+        db.collection('implantacoes').doc(id).set(data, { merge: true }).then(() => {
+            showToast('Implantação salva com sucesso!');
+            closeImplantationModal();
+        }).catch(err => {
+            console.error('Erro ao salvar implantação:', err);
+            showToast('Erro ao salvar no banco.', 'critical');
+        });
+    });
+}
 
 // Toast Notification
 function showToast(message, type = 'success') {
@@ -1929,3 +2053,56 @@ window.deleteTask = deleteTask;
 window.completeTask = completeTask;
 window.sendWhatsappCobrança = sendWhatsappCobrança;
 window.openEditCsModal = openEditCsModal;
+window.editImplantation = openImplantationModal;
+window.deleteImplantation = function (id) {
+    if (confirm("Deseja realmente excluir esta implantação?")) {
+        db.collection('implantacoes').doc(id).delete().then(() => {
+            showToast('Implantação excluída.', 'critical');
+        });
+    }
+};
+
+function renderImplantacoesBoard() {
+    const tableBody = document.getElementById('implantacoesTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    if (implantacoes.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhuma implantação cadastrada.</td></tr>';
+        return;
+    }
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return dateStr;
+    };
+
+    implantacoes.sort((a, b) => new Date(b.previsao) - new Date(a.previsao)).forEach(imp => {
+        const tr = document.createElement('tr');
+        tr.className = 'cs-table-row';
+        tr.style.borderBottom = '1px solid var(--border-color)';
+
+        tr.innerHTML = `
+            <td style="padding: 1.2rem 1rem; color: var(--text-primary); font-weight: 600;">${imp.rede || '-'}</td>
+            <td style="padding: 1.2rem 1rem; color: var(--text-primary); font-weight: 500;">${imp.unidade || '-'}</td>
+            <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.cnpj || '-'}</td>
+            <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${formatDate(imp.previsao)}</td>
+            <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.tipo || '-'}</td>
+            <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.contrato || '-'}</td>
+            <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.implantador || '-'}</td>
+            <td style="padding: 1.2rem 1rem;"><span class="cs-badge badge-neutral">${imp.status || 'Pendente'}</span></td>
+            <td style="padding: 1.2rem 1rem;"><span class="cs-badge badge-success">${imp.qualidade || '-'}</span></td>
+            <td style="padding: 1.2rem 1rem; white-space: nowrap;">
+                <button class="btn-icon" onclick="window.editImplantation('${imp.id}')" title="Editar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <button class="btn-icon" onclick="window.deleteImplantation('${imp.id}')" title="Excluir" style="color: var(--status-critical);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
