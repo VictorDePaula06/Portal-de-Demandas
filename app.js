@@ -104,7 +104,9 @@ async function fetchDemandasDaAPI() {
                         apiTask.quality !== localTask.quality ||
                         apiTask.closedAt !== localTask.closedAt ||
                         apiTask.createdAt !== localTask.createdAt ||
-                        apiTask.date !== localTask.date;
+                        apiTask.date !== localTask.date ||
+                        apiTask.clientEmail !== localTask.clientEmail ||
+                        apiTask.raw !== localTask.raw;
 
                     if (hasDifferences) {
                         updatedTasksCount++;
