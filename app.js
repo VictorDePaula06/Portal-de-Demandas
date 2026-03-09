@@ -172,6 +172,8 @@ async function checkAndSendOverdueEmails() {
     console.log(`Detectados ${overdueToNotify.length} chamados vencidos para notificação por e-mail.`);
 
     try {
+        console.log(`Enviando ${overdueToNotify.length} chamados para automação:`, overdueToNotify);
+
         const response = await fetch('/api/send-overdue-emails', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -187,9 +189,18 @@ async function checkAndSendOverdueEmails() {
         const result = await response.json();
         if (result.success) {
             const sentCount = result.results ? result.results.filter(r => r.status === 'sent').length : 0;
+            const skippedCount = result.results ? result.results.filter(r => r.status === 'skipped').length : 0;
+            const errorCount = result.results ? result.results.filter(r => r.status === 'error').length : 0;
+
             if (sentCount > 0) {
-                showToast(`${sentCount} e-mails de alerta enviados aos clientes!`);
+                showToast(`${sentCount} e-mails de alerta enviados com sucesso!`, 'success');
+            } else if (skippedCount > 0) {
+                showToast(`${skippedCount} chamados ignorados (sem e-mail do cliente). Verifique no TiFlux.`, 'warning');
+            } else if (errorCount > 0) {
+                showToast(`${errorCount} erros ao tentar enviar e-mails. Verifique o console.`, 'critical');
             }
+
+            if (result.results) console.log('Resultado da automação:', result.results);
         }
     } catch (error) {
         console.error('Erro ao disparar automação de e-mails:', error);
