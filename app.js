@@ -458,6 +458,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnViewMaintenance) btnViewMaintenance.addEventListener('click', (e) => { e.preventDefault(); showBoard('maintenanceBoard'); });
     if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); showBoard('relatoriosBoard'); });
     if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); showBoard('configBoard'); });
+
+    // Restore Default Email Template
+    const btnRestoreEmailDefault = document.getElementById('btnRestoreEmailDefault');
+    if (btnRestoreEmailDefault) {
+        btnRestoreEmailDefault.addEventListener('click', () => {
+            if (confirm('Deseja restaurar o assunto e o corpo do e-mail para o padrão do sistema?')) {
+                if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = DEFAULT_EMAIL_SUBJECT;
+                if (document.getElementById('emailBody')) document.getElementById('emailBody').value = DEFAULT_EMAIL_BODY;
+            }
+        });
+    }
 });
 
 // Auth Logic
@@ -604,20 +615,36 @@ if (emailSettingsForm) {
     });
 }
 
+const DEFAULT_EMAIL_SUBJECT = 'Chamado #{numero} ainda em análise - {cliente}';
+const DEFAULT_EMAIL_BODY = `Olá {cliente},
+
+Informamos que o seu chamado #{numero}, referente a "{descricao}", ainda encontra-se em fase de análise por nossa equipe técnica.
+
+Previsão de conclusão: {vencimento}
+
+Estamos trabalhando para finalizá-lo o mais breve possível. Qualquer dúvida, estamos à disposição.
+
+Atentamente,
+Equipe de Suporte @ Globaltera`;
+
 async function loadEmailSettings() {
     try {
         const doc = await db.collection('settings').doc('email').get();
         if (doc.exists) {
             const data = doc.data();
             if (document.getElementById('smtpHost')) document.getElementById('smtpHost').value = data.smtpHost || '';
-            if (document.getElementById('smtpPort')) document.getElementById('smtpPort').value = data.smtpPort || '';
+            if (document.getElementById('smtpPort')) document.getElementById('smtpPort').value = data.smtpPort || '587';
             if (document.getElementById('smtpUser')) document.getElementById('smtpUser').value = data.smtpUser || '';
             if (document.getElementById('smtpPass')) document.getElementById('smtpPass').value = data.smtpPass || '';
             if (document.getElementById('smtpSecure')) document.getElementById('smtpSecure').checked = data.smtpSecure || false;
             if (document.getElementById('senderName')) document.getElementById('senderName').value = data.senderName || '';
             if (document.getElementById('senderEmail')) document.getElementById('senderEmail').value = data.senderEmail || '';
-            if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = data.subjectTemplate || '';
-            if (document.getElementById('emailBody')) document.getElementById('emailBody').value = data.bodyTemplate || '';
+            if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = data.subjectTemplate || DEFAULT_EMAIL_SUBJECT;
+            if (document.getElementById('emailBody')) document.getElementById('emailBody').value = data.bodyTemplate || DEFAULT_EMAIL_BODY;
+        } else {
+            // Se não existir nada no banco, preenche apenas os templates padrão
+            if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = DEFAULT_EMAIL_SUBJECT;
+            if (document.getElementById('emailBody')) document.getElementById('emailBody').value = DEFAULT_EMAIL_BODY;
         }
     } catch (error) {
         console.error('Erro ao carregar config de e-mail:', error);

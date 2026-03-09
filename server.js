@@ -234,15 +234,15 @@ app.post('/api/send-overdue-emails', async (req, res) => {
             }
 
             const subject = emailSettings.subjectTemplate
-                .replace('{cliente}', task.cliente)
-                .replace('{numero}', task.number);
+                .replace(/{cliente}/g, task.cliente || '')
+                .replace(/{numero}/g, task.number || '');
 
-            const html = emailSettings.bodyTemplate
+            const html = (emailSettings.bodyTemplate || '')
                 .replace(/\n/g, '<br>')
-                .replace('{cliente}', task.cliente)
-                .replace('{numero}', task.number)
-                .replace('{descricao}', task.desc)
-                .replace('{vencimento}', task.date);
+                .replace(/{cliente}/g, task.cliente || '')
+                .replace(/{numero}/g, task.number || '')
+                .replace(/{descricao}/g, task.desc || '')
+                .replace(/{vencimento}/g, task.date || '');
 
             try {
                 await transporter.sendMail({
