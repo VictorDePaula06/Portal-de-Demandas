@@ -173,6 +173,19 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             ['Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
 
+        /**
+ * Rota de Debug para ver os dados crus do TiFlux
+ */
+        app.get('/api/debug/ticket/:id', async (req, res) => {
+            try {
+                const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
+                const response = await axios.get(`${TIFLUX_API_URL}/tickets/${req.params.id}`, { headers });
+                res.json(response.data);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
         return res.json(filteredDemands);
 
     } catch (error) {
