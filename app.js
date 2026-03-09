@@ -109,13 +109,19 @@ async function fetchDemandasDaAPI() {
                         apiTask.quality !== localTask.quality ||
                         apiTask.closedAt !== localTask.closedAt ||
                         apiTask.createdAt !== localTask.createdAt ||
-                        apiTask.date !== localTask.date ||
                         apiTask.clientEmail !== localTask.clientEmail;
 
                     if (hasDifferences) {
                         updatedTasksCount++;
                         const taskRef = db.collection('tasks').doc(apiTask.id);
-                        batch.set(taskRef, apiTask, { merge: true });
+
+                        // Proteção: Não sobrescrever a data de vencimento (SLA) se ela já existe localmente
+                        const taskUpdate = { ...apiTask };
+                        if (localTask.date) {
+                            taskUpdate.date = localTask.date;
+                        }
+
+                        batch.set(taskRef, taskUpdate, { merge: true });
                         hasChanges = true;
                         syncdItems.push({ number: apiTask.number || 'N/A', type: 'Atu.', client: apiTask.cliente });
                     }
