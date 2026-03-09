@@ -18,7 +18,6 @@ const TIFLUX_API_URL = process.env.TIFLUX_API_URL || 'https://api.tiflux.com/api
 const TIFLUX_API_TOKEN = process.env.TIFLUX_API_TOKEN || 'SEU_TOKEN_AQUI';
 
 // Inicializar Firebase Admin
-// O ideal é usar uma Service Account Key. Buscamos no .env ou arquivo local.
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (FIREBASE_SERVICE_ACCOUNT) {
     try {
@@ -26,16 +25,12 @@ if (FIREBASE_SERVICE_ACCOUNT) {
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
         });
+        console.log("Firebase Admin inicializado com Service Account.");
     } catch (e) {
-        console.error("Erro ao inicializar Firebase Admin:", e.message);
+        console.error("Erro ao inicializar Firebase Admin com Service Account:", e.message);
     }
 } else {
-    // Fallback: Tentativa de inicialização sem parâmetros (funciona em environments do Google)
-    try {
-        admin.initializeApp();
-    } catch (e) {
-        console.warn("Firebase Admin não inicializado: Defina FIREBASE_SERVICE_ACCOUNT no .env");
-    }
+    console.warn("Firebase Admin não inicializado: Defina FIREBASE_SERVICE_ACCOUNT no .env para habilitar automações.");
 }
 
 const db = admin.apps.length > 0 ? admin.firestore() : null;
