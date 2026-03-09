@@ -163,7 +163,8 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                         ticket.stage?.name?.toLowerCase().includes('closed') ||
                         ticket.status?.name?.toLowerCase().includes('closed') ?
                         (ticket.updated_at ? ticket.updated_at.split('T')[0].split(' ')[0] : new Date().toISOString().split('T')[0]) : null
-                )
+                ),
+                raw: String(ticket.ticket_number) === '26191' ? ticket : null
             };
         });
 
