@@ -781,6 +781,11 @@ const emailSettingsForm = document.getElementById('emailSettingsForm');
 if (emailSettingsForm) {
     emailSettingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const smtpUser = document.getElementById('smtpUser').value.trim();
+        const ok = confirm(`Deseja salvar as novas configurações de e-mail para ${smtpUser}?\n\nCERTIFIQUE-SE QUE OS DADOS ESTÃO CORRETOS PARA NÃO INTERROMPER A AUTOMAÇÃO.`);
+        if (!ok) return;
+
         const settings = {
             smtpHost: document.getElementById('smtpHost').value.trim(),
             smtpPort: document.getElementById('smtpPort').value.trim(),
@@ -796,6 +801,7 @@ if (emailSettingsForm) {
         try {
             await db.collection('settings').doc('email').set(settings);
             showToast('Configurações de e-mail salvas!');
+            loadEmailSettings(); // Recarrega para atualizar o badge
         } catch (error) {
             console.error('Erro ao salvar config de e-mail:', error);
             showToast('Erro ao salvar configurações.', 'critical');
@@ -820,6 +826,15 @@ async function loadEmailSettings() {
         const doc = await db.collection('settings').doc('email').get();
         if (doc.exists) {
             const data = doc.data();
+
+            // Atualizar indicador de e-mail ativo
+            const badge = document.getElementById('activeEmailBadge');
+            const display = document.getElementById('activeEmailDisplay');
+            if (badge && display && data.smtpUser) {
+                display.textContent = data.smtpUser;
+                badge.style.display = 'flex';
+            }
+
             if (document.getElementById('smtpHost')) document.getElementById('smtpHost').value = data.smtpHost || '';
             if (document.getElementById('smtpPort')) document.getElementById('smtpPort').value = data.smtpPort || '587';
             if (document.getElementById('smtpUser')) document.getElementById('smtpUser').value = data.smtpUser || '';
