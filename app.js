@@ -172,9 +172,15 @@ async function checkAndSendOverdueEmails() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Filtrar tarefas abertas que estão vencidas (date < today), ainda não foram notificadas e têm e-mail válido
     const overdueToNotify = tasks.filter(t => {
         if (!t.date || t.status.includes('Concluida')) return false;
         if (t.notified) return false;
+
+        // Só conta se o e-mail for válido (mesma lógica do servidor)
+        if (!t.clientEmail || !emailRegex.test(t.clientEmail)) return false;
 
         const slaDate = new Date(t.date);
         return slaDate < today;
@@ -265,8 +271,10 @@ function showSyncResultsModal(newCount, updatedCount, items) {
         </div>`;
         if (emailActions) emailActions.style.display = 'none';
     } else if (pendingCount > 0) {
+        const pendingList = window.pendingOverdueToNotify.map(t => `#${t.number} (${t.cliente})`).join(', ');
         emailPart = `<div style="margin-top: 10px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 0.85rem;">
-            ⚠️ Existem <strong>${pendingCount} chamados vencidos</strong> que podem ser notificados agora.
+            ⚠️ Existem <strong>${pendingCount} chamados vencidos</strong> para notificação: <br>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${pendingList}</span>
         </div>`;
         if (emailActions) emailActions.style.display = 'flex';
     } else {
