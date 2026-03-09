@@ -172,7 +172,6 @@ async function checkAndSendOverdueEmails() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Filtrar tarefas abertas que estão vencidas (date < today) e ainda não foram notificadas
     const overdueToNotify = tasks.filter(t => {
         if (!t.date || t.status.includes('Concluida')) return false;
         if (t.notified) return false;
@@ -181,9 +180,25 @@ async function checkAndSendOverdueEmails() {
         return slaDate < today;
     });
 
-    if (overdueToNotify.length === 0) return;
+    if (overdueToNotify.length === 0) {
+        isProcessingEmails = false;
+        return;
+    }
 
-    console.log(`Detectados ${overdueToNotify.length} chamados vencidos para notificação por e-mail:`, overdueToNotify);
+    console.log(`Detectados ${overdueToNotify.length} chamados vencidos.`);
+
+    // Armazena para uso no modal/botões manuais
+    window.pendingOverdueToNotify = overdueToNotify;
+
+    // TRAVA: Se for muita coisa (mais de 5), não envia automático.
+    // O usuário terá que clicar no botão do modal de Sync.
+    if (overdueToNotify.length > 5) {
+        console.log('Limite automático excedido (>5). Aguardando ação manual do usuário no modal.');
+        isProcessingEmails = false;
+        return;
+    }
+
+    console.log(`Enviando ${overdueToNotify.length} chamados automaticamente para automação.`);
 
     // Log individual check for the testing ticket
     const testTicket = overdueToNotify.find(t => t.number === '26191');
@@ -241,10 +256,21 @@ function showSyncResultsModal(newCount, updatedCount, items) {
     const list = document.getElementById('syncResultsList');
 
     let emailPart = '';
+    const emailActions = document.getElementById('syncEmailActions');
+    const pendingCount = window.pendingOverdueToNotify ? window.pendingOverdueToNotify.length : 0;
+
     if (window.lastEmailResult && window.lastEmailResult.sentCount > 0) {
         emailPart = `<div style="margin-top: 10px; padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; font-size: 0.85rem;">
-            🚀 <strong>${window.lastEmailResult.sentCount} e-mails</strong> de alerta foram enviados automaticamente para clientes de chamados vencidos.
+            🚀 <strong>${window.lastEmailResult.sentCount} e-mails</strong> de alerta foram enviados com sucesso!
         </div>`;
+        if (emailActions) emailActions.style.display = 'none';
+    } else if (pendingCount > 0) {
+        emailPart = `<div style="margin-top: 10px; padding: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 0.85rem;">
+            ⚠️ Existem <strong>${pendingCount} chamados vencidos</strong> que podem ser notificados agora.
+        </div>`;
+        if (emailActions) emailActions.style.display = 'flex';
+    } else {
+        if (emailActions) emailActions.style.display = 'none';
     }
 
     summary.innerHTML = `
@@ -270,7 +296,85 @@ const btnOkSyncResults = document.getElementById('btnOkSyncResults');
 const syncResultsModal = document.getElementById('syncResultsModal');
 
 if (btnCloseSyncResults) btnCloseSyncResults.addEventListener('click', () => syncResultsModal.classList.remove('active'));
-if (btnOkSyncResults) btnOkSyncResults.addEventListener('click', () => syncResultsModal.classList.remove('active'));
+if (btnOkSyncResults) btnOkSyncResults.addEventListener('click', () => {
+    syncResultsModal.classList.remove('active');
+    window.lastEmailResult = null;
+    window.pendingOverdueToNotify = null;
+});
+
+// Ações manuais de E-mail
+const btnSendEmails = document.getElementById('btnSendEmails');
+const btnSkipEmails = document.getElementById('btnSkipEmails');
+
+if (btnSendEmails) {
+    btnSendEmails.addEventListener('click', async () => {
+        if (!window.pendingOverdueToNotify || window.pendingOverdueToNotify.length === 0) return;
+
+        btnSendEmails.disabled = true;
+        btnSendEmails.innerHTML = 'Enviando...';
+
+        try {
+            const overdueToNotify = window.pendingOverdueToNotify;
+            console.log(`Disparando envio manual para ${overdueToNotify.length} chamados...`);
+
+            const response = await fetch('/api/send-overdue-emails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tasks: overdueToNotify })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    const sentCount = result.results ? result.results.filter(r => r.status === 'sent').length : 0;
+                    window.lastEmailResult = { sentCount };
+                    window.pendingOverdueToNotify = null;
+                    showToast(`${sentCount} e-mails enviados!`);
+
+                    syncResultsModal.classList.remove('active');
+                }
+            } else {
+                showToast('Erro ao enviar e-mails.', 'critical');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            btnSendEmails.disabled = false;
+            btnSendEmails.innerHTML = 'Enviar E-mails de Alerta';
+        }
+    });
+}
+
+if (btnSkipEmails) {
+    btnSkipEmails.addEventListener('click', async () => {
+        if (!window.pendingOverdueToNotify || window.pendingOverdueToNotify.length === 0) return;
+
+        const ok = confirm(`Deseja marcar ${window.pendingOverdueToNotify.length} chamados como avisados sem enviar e-mail para ninguém?`);
+        if (!ok) return;
+
+        btnSkipEmails.disabled = true;
+        try {
+            const batch = db.batch();
+            window.pendingOverdueToNotify.forEach(task => {
+                const ref = db.collection('tasks').doc(task.id);
+                batch.update(ref, {
+                    notified: true,
+                    lastNotifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    skipReason: 'Manual backlog skip'
+                });
+            });
+            await batch.commit();
+            showToast('Backlog limpo com sucesso!');
+            window.pendingOverdueToNotify = null;
+            syncResultsModal.classList.remove('active');
+        } catch (e) {
+            console.error(e);
+        } finally {
+            btnSkipEmails.disabled = false;
+        }
+    });
+}
+
 if (syncResultsModal) syncResultsModal.addEventListener('click', (e) => {
     if (e.target === syncResultsModal) syncResultsModal.classList.remove('active');
 });

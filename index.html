@@ -1192,7 +1192,24 @@
                 style="max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; background: rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 4px;">
                 <!-- Populated by JS -->
             </div>
-            <div class="modal-footer" style="margin-top: 1.5rem;">
+            <div class="modal-footer" id="syncEmailActions"
+                style="margin-top: 1.5rem; display: none; flex-direction: column; gap: 8px;">
+                <button type="button" class="btn btn-primary" id="btnSendEmails"
+                    style="width: 100%; position: relative;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="margin-right: 8px;">
+                        <path d="m22 2-7 20-4-9-9-4Z" />
+                        <path d="M22 2 11 13" />
+                    </svg>
+                    Enviar E-mails de Alerta
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnSkipEmails"
+                    style="width: 100%; background: transparent; border-color: var(--border-color);">
+                    Marcar todos como Avisados (Não Enviar)
+                </button>
+            </div>
+            <div class="modal-footer" style="margin-top: 1rem;">
                 <button type="button" class="btn btn-primary" id="btnOkSyncResults" style="width: 100%;">OK</button>
             </div>
         </div>

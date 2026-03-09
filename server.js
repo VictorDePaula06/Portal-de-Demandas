@@ -243,12 +243,15 @@ app.post('/api/send-overdue-emails', async (req, res) => {
 
         const overdueTasks = req.body.tasks || [];
         const results = [];
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         for (const task of overdueTasks) {
             // Verificar se o chamado já foi notificado recentemente para evitar spam
             if (task.notified) continue;
-            if (!task.clientEmail) {
-                results.push({ id: task.id, status: 'skipped', reason: 'Email do cliente ausente' });
+
+            if (!task.clientEmail || !emailRegex.test(task.clientEmail)) {
+                console.log(`[E-mail Skip] Chamado #${task.number} ignorado por e-mail inválido: "${task.clientEmail}"`);
+                results.push({ id: task.id, status: 'skipped', reason: 'Email inválido ou ausente' });
                 continue;
             }
 
