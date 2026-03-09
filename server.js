@@ -84,9 +84,11 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
+            // Log profundo para o ticket de teste específico
             if (String(ticket.ticket_number) === '26191') {
-                console.log(`--- DEBUG TICKET 26191 ---`);
-                console.log('Full Ticket Object:', JSON.stringify(ticket, null, 2));
+                console.log('--- DEBUG TICKET 26191 FULL OBJECT ---');
+                console.log(JSON.stringify(ticket, null, 2));
+                console.log('---------------------------------------');
             }
 
             const rawStage = (ticket.stage?.name || '').toLowerCase();
@@ -146,7 +148,15 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 number: String(ticket.ticket_number || 'N/A'),
                 quality: numQuality,
                 cliente: ticket.client?.name || 'Cliente Desconhecido',
-                clientEmail: ticket.contact?.email || ticket.contact?.main_email || ticket.requester?.email || ticket.requester?.main_email || ticket.contact_email || ticket.client?.email || '',
+                clientEmail: ticket.contact?.email ||
+                    ticket.contact?.main_email ||
+                    ticket.requestor?.email ||
+                    ticket.requestor?.main_email ||
+                    ticket.client?.main_email ||
+                    ticket.client?.email ||
+                    ticket.contact_email ||
+                    (ticket.requestor_email) ||
+                    '',
                 desc: ticket.title || 'Descrição Ausente',
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
@@ -163,8 +173,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                         ticket.stage?.name?.toLowerCase().includes('closed') ||
                         ticket.status?.name?.toLowerCase().includes('closed') ?
                         (ticket.updated_at ? ticket.updated_at.split('T')[0].split(' ')[0] : new Date().toISOString().split('T')[0]) : null
-                ),
-                raw: String(ticket.ticket_number) === '26191' ? ticket : null
+                )
             };
         });
 

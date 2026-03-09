@@ -300,6 +300,19 @@ body {
     /* Estica até o fim do board */
 }
 
+/* Toggle Visibility based on Board Data View */
+.kanban-board[data-view="demandas"] .kanban-column[data-view="concluidas"] {
+    display: none !important;
+}
+
+.kanban-board[data-view="concluidas"] .kanban-column[data-view="demandas"] {
+    display: none !important;
+}
+
+.kanban-board[data-view="concluidas"] .kanban-column[data-view="concluidas"] {
+    display: flex !important;
+}
+
 .column-header {
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border-color);

@@ -214,10 +214,13 @@ async function checkAndSendOverdueEmails() {
             const skippedCount = result.results ? result.results.filter(r => r.status === 'skipped').length : 0;
             const errorCount = result.results ? result.results.filter(r => r.status === 'error').length : 0;
 
+            // Armazena temporariamente para o modal de sync
+            window.lastEmailResult = { sentCount, skippedCount, errorCount };
+
             if (sentCount > 0) {
                 showToast(`${sentCount} e-mails de alerta enviados com sucesso!`, 'success');
             } else if (skippedCount > 0) {
-                showToast(`${skippedCount} chamados ignorados (sem e-mail do cliente). Verifique no TiFlux.`, 'warning');
+                // showToast(`${skippedCount} chamados ignorados (sem e-mail do cliente). Verifique no TiFlux.`, 'warning');
             } else if (errorCount > 0) {
                 showToast(`${errorCount} erros ao tentar enviar e-mails. Verifique o console.`, 'critical');
             }
@@ -237,7 +240,17 @@ function showSyncResultsModal(newCount, updatedCount, items) {
     const summary = document.getElementById('syncSummaryText');
     const list = document.getElementById('syncResultsList');
 
-    summary.innerHTML = `Foram encontrados <strong>${newCount}</strong> novos chamados e <strong>${updatedCount}</strong> atualizados no TiFlux.`;
+    let emailPart = '';
+    if (window.lastEmailResult && window.lastEmailResult.sentCount > 0) {
+        emailPart = `<div style="margin-top: 10px; padding: 10px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); color: #10b981; font-size: 0.85rem;">
+            🚀 <strong>${window.lastEmailResult.sentCount} e-mails</strong> de alerta foram enviados automaticamente para clientes de chamados vencidos.
+        </div>`;
+    }
+
+    summary.innerHTML = `
+        Foram encontrados <strong>${newCount}</strong> novos chamados e <strong>${updatedCount}</strong> atualizados no TiFlux.
+        ${emailPart}
+    `;
 
     list.innerHTML = items.map(item => `
         <div class="sync-item ${item.type === 'Novo' ? 'new' : 'updated'}">
@@ -455,6 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnViewMaintenance = document.getElementById('btnViewMaintenance');
     const btnViewRelatorios = document.getElementById('btnViewRelatorios');
     const btnViewConfig = document.getElementById('btnViewConfig');
+    const btnViewConcluidas = document.getElementById('btnViewConcluidas');
 
     const boards = [
         { btn: btnViewDemandas, board: kanbanBoard },
@@ -462,32 +476,58 @@ document.addEventListener('DOMContentLoaded', () => {
         { btn: btnViewImplantacoes, board: implantacoesBoard },
         { btn: btnViewMaintenance, board: document.getElementById('maintenanceBoard') },
         { btn: btnViewRelatorios, board: document.getElementById('relatoriosBoard') },
-        { btn: btnViewConfig, board: document.getElementById('configBoard') }
+        { btn: btnViewConfig, board: document.getElementById('configBoard') },
+        { btn: btnViewConcluidas, board: kanbanBoard }
     ];
 
-    function showBoard(targetBoardId) {
+    function showBoard(targetBoardId, viewType = 'demandas') {
+        console.log(`Switching to board: ${targetBoardId}, view: ${viewType}`);
+
+        // Define o tipo de visualização no Kanban se for o caso
+        if (kanbanBoard) {
+            kanbanBoard.dataset.view = viewType;
+        }
+
         boards.forEach(b => {
-            if (b.board) {
-                b.board.style.display = b.board.id === targetBoardId ? 'block' : 'none';
-                if (b.board.id === 'maintenanceBoard') b.board.style.display = b.board.id === targetBoardId ? 'flex' : 'none';
+            if (!b.board) return;
+
+            // Lógica de visibilidade
+            const isTarget = b.board.id === targetBoardId;
+
+            // Caso especial do Kanban que é compartilhado
+            if (b.board.id === 'kanbanBoard') {
+                b.board.style.setProperty('display', isTarget ? 'flex' : 'none', 'important');
+            } else if (b.board.id === 'maintenanceBoard') {
+                b.board.style.setProperty('display', isTarget ? 'flex' : 'none', 'important');
+            } else {
+                b.board.style.setProperty('display', isTarget ? 'block' : 'none', 'important');
             }
-            if (b.btn) b.btn.classList.toggle('active', b.board?.id === targetBoardId);
+
+            // Lógica de ativação do botão
+            if (b.btn) {
+                if (b.board.id === 'kanbanBoard') {
+                    const isCorrectBtn = (viewType === 'demandas' && b.btn.id === 'btnViewDemandas') ||
+                        (viewType === 'concluidas' && b.btn.id === 'btnViewConcluidas');
+                    b.btn.classList.toggle('active', isCorrectBtn);
+                } else {
+                    b.btn.classList.toggle('active', isTarget);
+                }
+            }
         });
 
         // Toggle Header Buttons visibility
-        if (btnNewTask) btnNewTask.style.display = targetBoardId === 'kanbanBoard' ? 'flex' : 'none';
+        if (btnNewTask) btnNewTask.style.display = (targetBoardId === 'kanbanBoard' && viewType === 'demandas') ? 'flex' : 'none';
         if (btnNewCS) btnNewCS.style.display = targetBoardId === 'csBoard' ? 'flex' : 'none';
         if (btnNewImplantation) btnNewImplantation.style.display = targetBoardId === 'implantacoesBoard' ? 'flex' : 'none';
-
-        // Extra adjustments for flex containers
-        if (targetBoardId === 'kanbanBoard') kanbanBoard.style.display = 'flex';
 
         // Refresh specific boards if needed
         if (targetBoardId === 'csBoard') renderCSBoard();
         if (targetBoardId === 'implantacoesBoard') renderImplantacoesBoard();
+        if (targetBoardId === 'kanbanBoard') renderBoard();
     }
 
-    if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); showBoard('kanbanBoard'); });
+    if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); showBoard('kanbanBoard', 'demandas'); });
+    if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); showBoard('kanbanBoard', 'concluidas'); });
     if (btnViewCS) btnViewCS.addEventListener('click', (e) => { e.preventDefault(); showBoard('csBoard'); });
     if (btnViewImplantacoes) btnViewImplantacoes.addEventListener('click', (e) => { e.preventDefault(); showBoard('implantacoesBoard'); });
     if (btnViewMaintenance) btnViewMaintenance.addEventListener('click', (e) => { e.preventDefault(); showBoard('maintenanceBoard'); });
@@ -705,8 +745,11 @@ function checkAuth() {
 
         // Ocultar Configurações se não for Admin
         const viewConfigBtn = document.getElementById('btnViewConfig');
+        const isMaster = ADMIN_USERS.some(adm => currentUser.toLowerCase().includes(adm.toLowerCase()));
+        const canSeeConfig = isAdminUser || isMaster;
+
         if (viewConfigBtn) {
-            viewConfigBtn.style.display = isAdminUser ? 'flex' : 'none';
+            viewConfigBtn.style.display = canSeeConfig ? 'flex' : 'none';
         }
 
     } else {
