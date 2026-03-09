@@ -84,13 +84,9 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
-            if (String(ticket.ticket_number) === '27109' || String(ticket.ticket_number) === '27069') {
-                console.log(`--- ENCONTRADO TICKET ${ticket.ticket_number} ---`);
-                console.log('is_closed:', ticket.is_closed);
-                console.log('title:', ticket.title);
-                console.log('stage:', JSON.stringify(ticket.stage));
-                console.log('status:', JSON.stringify(ticket.status));
-                console.log('updated_at:', ticket.updated_at);
+            if (String(ticket.ticket_number) === '26191') {
+                console.log(`--- DEBUG TICKET 26191 ---`);
+                console.log('Full Ticket Object:', JSON.stringify(ticket, null, 2));
             }
 
             const rawStage = (ticket.stage?.name || '').toLowerCase();
