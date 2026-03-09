@@ -169,7 +169,15 @@ async function checkAndSendOverdueEmails() {
 
     if (overdueToNotify.length === 0) return;
 
-    console.log(`Detectados ${overdueToNotify.length} chamados vencidos para notificação por e-mail.`);
+    console.log(`Detectados ${overdueToNotify.length} chamados vencidos para notificação por e-mail:`, overdueToNotify);
+
+    // Log individual check for the testing ticket
+    const testTicket = overdueToNotify.find(t => t.number === '26191');
+    if (testTicket) {
+        console.log('DEBUG: Ticket 26191 encontrado na lista de vencidos. Email capturado:', testTicket.clientEmail);
+    } else {
+        console.log('DEBUG: Ticket 26191 NÃO está na lista de overdueToNotify.');
+    }
 
     try {
         console.log(`Enviando ${overdueToNotify.length} chamados para automação:`, overdueToNotify);
