@@ -146,7 +146,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 number: String(ticket.ticket_number || 'N/A'),
                 quality: numQuality,
                 cliente: ticket.client?.name || 'Cliente Desconhecido',
-                clientEmail: ticket.contact?.email || ticket.requester?.email || ticket.contact_email || ticket.client?.email || '',
+                clientEmail: ticket.contact?.email || ticket.contact?.main_email || ticket.requester?.email || ticket.requester?.main_email || ticket.contact_email || ticket.client?.email || '',
                 desc: ticket.title || 'Descrição Ausente',
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',

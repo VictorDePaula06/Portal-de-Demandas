@@ -33,8 +33,13 @@ db.collection('implantacoes').onSnapshot((snapshot) => {
     if (typeof renderImplantacoesBoard === 'function') renderImplantacoesBoard();
 });
 
+let isSyncing = false;
+let isProcessingEmails = false;
+
 // Function to fetch demands from the new backend API
 async function fetchDemandasDaAPI() {
+    if (isSyncing) return;
+    isSyncing = true;
     const syncButton = document.getElementById('btnSyncTiFlux');
     const syncIcon = syncButton?.querySelector('.icon-sync');
     const lastSyncLabel = document.getElementById('lastSyncTime');
@@ -105,8 +110,7 @@ async function fetchDemandasDaAPI() {
                         apiTask.closedAt !== localTask.closedAt ||
                         apiTask.createdAt !== localTask.createdAt ||
                         apiTask.date !== localTask.date ||
-                        apiTask.clientEmail !== localTask.clientEmail ||
-                        apiTask.raw !== localTask.raw;
+                        apiTask.clientEmail !== localTask.clientEmail;
 
                     if (hasDifferences) {
                         updatedTasksCount++;
@@ -148,14 +152,22 @@ async function fetchDemandasDaAPI() {
         if (syncIcon) syncIcon.classList.remove('rotating');
         if (syncButton) syncButton.disabled = false;
 
+        isSyncing = false;
+
         // Automação: Verificar e Enviar E-mails para Vencidas
         checkAndSendOverdueEmails();
     }
 }
 
 async function checkAndSendOverdueEmails() {
+    if (isProcessingEmails) return;
+    isProcessingEmails = true;
+
     // Só processa se houver tarefas carregadas
-    if (tasks.length === 0) return;
+    if (tasks.length === 0) {
+        isProcessingEmails = false;
+        return;
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -214,6 +226,8 @@ async function checkAndSendOverdueEmails() {
         }
     } catch (error) {
         console.error('Erro ao disparar automação de e-mails:', error);
+    } finally {
+        isProcessingEmails = false;
     }
 }
 
