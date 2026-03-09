@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
+import admin from 'firebase-admin';
 
 dotenv.config();
 
@@ -14,6 +16,29 @@ app.use(express.json());
 // API Key TiFlux (Configurar no arquivo .env)
 const TIFLUX_API_URL = process.env.TIFLUX_API_URL || 'https://api.tiflux.com/api/v2';
 const TIFLUX_API_TOKEN = process.env.TIFLUX_API_TOKEN || 'SEU_TOKEN_AQUI';
+
+// Inicializar Firebase Admin
+// O ideal é usar uma Service Account Key. Buscamos no .env ou arquivo local.
+const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (e) {
+        console.error("Erro ao inicializar Firebase Admin:", e.message);
+    }
+} else {
+    // Fallback: Tentativa de inicialização sem parâmetros (funciona em environments do Google)
+    try {
+        admin.initializeApp();
+    } catch (e) {
+        console.warn("Firebase Admin não inicializado: Defina FIREBASE_SERVICE_ACCOUNT no .env");
+    }
+}
+
+const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 /**
  * Rota para buscar os chamados no TiFlux (QP e Analise)
@@ -130,6 +155,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 number: String(ticket.ticket_number || 'N/A'),
                 quality: numQuality,
                 cliente: ticket.client?.name || 'Cliente Desconhecido',
+                clientEmail: ticket.client?.email || ticket.contact?.email || '',
                 desc: ticket.title || 'Descrição Ausente',
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
@@ -165,6 +191,85 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             console.error('Erro na requisição ao TiFlux:', error.message);
         }
         res.status(500).json({ error: 'Falha ao buscar demandas', details: error.message });
+    }
+});
+
+/**
+ * Rota para enviar e-mails de chamados vencidos
+ */
+app.post('/api/send-overdue-emails', async (req, res) => {
+    if (!db) {
+        return res.status(500).json({ error: 'Firebase Admin não configurado.' });
+    }
+
+    try {
+        const settingsSnap = await db.collection('settings').doc('email').get();
+        if (!settingsSnap.exists) {
+            return res.status(404).json({ error: 'Configurações de e-mail não encontradas no Firestore.' });
+        }
+        const emailSettings = settingsSnap.data();
+
+        if (!emailSettings.smtpHost || !emailSettings.smtpUser || !emailSettings.smtpPass) {
+            return res.status(400).json({ error: 'Configurações de SMTP incompletas.' });
+        }
+
+        const transporter = nodemailer.createTransport({
+            host: emailSettings.smtpHost,
+            port: parseInt(emailSettings.smtpPort) || 587,
+            secure: emailSettings.smtpSecure || false,
+            auth: {
+                user: emailSettings.smtpUser,
+                pass: emailSettings.smtpPass
+            }
+        });
+
+        const overdueTasks = req.body.tasks || [];
+        const results = [];
+
+        for (const task of overdueTasks) {
+            // Verificar se o chamado já foi notificado recentemente para evitar spam
+            if (task.notified) continue;
+            if (!task.clientEmail) {
+                results.push({ id: task.id, status: 'skipped', reason: 'Email do cliente ausente' });
+                continue;
+            }
+
+            const subject = emailSettings.subjectTemplate
+                .replace('{cliente}', task.cliente)
+                .replace('{numero}', task.number);
+
+            const html = emailSettings.bodyTemplate
+                .replace(/\n/g, '<br>')
+                .replace('{cliente}', task.cliente)
+                .replace('{numero}', task.number)
+                .replace('{descricao}', task.desc)
+                .replace('{vencimento}', task.date);
+
+            try {
+                await transporter.sendMail({
+                    from: `"${emailSettings.senderName}" <${emailSettings.senderEmail}>`,
+                    to: task.clientEmail,
+                    subject: subject,
+                    html: html
+                });
+
+                // Marcar como notificado no Firestore para evitar envios duplicados
+                await db.collection('tasks').doc(task.id).update({
+                    notified: true,
+                    lastNotifiedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+
+                results.push({ id: task.id, status: 'sent' });
+            } catch (err) {
+                console.error(`Erro ao enviar e-mail para ${task.id}:`, err.message);
+                results.push({ id: task.id, status: 'error', error: err.message });
+            }
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('Erro ao processar envios de e-mail:', error);
+        res.status(500).json({ error: 'Falha ao processar envios', details: error.message });
     }
 });
 

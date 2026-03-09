@@ -640,6 +640,94 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Configurações de E-mail (NOVO) -->
+                <div class="glass-card" style="margin-top: 2.5rem; max-width: 1000px;">
+                    <div
+                        style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <rect width="20" height="16" x="2" y="4" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                        <h3 style="margin: 0; font-size: 1.25rem;">Configurações de E-mail (Automação)</h3>
+                    </div>
+
+                    <form id="emailSettingsForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <h4
+                                style="font-size: 0.9rem; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                Servidor SMTP</h4>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">HOST SMTP</label>
+                                    <input type="text" id="smtpHost" placeholder="smtp.gmail.com" required>
+                                </div>
+                                <div class="form-group" style="flex: 0 0 100px;">
+                                    <label style="font-size: 0.75rem;">PORTA</label>
+                                    <input type="number" id="smtpPort" placeholder="587" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">USUÁRIO (E-MAIL)</label>
+                                <input type="email" id="smtpUser" placeholder="empresa@exemplo.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">SENHA / APP PASSWORD</label>
+                                <input type="password" id="smtpPass" placeholder="******" required>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label class="switch" style="width: 40px; height: 20px;">
+                                    <input type="checkbox" id="smtpSecure">
+                                    <span class="slider" style="border-radius: 20px;"></span>
+                                </label>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">Usar Conexão Segura
+                                    (SSL/TLS)</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <h4
+                                style="font-size: 0.9rem; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                Template do E-mail</h4>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">NOME REMETENTE</label>
+                                    <input type="text" id="senderName" placeholder="Globaltera Suporte" required>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">E-MAIL REMETENTE</label>
+                                    <input type="email" id="senderEmail" placeholder="nao-responder@globaltera.com"
+                                        required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">ASSUNTO</label>
+                                <input type="text" id="emailSubject" placeholder="Chamado #{numero} ainda em análise"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">CORPO DO E-MAIL (Placeholders: {cliente}, {numero},
+                                    {descricao}, {vencimento})</label>
+                                <textarea id="emailBody" rows="5" style="font-size: 0.85rem;"
+                                    placeholder="Olá {cliente}, informamos que o chamado #{numero} referente a {descricao} ainda encontra-se em análise..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary"
+                                style="margin-top: 0.5rem; padding: 0.85rem; font-weight: 700;">
+                                Salvar Configurações de E-mail
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
     </div>
     </main>

@@ -139,6 +139,48 @@ async function fetchDemandasDaAPI() {
         // Visual Feedback: Stop Rotation & Enable Button
         if (syncIcon) syncIcon.classList.remove('rotating');
         if (syncButton) syncButton.disabled = false;
+
+        // Automação: Verificar e Enviar E-mails para Vencidas
+        checkAndSendOverdueEmails();
+    }
+}
+
+async function checkAndSendOverdueEmails() {
+    // Só processa se houver tarefas carregadas
+    if (tasks.length === 0) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Filtrar tarefas abertas que estão vencidas (date < today) e ainda não foram notificadas
+    const overdueToNotify = tasks.filter(t => {
+        if (!t.date || t.status.includes('Concluida')) return false;
+        if (t.notified) return false;
+
+        const slaDate = new Date(t.date);
+        return slaDate < today;
+    });
+
+    if (overdueToNotify.length === 0) return;
+
+    console.log(`Detectados ${overdueToNotify.length} chamados vencidos para notificação por e-mail.`);
+
+    try {
+        const response = await fetch('/api/send-overdue-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tasks: overdueToNotify })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            const sentCount = result.results.filter(r => r.status === 'sent').length;
+            if (sentCount > 0) {
+                showToast(`${sentCount} e-mails de alerta enviados aos clientes!`);
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao disparar automação de e-mails:', error);
     }
 }
 
@@ -249,6 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch Custom Users Admin List
     fetchCustomUsers();
+
+    // Load Email Settings
+    loadEmailSettings();
 
     // Limpeza de Bugs que podem ter ficado salvos no banco durante o desenvolvimento
     db.collection('tasks').get().then(snap => {
@@ -471,6 +516,53 @@ if (userAdminForm) {
 
         const formTitle = userAdminForm.previousElementSibling;
         if (formTitle) formTitle.textContent = 'Cadastrar Novo Usuário';
+    }
+}
+
+// Lógica de Configurações de E-mail (NOVO)
+const emailSettingsForm = document.getElementById('emailSettingsForm');
+if (emailSettingsForm) {
+    emailSettingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const settings = {
+            smtpHost: document.getElementById('smtpHost').value.trim(),
+            smtpPort: document.getElementById('smtpPort').value.trim(),
+            smtpUser: document.getElementById('smtpUser').value.trim(),
+            smtpPass: document.getElementById('smtpPass').value.trim(),
+            smtpSecure: document.getElementById('smtpSecure').checked,
+            senderName: document.getElementById('senderName').value.trim(),
+            senderEmail: document.getElementById('senderEmail').value.trim(),
+            subjectTemplate: document.getElementById('emailSubject').value.trim(),
+            bodyTemplate: document.getElementById('emailBody').value.trim()
+        };
+
+        try {
+            await db.collection('settings').doc('email').set(settings);
+            showToast('Configurações de e-mail salvas!');
+        } catch (error) {
+            console.error('Erro ao salvar config de e-mail:', error);
+            showToast('Erro ao salvar configurações.', 'critical');
+        }
+    });
+}
+
+async function loadEmailSettings() {
+    try {
+        const doc = await db.collection('settings').doc('email').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (document.getElementById('smtpHost')) document.getElementById('smtpHost').value = data.smtpHost || '';
+            if (document.getElementById('smtpPort')) document.getElementById('smtpPort').value = data.smtpPort || '';
+            if (document.getElementById('smtpUser')) document.getElementById('smtpUser').value = data.smtpUser || '';
+            if (document.getElementById('smtpPass')) document.getElementById('smtpPass').value = data.smtpPass || '';
+            if (document.getElementById('smtpSecure')) document.getElementById('smtpSecure').checked = data.smtpSecure || false;
+            if (document.getElementById('senderName')) document.getElementById('senderName').value = data.senderName || '';
+            if (document.getElementById('senderEmail')) document.getElementById('senderEmail').value = data.senderEmail || '';
+            if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = data.subjectTemplate || '';
+            if (document.getElementById('emailBody')) document.getElementById('emailBody').value = data.bodyTemplate || '';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar config de e-mail:', error);
     }
 }
 
