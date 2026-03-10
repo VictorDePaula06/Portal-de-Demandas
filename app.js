@@ -901,6 +901,98 @@ if (networkForm) {
         const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
         if (submitBtn) submitBtn.textContent = 'Salvar Rede';
     }
+
+    // TiFlux Client Integration (NOVO)
+    let tifluxClients = [];
+
+    async function fetchTifluxClients() {
+        try {
+            const response = await fetch('/api/tiflux/clients');
+            tifluxClients = await response.json();
+        } catch (err) {
+            console.error('Erro ao buscar clientes TiFlux:', err);
+            showToast('Erro ao buscar dados do TiFlux.', 'critical');
+        }
+    }
+
+    const tifluxClientSearch = document.getElementById('tifluxClientSearch');
+    const tifluxSearchResults = document.getElementById('tifluxSearchResults');
+    const btnSearchTiflux = document.getElementById('btnSearchTiflux');
+
+    if (btnSearchTiflux) {
+        btnSearchTiflux.addEventListener('click', async () => {
+            if (tifluxClients.length === 0) {
+                const originalContent = btnSearchTiflux.innerHTML;
+                btnSearchTiflux.disabled = true;
+                btnSearchTiflux.innerHTML = '<svg class="rotating" style="display:inline-block" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>';
+                await fetchTifluxClients();
+                btnSearchTiflux.disabled = false;
+                btnSearchTiflux.innerHTML = originalContent;
+            }
+            renderTifluxSearchResults(tifluxClientSearch.value);
+        });
+    }
+
+    if (tifluxClientSearch) {
+        tifluxClientSearch.addEventListener('input', (e) => {
+            renderTifluxSearchResults(e.target.value);
+        });
+    }
+
+    function renderTifluxSearchResults(query) {
+        if (!tifluxSearchResults) return;
+        if (!query || query.length < 2) {
+            tifluxSearchResults.style.display = 'none';
+            return;
+        }
+
+        const filtered = tifluxClients.filter(c => 
+            (c.name && c.name.toLowerCase().includes(query.toLowerCase())) || 
+            (c.trade_name && c.trade_name.toLowerCase().includes(query.toLowerCase()))
+        );
+
+        if (filtered.length === 0) {
+            tifluxSearchResults.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.8rem; text-align: center;">Nenhum cliente encontrado no TiFlux.</div>';
+            tifluxSearchResults.style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(c => {
+            html += `
+                <div class="tiflux-client-item" onclick="addClientToNetwork('${c.name.replace(/'/g, "\\'")}')" style="padding: 8px 12px; cursor: pointer; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem; transition: background 0.2s; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                    <span>${c.name}</span>
+                </div>
+            `;
+        });
+        tifluxSearchResults.innerHTML = html;
+        tifluxSearchResults.style.display = 'block';
+
+        if (!document.getElementById('tiflux-client-styles')) {
+            const style = document.createElement('style');
+            style.id = 'tiflux-client-styles';
+            style.textContent = `.tiflux-client-item:hover { background: rgba(139, 92, 246, 0.2); }`;
+            document.head.appendChild(style);
+        }
+    }
+
+    window.addClientToNetwork = function(name) {
+        const textarea = document.getElementById('networkClients');
+        const currentVal = textarea.value.trim();
+        const clients = currentVal ? currentVal.split('\n').map(c => c.trim()) : [];
+        
+        if (!clients.includes(name)) {
+            clients.push(name);
+            textarea.value = clients.join('\n');
+            showToast(`Cliente "${name}" adicionado!`);
+        } else {
+            showToast(`"${name}" já está na lista.`, 'warning');
+        }
+        
+        if (tifluxSearchResults) tifluxSearchResults.style.display = 'none';
+        if (tifluxClientSearch) tifluxClientSearch.value = '';
+    }
 }
 
 function renderUserAdminList() {

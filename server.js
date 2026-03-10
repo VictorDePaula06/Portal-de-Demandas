@@ -210,6 +210,29 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
 });
 
 /**
+ * Rota para buscar clientes do TiFlux
+ */
+app.get('/api/tiflux/clients', async (req, res) => {
+    try {
+        const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
+        // Buscamos os primeiros 200 clientes (ajustar paginação se necessário futuramente)
+        const response = await axios.get(`${TIFLUX_API_URL}/clients?limit=200&active=true`, { headers });
+        
+        const clients = response.data?.data || response.data || [];
+        const formattedClients = clients.map(c => ({
+            id: c.id,
+            name: c.name,
+            trade_name: c.trade_name
+        })).sort((a, b) => a.name.localeCompare(b.name));
+
+        res.json(formattedClients);
+    } catch (error) {
+        console.error('Erro ao buscar clientes no TiFlux:', error.message);
+        res.status(500).json({ error: 'Falha ao buscar clientes', details: error.message });
+    }
+});
+
+/**
  * Rota para enviar e-mails de chamados vencidos
  */
 app.post('/api/send-overdue-emails', async (req, res) => {
