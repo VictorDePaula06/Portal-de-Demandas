@@ -1084,7 +1084,11 @@
                     </div>
                     <div class="form-group">
                         <label for="impContrato">Contrato</label>
-                        <input type="text" id="impContrato" placeholder="Ex: WEBPOSTO (POSTO)">
+                        <select id="impContrato">
+                            <option value="WebPosto">WebPosto</option>
+                            <option value="T.I">T.I</option>
+                            <option value="Automação">Automação</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
@@ -1100,6 +1104,11 @@
                 <div class="form-group">
                     <label for="impQualidade">Qualidade Implantação</label>
                     <input type="text" id="impQualidade" placeholder="Feedback / Score">
+                </div>
+                <div class="form-group">
+                    <label for="impObs">Observações</label>
+                    <textarea id="impObs" placeholder="Observações gerais da implantação..." rows="3"
+                        style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-primary); outline: none; transition: all 0.2s ease; resize: vertical;"></textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="btnCancelImplantationModal">Cancelar</button>

@@ -1134,10 +1134,11 @@ function openImplantationModal(id = null) {
             document.getElementById('impCnpj').value = imp.cnpj || '';
             document.getElementById('impPrevisao').value = imp.previsao || '';
             document.getElementById('impTipo').value = imp.tipo || 'Presencial';
-            document.getElementById('impContrato').value = imp.contrato || '';
+            document.getElementById('impContrato').value = imp.contrato || 'WebPosto';
             document.getElementById('impImplantador').value = imp.implantador || '';
             document.getElementById('impStatus').value = imp.status || '';
             document.getElementById('impQualidade').value = imp.qualidade || '';
+            document.getElementById('impObs').value = imp.obs || '';
 
             implantationModal.querySelector('h2').textContent = 'Editar Implantação';
         }
@@ -1170,10 +1171,11 @@ if (implantationForm) {
             cnpj: document.getElementById('impCnpj').value.trim(),
             previsao: document.getElementById('impPrevisao').value,
             tipo: document.getElementById('impTipo').value,
-            contrato: document.getElementById('impContrato').value.trim(),
+            contrato: document.getElementById('impContrato').value,
             implantador: document.getElementById('impImplantador').value.trim(),
             status: document.getElementById('impStatus').value.trim(),
-            qualidade: document.getElementById('impQualidade').value.trim()
+            qualidade: document.getElementById('impQualidade').value.trim(),
+            obs: document.getElementById('impObs').value.trim()
         };
 
         db.collection('implantacoes').doc(id).set(data, { merge: true }).then(() => {
@@ -1653,7 +1655,8 @@ if (btnGenerateImplantacoesPDF) {
                 sanitizeForPDF(imp.contrato || '-'),
                 sanitizeForPDF(imp.implantador || '-'),
                 sanitizeForPDF(imp.status || 'Pendente'),
-                sanitizeForPDF(imp.qualidade || '-')
+                sanitizeForPDF(imp.qualidade || '-'),
+                sanitizeForPDF(imp.obs || '-')
             ]);
         });
 
@@ -1674,7 +1677,7 @@ if (btnGenerateImplantacoesPDF) {
         doc.text(`Mês de Referência: ${m}/${y} | Filtro: ${statusFilter === 'all' ? 'Todas' : (statusFilter === 'pendente' ? 'Pendentes' : 'Concluídas')}`, 14, 23);
 
         doc.autoTable({
-            head: [["Rede", "Unidade", "CNPJ", "Previsão", "Tipo", "Contrato", "Implantador", "Status", "Quality"]],
+            head: [["Rede", "Unidade", "CNPJ", "Previsão", "Tipo", "Contrato", "Implantador", "Status", "Quality", "Obs"]],
             body: reportRows,
             startY: 30,
             theme: 'striped',
