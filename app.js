@@ -48,7 +48,8 @@ function updateReportCustomerList() {
 
         if (btnSelectAll) {
             btnSelectAll.onclick = () => {
-                const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+                const filteredByNetwork = getFilteredItems(tasks);
+                const allClients = [...new Set(filteredByNetwork.map(t => t.cliente || 'Sem Cliente'))].sort();
                 const areAllSelected = allClients.every(c => reportSelectedClients.has(c));
                 
                 if (areAllSelected) {
@@ -65,7 +66,8 @@ function updateReportCustomerList() {
 
     // 2. Função de Renderização
     window.renderReportClients = function(filter = '') {
-        const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+        const filteredByNetwork = getFilteredItems(tasks);
+        const allClients = [...new Set(filteredByNetwork.map(t => t.cliente || 'Sem Cliente'))].sort();
         console.log(`Dropdown Relatórios: Renderizando ${allClients.length} clientes. Filtro: "${filter}"`);
         const listContainer = document.getElementById('reportCustomerList');
         if (!listContainer) return;
@@ -579,6 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch Custom Users Admin List
     fetchCustomUsers();
 
+    // Fetch Networks
+    fetchNetworks();
+
     // Load Email Settings
     loadEmailSettings();
 
@@ -769,14 +774,133 @@ document.addEventListener('DOMContentLoaded', () => {
 // Auth Logic
 // Variaveis e Funções para Custom Admin Users (Configurações)
 let customUsers = [];
+let networks = [];
 
 function fetchCustomUsers() {
     db.collection('customUsers').onSnapshot((snapshot) => {
         customUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         if (document.getElementById('configBoard').style.display === 'block') {
             renderUserAdminList();
+            if (typeof renderNetworkSelect === 'function') renderNetworkSelect();
         }
     });
+}
+
+function fetchNetworks() {
+    db.collection('networks').onSnapshot((snapshot) => {
+        networks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (document.getElementById('configBoard').style.display === 'block') {
+            renderNetworkList();
+            renderNetworkSelect();
+        }
+    });
+}
+
+function renderNetworkSelect() {
+    const select = document.getElementById('adminUserNetwork');
+    if (!select) return;
+
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Nenhuma (Acesso Geral)</option>';
+    
+    networks.forEach(n => {
+        const option = document.createElement('option');
+        option.value = n.id;
+        option.textContent = n.name;
+        select.appendChild(option);
+    });
+
+    select.value = currentValue;
+}
+
+function renderNetworkList() {
+    const listContainer = document.getElementById('networkList');
+    if (!listContainer) return;
+
+    if (networks.length === 0) {
+        listContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Nenhuma rede cadastrada.</p>';
+        return;
+    }
+
+    let html = '';
+    networks.forEach(n => {
+        html += `
+            <div class="user-card" style="margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="user-avatar" style="background: var(--accent-primary); color: white;">${n.name.slice(0, 2).toUpperCase()}</div>
+                    <div style="flex: 1;">
+                        <div style="color: var(--text-primary); font-weight: 600;">${n.name}</div>
+                        <div style="color: var(--text-muted); font-size: 0.75rem;">${n.clients ? n.clients.length : 0} postos associados</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                    <button class="action-btn edit" onclick="openEditNetworkModal('${n.id}')" title="Editar Rede">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    </button>
+                    <button class="action-btn delete" onclick="deleteNetwork('${n.id}')" title="Excluir Rede">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    listContainer.innerHTML = html;
+}
+
+window.openEditNetworkModal = function(id) {
+    const network = networks.find(n => n.id === id);
+    if (network) {
+        document.getElementById('networkId').value = network.id;
+        document.getElementById('networkName').value = network.name;
+        document.getElementById('networkClients').value = (network.clients || []).join('\n');
+        
+        const netForm = document.getElementById('networkForm');
+        const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
+        if (submitBtn) submitBtn.textContent = 'Atualizar Rede';
+    }
+}
+
+window.deleteNetwork = function(id) {
+    if (confirm("Deseja realmente excluir esta rede? Usuários associados a ela perderão o filtro de acesso.")) {
+        db.collection('networks').doc(id).delete().then(() => {
+            showToast('Rede removida com sucesso!', 'critical');
+        });
+    }
+}
+
+const networkForm = document.getElementById('networkForm');
+if (networkForm) {
+    networkForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('networkId').value;
+        const name = document.getElementById('networkName').value.trim();
+        const clientsText = document.getElementById('networkClients').value.trim();
+        
+        if (!name || !clientsText) return;
+
+        const clients = clientsText.split('\n').map(c => c.trim()).filter(c => c !== '');
+        const networkData = { name: name, clients: clients };
+
+        if (id) {
+            db.collection('networks').doc(id).update(networkData).then(() => {
+                showToast('Rede atualizada!');
+                resetNetworkForm();
+            });
+        } else {
+            db.collection('networks').add(networkData).then(() => {
+                showToast('Rede cadastrada!');
+                resetNetworkForm();
+            });
+        }
+    });
+
+    function resetNetworkForm() {
+        const netForm = document.getElementById('networkForm');
+        if (netForm) netForm.reset();
+        document.getElementById('networkId').value = '';
+        const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
+        if (submitBtn) submitBtn.textContent = 'Salvar Rede';
+    }
 }
 
 function renderUserAdminList() {
@@ -827,6 +951,7 @@ window.openEditUserModal = function (id) {
         document.getElementById('adminUserEmail').value = user.email;
         document.getElementById('adminUserPass').value = user.pass;
         document.getElementById('adminUserIsAdmin').checked = user.isAdmin || false;
+        document.getElementById('adminUserNetwork').value = user.userNetwork || '';
 
         // Change button text or title to indicate editing
         const submitBtn = userAdminForm.querySelector('button[type="submit"]');
@@ -846,6 +971,7 @@ if (userAdminForm) {
         const email = document.getElementById('adminUserEmail').value.trim().toLowerCase();
         const pass = document.getElementById('adminUserPass').value.trim();
         const isAdmin = document.getElementById('adminUserIsAdmin').checked;
+        const userNetwork = document.getElementById('adminUserNetwork').value;
 
         if (!name || !email || !pass) return;
 
@@ -853,7 +979,8 @@ if (userAdminForm) {
             name: name,
             email: email,
             pass: pass,
-            isAdmin: isAdmin
+            isAdmin: isAdmin,
+            userNetwork: userNetwork
         };
 
         if (id) {
@@ -1053,6 +1180,7 @@ loginForm.addEventListener('submit', (e) => {
         if (validUser) {
             localStorage.setItem(USER_STORAGE_KEY, validUser.name);
             localStorage.setItem('portalCS_isAdmin', validUser.isAdmin ? 'true' : 'false');
+            localStorage.setItem('portalCS_network', validUser.userNetwork || '');
             loginEmailInput.value = '';
             loginPassInput.value = '';
             checkAuth();
@@ -1069,6 +1197,31 @@ btnLogout.addEventListener('click', () => {
     checkAuth();
     showToast('Sessão encerrada.');
 });
+
+// Helper para Filtragem por Rede (NOVO)
+function getFilteredItems(items, type = 'demanda') {
+    const isAdmin = localStorage.getItem('portalCS_isAdmin') === 'true';
+    const userNetworkId = localStorage.getItem('portalCS_network');
+    const userRole = localStorage.getItem(USER_STORAGE_KEY);
+
+    // Victor e outros admins masters ignore tudo
+    const isMaster = ADMIN_USERS.some(adm => userRole && userRole.toLowerCase().includes(adm.toLowerCase()));
+
+    if (isAdmin || isMaster || !userNetworkId) {
+        return items;
+    }
+
+    const network = networks.find(n => n.id === userNetworkId);
+    if (!network || !network.clients || network.clients.length === 0) {
+        return items; // Ou retornar [] se preferir que usuários sem rede não vejam nada
+    }
+
+    const networkClients = network.clients.map(c => c.toLowerCase());
+    return items.filter(item => {
+        const clientName = (type === 'cs' ? item.name : (type === 'implantacao' ? item.unidade || item.rede : item.cliente)) || '';
+        return networkClients.some(nc => clientName.toLowerCase().includes(nc));
+    });
+}
 
 // Modal Actions
 function openModal() {
@@ -1447,7 +1600,7 @@ if (btnGeneratePDF) {
         }
 
         // Filtra as tarefas baseadas nos critérios da tela de relatórios
-        let reportData = tasks.filter(t => {
+        let reportData = getFilteredItems(tasks).filter(t => {
             // 0. Filtro de Cliente (Novo)
             const selectedCheckboxes = document.querySelectorAll('.report-client-checkbox:checked');
             if (selectedCheckboxes.length > 0) {
@@ -1569,7 +1722,7 @@ if (btnGeneratePreventivasPDF) {
         const preventivasByClient = {};
 
         // Coletar dados de preventivas (similar à lógica da aba de preventivas)
-        tasks.forEach(task => {
+        getFilteredItems(tasks).forEach(task => {
             if (task.status.includes('Preventiva')) {
                 const clientName = task.cliente || 'Sem Cliente';
                 if (!preventivasByClient[clientName]) {
@@ -1682,7 +1835,7 @@ if (btnGenerateCSPDF) {
             return String(str).replace(/[^\x00-\xFF]/g, '');
         };
 
-        csClients.forEach(client => {
+        getFilteredItems(csClients, 'cs').forEach(client => {
             const risk = client.risk || 'Baixo';
 
             // Filtro
@@ -1759,7 +1912,7 @@ if (btnGenerateImplantacoesPDF) {
         };
 
         // Filtrar implantações
-        implantacoes.forEach(imp => {
+        getFilteredItems(implantacoes, 'implantacao').forEach(imp => {
             // Filtro de Mês (previsao: "YYYY-MM-DD")
             if (imp.previsao && !imp.previsao.startsWith(monthFilter)) return;
 
@@ -2043,7 +2196,7 @@ function renderBoard() {
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     const slaFilterValue = slaFilter ? slaFilter.value : 'all';
 
-    let filteredTasks = tasks.filter(task => {
+    let filteredTasks = getFilteredItems(tasks).filter(task => {
         // Texto Filter
         const matchesSearch = !searchTerm ||
             (task.number && task.number.toLowerCase().includes(searchTerm)) ||
@@ -2346,7 +2499,7 @@ function renderCSBoard() {
         return dateStr;
     };
 
-    csClients.forEach(client => {
+    getFilteredItems(csClients, 'cs').forEach(client => {
         const tr = document.createElement('tr');
         tr.className = 'cs-table-row';
         tr.style.borderBottom = '1px solid var(--border-color)';
@@ -2421,7 +2574,7 @@ function renderMaintenanceBoard() {
     const searchVal = document.getElementById('maintenanceSearch')?.value.toLowerCase() || '';
     const filterVal = document.getElementById('maintenanceFilter')?.value || 'all';
 
-    tasks.forEach(task => {
+    getFilteredItems(tasks).forEach(task => {
         if (task.status.includes('Preventiva')) {
             const clientName = task.cliente || 'Sem Cliente';
             if (!preventivasByClient[clientName]) {
