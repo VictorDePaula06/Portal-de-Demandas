@@ -66,6 +66,7 @@ function updateReportCustomerList() {
     // 2. Função de Renderização
     window.renderReportClients = function(filter = '') {
         const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+        console.log(`Dropdown Relatórios: Renderizando ${allClients.length} clientes. Filtro: "${filter}"`);
         const listContainer = document.getElementById('reportCustomerList');
         if (!listContainer) return;
 

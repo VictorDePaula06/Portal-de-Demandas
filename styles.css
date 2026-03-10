@@ -1459,14 +1459,13 @@ input:checked+.slider:before {
     background: #1e293b;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    z-index: 1000; /* Increased z-index */
-    padding: 1rem;
+    z-index: 10000; /* Extra high z-index */
+    padding: 0.75rem;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
     display: none;
     flex-direction: column;
-    gap: 0.75rem;
-    max-height: 400px; /* Limit total dropdown height */
-    overflow: visible;
+    gap: 0.5rem;
+    max-height: 450px;
 }
 
 .client-dropdown.active .client-dropdown-content {
@@ -1474,47 +1473,67 @@ input:checked+.slider:before {
 }
 
 .client-checkbox-list {
-    min-height: 100px;
-    max-height: 200px; /* Clearer scrollable area */
+    min-height: 50px;
+    max-height: 250px;
     overflow-y: auto !important;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 5px;
+    overflow-x: hidden;
+    display: block; /* Block is safer for overflow */
     background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 5px;
 }
 
 .client-checkbox-item {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.4rem 0.6rem;
+    padding: 0.50rem 0.6rem; /* Slightly larger padding */
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s ease;
     user-select: none;
+    margin-bottom: 2px;
 }
 
 .client-checkbox-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .client-checkbox-item input[type="checkbox"] {
-    width: 15px !important;
-    height: 15px !important;
+    width: 16px !important;
+    height: 16px !important;
     cursor: pointer;
     accent-color: var(--accent-primary);
     margin: 0 !important;
+    flex-shrink: 0;
 }
 
 .client-checkbox-item span {
-    font-size: 0.8rem;
-    color: var(--text-primary);
+    font-size: 0.85rem;
+    color: #e2e8f0; /* Explicit light color */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+/* Scrollbar styling for better visibility */
+.client-checkbox-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.client-checkbox-list::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+
+.client-checkbox-list::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 10px;
+}
+
+.client-checkbox-list::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
 }
 
 .client-checkbox-list::-webkit-scrollbar {
