@@ -779,20 +779,16 @@ let networks = [];
 function fetchCustomUsers() {
     db.collection('customUsers').onSnapshot((snapshot) => {
         customUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (document.getElementById('configBoard').style.display === 'block') {
-            renderUserAdminList();
-            if (typeof renderNetworkSelect === 'function') renderNetworkSelect();
-        }
+        renderUserAdminList();
+        renderNetworkSelect();
     });
 }
 
 function fetchNetworks() {
     db.collection('networks').onSnapshot((snapshot) => {
         networks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (document.getElementById('configBoard').style.display === 'block') {
-            renderNetworkList();
-            renderNetworkSelect();
-        }
+        renderNetworkList();
+        renderNetworkSelect();
     });
 }
 
