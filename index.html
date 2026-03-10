@@ -652,8 +652,7 @@
                     críticas, como excluir demandas ou concluir tarefas.
                 </p>
 
-                <div
-                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; max-width: 1000px; align-items: start;">
+                <div class="settings-grid">
                     <!-- Formulário de Cadastro -->
                     <div class="glass-card">
                         <div
@@ -792,7 +791,8 @@
                 </div>
 
                 <!-- Gestão de Redes (NOVO) -->
-                <div style="margin-top: 2.5rem; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+                <div class="settings-grid">
+                    <div class="glass-card">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
@@ -940,6 +940,7 @@
                                     <textarea id="emailBody" rows="5" style="font-size: 0.85rem;"
                                         placeholder="Olá {cliente}, informamos que o chamado #{numero} referente a {descricao} ainda encontra-se em análise..."></textarea>
                                 </div>
+                            </div>
                         </fieldset>
 
                         <button type="submit" id="btnSaveEmailSettings" class="btn btn-primary"
@@ -949,7 +950,6 @@
                     </form>
                 </div>
             </div>
-    </div>
     </main>
     </div>
 
