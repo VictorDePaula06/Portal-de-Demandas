@@ -20,10 +20,34 @@ let implantacoes = [];
 function updateReportCustomerList() {
     const listContainer = document.getElementById('reportCustomerList');
     const searchInput = document.getElementById('reportCustomerSearch');
+    const header = document.getElementById('reportCustomerHeader');
+    const dropdown = document.getElementById('reportCustomerDropdown');
+    const selectedText = document.getElementById('selectedClientsText');
     if (!listContainer) return;
+
+    // Toggle Dropdown
+    if (header && dropdown) {
+        header.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        };
+        // Fechar ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) dropdown.classList.remove('active');
+        });
+    }
 
     // Extrair lista única de clientes
     const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+
+    const updateSelectedCount = () => {
+        const checked = listContainer.querySelectorAll('.report-client-checkbox:checked');
+        if (selectedText) {
+            if (checked.length === 0) selectedText.textContent = 'Selecionar Clientes...';
+            else if (checked.length === 1) selectedText.textContent = checked[0].value;
+            else selectedText.textContent = `${checked.length} Clientes Selecionados`;
+        }
+    };
 
     const renderList = (filter = '') => {
         listContainer.innerHTML = '';
@@ -43,8 +67,11 @@ function updateReportCustomerList() {
                 <input type="checkbox" value="${client}" class="report-client-checkbox">
                 <span title="${client}">${client}</span>
             `;
+            const checkbox = label.querySelector('input');
+            checkbox.onchange = updateSelectedCount;
             listContainer.appendChild(label);
         });
+        updateSelectedCount();
     };
 
     // Filtro de busca
@@ -60,6 +87,7 @@ function updateReportCustomerList() {
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
             checkboxes.forEach(cb => cb.checked = !allChecked);
             btnSelectAll.textContent = allChecked ? 'Selecionar Todos' : 'Desmarcar Todos';
+            updateSelectedCount();
         };
     }
 
