@@ -793,7 +793,6 @@
 
                 <!-- Gestão de Redes (NOVO) -->
                 <div style="margin-top: 2.5rem; max-width: 1000px; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
-                    <div class="glass-card">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
@@ -806,20 +805,19 @@
                                 <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">NOME DA REDE</label>
                                 <input type="text" id="networkName" required placeholder="Ex: GULF" style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
                             </div>
-                            <div class="form-group">
-                                <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">BUSCAR CLIENTES TIFLUX (Opcional)</label>
-                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                    <input type="text" id="tifluxClientSearch" placeholder="Pesquisar por nome..." style="flex: 1; padding: 0.7rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.1); color: var(--text-primary); font-size: 0.8rem;">
-                                    <button type="button" id="btnSearchTiflux" class="action-btn" style="padding: 0.7rem 1rem; height: auto;" title="Buscar no TiFlux">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                    </button>
+                            <div class="form-group" style="margin-top: 0.5rem;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <label style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">POSTOS NESTA REDE (<span id="networkClientsCount">0</span>)</label>
                                 </div>
-                                <div id="tifluxSearchResults" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; display: none; padding: 4px;">
-                                    <!-- Resultados aqui -->
+                                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                    <input type="text" id="internalClientSearch" placeholder="🔍 Pesquisar nos postos já vinculados..." style="flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-size: 0.85rem;">
                                 </div>
-                                <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">CLIENTES / POSTOS DA REDE (Um por linha)</label>
-                                <textarea id="networkClients" rows="5" required placeholder="POSTO BLUE&#10;NOVA CASTELO&#10;ITAIPAVA" style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-size: 0.85rem;"></textarea>
-                                <small style="color: var(--text-muted); font-size: 0.7rem;">Dica: Use a busca acima ou escreva o nome exato do cliente.</small>
+                                <div id="networkClientsList" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 10px; border: 1px solid var(--border-color); padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+                                    <p style="color: var(--text-muted); text-align: center; padding: 2rem; font-size: 0.85rem;">Carregando postos...</p>
+                                </div>
+                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 10px; display: block; line-height: 1.4;">
+                                    ⚠️ Os nomes dos postos são sincronizados com o banco e não podem ser editados manualmente para garantir a integridade dos filtros.
+                                </small>
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; padding: 0.85rem; font-weight: 700;">Salvar Rede</button>
                         </form>

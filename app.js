@@ -848,11 +848,17 @@ window.openEditNetworkModal = function(id) {
     if (network) {
         document.getElementById('networkId').value = network.id;
         document.getElementById('networkName').value = network.name;
-        document.getElementById('networkClients').value = (network.clients || []).join('\n');
+        
+        // Inicializar estado local de clientes para edição
+        currentNetworkClients = [...(network.clients || [])];
+        renderCurrentNetworkClients();
         
         const netForm = document.getElementById('networkForm');
         const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
         if (submitBtn) submitBtn.textContent = 'Atualizar Rede';
+
+        // Garantir que a aba de config role para o topo do formulário
+        document.getElementById('configBoard').scrollTop = 0;
     }
 }
 
@@ -864,18 +870,23 @@ window.deleteNetwork = function(id) {
     }
 }
 
+// Estado global para o formulário de Redes
+let currentNetworkClients = [];
+let tifluxClients = [];
+
 const networkForm = document.getElementById('networkForm');
 if (networkForm) {
     networkForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('networkId').value;
         const name = document.getElementById('networkName').value.trim();
-        const clientsText = document.getElementById('networkClients').value.trim();
         
-        if (!name || !clientsText) return;
+        if (!name || currentNetworkClients.length === 0) {
+            showToast('Preencha o nome da rede e adicione ao menos um posto.', 'warning');
+            return;
+        }
 
-        const clients = clientsText.split('\n').map(c => c.trim()).filter(c => c !== '');
-        const networkData = { name: name, clients: clients };
+        const networkData = { name: name, clients: currentNetworkClients };
 
         if (id) {
             db.collection('networks').doc(id).update(networkData).then(() => {
@@ -894,20 +905,19 @@ if (networkForm) {
         const netForm = document.getElementById('networkForm');
         if (netForm) netForm.reset();
         document.getElementById('networkId').value = '';
+        currentNetworkClients = [];
+        renderCurrentNetworkClients();
         const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
         if (submitBtn) submitBtn.textContent = 'Salvar Rede';
     }
 
-    // TiFlux Client Integration (NOVO)
-    let tifluxClients = [];
-
+    // TiFlux Integration
     async function fetchTifluxClients() {
         try {
             const response = await fetch('/api/tiflux/clients');
             tifluxClients = await response.json();
         } catch (err) {
             console.error('Erro ao buscar clientes TiFlux:', err);
-            showToast('Erro ao buscar dados do TiFlux.', 'critical');
         }
     }
 
@@ -920,19 +930,17 @@ if (networkForm) {
             if (tifluxClients.length === 0) {
                 const originalContent = btnSearchTiflux.innerHTML;
                 btnSearchTiflux.disabled = true;
-                btnSearchTiflux.innerHTML = '<svg class="rotating" style="display:inline-block" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>';
+                btnSearchTiflux.innerHTML = '<svg class="rotating" style="height:16px; width:16px;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>';
                 await fetchTifluxClients();
                 btnSearchTiflux.disabled = false;
                 btnSearchTiflux.innerHTML = originalContent;
             }
-            renderTifluxSearchResults(tifluxClientSearch.value);
+            renderTifluxSearchResults(tifluxClientSearch?.value);
         });
     }
 
     if (tifluxClientSearch) {
-        tifluxClientSearch.addEventListener('input', (e) => {
-            renderTifluxSearchResults(e.target.value);
-        });
+        tifluxClientSearch.addEventListener('input', (e) => renderTifluxSearchResults(e.target.value));
     }
 
     function renderTifluxSearchResults(query) {
@@ -948,7 +956,7 @@ if (networkForm) {
         );
 
         if (filtered.length === 0) {
-            tifluxSearchResults.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.8rem; text-align: center;">Nenhum cliente encontrado no TiFlux.</div>';
+            tifluxSearchResults.innerHTML = '<div style="padding: 10px; color: var(--text-muted); font-size: 0.8rem; text-align: center;">Nenhum cliente no TiFlux.</div>';
             tifluxSearchResults.style.display = 'block';
             return;
         }
@@ -956,7 +964,7 @@ if (networkForm) {
         let html = '';
         filtered.forEach(c => {
             html += `
-                <div class="tiflux-client-item" onclick="addClientToNetwork('${c.name.replace(/'/g, "\\'")}')" style="padding: 8px 12px; cursor: pointer; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem; transition: background 0.2s; display: flex; align-items: center; gap: 8px;">
+                <div class="tiflux-client-item" onclick="addClientToNetwork('${c.name.replace(/'/g, "\\'")}')" style="padding: 8px 12px; cursor: pointer; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
                     <span>${c.name}</span>
                 </div>
@@ -964,30 +972,59 @@ if (networkForm) {
         });
         tifluxSearchResults.innerHTML = html;
         tifluxSearchResults.style.display = 'block';
-
-        if (!document.getElementById('tiflux-client-styles')) {
-            const style = document.createElement('style');
-            style.id = 'tiflux-client-styles';
-            style.textContent = `.tiflux-client-item:hover { background: rgba(139, 92, 246, 0.2); }`;
-            document.head.appendChild(style);
-        }
     }
 
     window.addClientToNetwork = function(name) {
-        const textarea = document.getElementById('networkClients');
-        const currentVal = textarea.value.trim();
-        const clients = currentVal ? currentVal.split('\n').map(c => c.trim()) : [];
-        
-        if (!clients.includes(name)) {
-            clients.push(name);
-            textarea.value = clients.join('\n');
-            showToast(`Cliente "${name}" adicionado!`);
+        if (!currentNetworkClients.includes(name)) {
+            currentNetworkClients.push(name);
+            renderCurrentNetworkClients();
+            showToast(`"${name}" adicionado.`);
         } else {
-            showToast(`"${name}" já está na lista.`, 'warning');
+            showToast('Este posto já está na lista.', 'warning');
         }
-        
         if (tifluxSearchResults) tifluxSearchResults.style.display = 'none';
         if (tifluxClientSearch) tifluxClientSearch.value = '';
+    }
+
+    // Busca interna e renderização de postos
+    const internalSearch = document.getElementById('internalClientSearch');
+    if (internalSearch) {
+        internalSearch.addEventListener('input', (e) => renderCurrentNetworkClients(e.target.value));
+    }
+
+    window.renderCurrentNetworkClients = function(query = '') {
+        const listContainer = document.getElementById('networkClientsList');
+        const countSpan = document.getElementById('networkClientsCount');
+        if (!listContainer) return;
+
+        if (countSpan) countSpan.textContent = currentNetworkClients.length;
+
+        const filtered = query 
+            ? currentNetworkClients.filter(c => c.toLowerCase().includes(query.toLowerCase()))
+            : currentNetworkClients;
+
+        if (filtered.length === 0) {
+            listContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 1rem; font-size: 0.8rem;">${query ? 'Nenhum posto encontrado na busca.' : 'Nenhum posto adicionado.'}</p>`;
+            return;
+        }
+
+        let html = '';
+        filtered.sort().forEach(name => {
+            html += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span style="color: var(--text-primary); font-size: 0.85rem; font-weight: 500;">${name}</span>
+                    <button type="button" onclick="removeClientFromNetwork('${name.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--status-critical); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; transition: background 0.2s;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            `;
+        });
+        listContainer.innerHTML = html;
+    }
+
+    window.removeClientFromNetwork = function(name) {
+        currentNetworkClients = currentNetworkClients.filter(c => c !== name);
+        renderCurrentNetworkClients(document.getElementById('internalClientSearch')?.value || '');
     }
 }
 
