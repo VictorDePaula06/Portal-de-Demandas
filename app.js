@@ -2370,7 +2370,7 @@ function renderMaintenanceBoard() {
             else if (daysToMaintenance <= 15) badgeClass = 'badge-warning';
             else badgeClass = 'badge-success';
         } else {
-            dataRealizada = 'Inédita';
+            dataRealizada = 'Sem histórico';
         }
 
         const matchSearch = clientName.toLowerCase().includes(searchVal);
