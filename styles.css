@@ -1243,9 +1243,10 @@ input:checked+.slider:before {
     gap: 1rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden; Removed to allow dropdowns to overlap card boundaries */
     backdrop-filter: blur(12px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    min-height: 520px; /* Increased height to accommodate filters comfortably */
 }
 
 .report-card::before {
@@ -1459,13 +1460,13 @@ input:checked+.slider:before {
     background: #1e293b;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    z-index: 10000;
+    z-index: 99999; /* Very high to float over everything */
     padding: 0.75rem;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
     display: none;
     flex-direction: column;
     gap: 0.5rem;
-    max-height: 450px;
+    max-height: 350px;
 }
 
 .client-dropdown.active .client-dropdown-content {
