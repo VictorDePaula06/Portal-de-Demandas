@@ -2332,21 +2332,25 @@ function renderMaintenanceBoard() {
     clients.forEach(clientName => {
         const clientTasks = preventivasByClient[clientName];
 
+        // Ordenar por data (mais recente primeiro)
         clientTasks.sort((a, b) => {
             const dateA = new Date(a.closedAt || a.createdAt || a.date || '1970-01-01');
             const dateB = new Date(b.closedAt || b.createdAt || b.date || '1970-01-01');
             return dateB - dateA;
         });
 
-        const lastTask = clientTasks[0];
+        // Encontrar a última CONCLUÍDA para a data realizada
+        const lastCompleted = clientTasks.find(t => t.status === 'Preventiva Concluida');
+        // Encontrar se existe uma em andamento
+        const openTask = clientTasks.find(t => t.status === 'Preventiva');
 
         let proxPreventiva = '-';
         let badgeClass = 'badge-neutral';
         let dataRealizada = '-';
 
-        if (lastTask.closedAt) {
-            dataRealizada = formatDate(lastTask.closedAt);
-            const closedDate = new Date(lastTask.closedAt + 'T12:00:00');
+        if (lastCompleted && lastCompleted.closedAt) {
+            dataRealizada = formatDate(lastCompleted.closedAt);
+            const closedDate = new Date(lastCompleted.closedAt + 'T12:00:00');
             closedDate.setDate(closedDate.getDate() + 90);
 
             const y = closedDate.getFullYear();
@@ -2363,13 +2367,10 @@ function renderMaintenanceBoard() {
             else if (daysToMaintenance <= 15) badgeClass = 'badge-warning';
             else badgeClass = 'badge-success';
         } else {
-            dataRealizada = 'Em andamento (Aberta)';
-            badgeClass = 'badge-neutral';
-            proxPreventiva = 'Aguardando conclusão';
+            dataRealizada = 'Inédita';
         }
 
-        const responsavel = lastTask.responsavel || '';
-        const matchSearch = clientName.toLowerCase().includes(searchVal) || responsavel.toLowerCase().includes(searchVal);
+        const matchSearch = clientName.toLowerCase().includes(searchVal);
 
         let matchStatus = true;
         if (filterVal === 'vencidas' && badgeClass !== 'badge-critical') matchStatus = false;
@@ -2383,11 +2384,16 @@ function renderMaintenanceBoard() {
             tr.style.borderBottom = '1px solid var(--border-color)';
 
             const maintenanceBadge = `<span class="cs-badge ${badgeClass}">${proxPreventiva}</span>`;
+            const inProgressBadge = openTask ? `<span class="cs-badge badge-neutral" style="margin-left: 8px; font-size: 0.65rem; border: 1px dashed var(--border-color);">Em andamento</span>` : '';
 
             tr.innerHTML = `
-                <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;"><a href="#" onclick="window.openEditCsModal('${lastTask.id}')" style="color: var(--accent-color); text-decoration: none;">#${lastTask.number}</a></td>
-                <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">${clientName}</td>
-                <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${responsavel || '-'}</td>
+                <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <a href="#" onclick="showMaintenanceHistory('${clientName.replace(/'/g, "\\'")}')" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">${clientName}</a>
+                        ${inProgressBadge}
+                    </div>
+                </td>
+                <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${(openTask || lastCompleted)?.responsavel || '-'}</td>
                 <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${dataRealizada}</td>
                 <td style="padding: 1rem;">${maintenanceBadge}</td>
             `;
@@ -2399,6 +2405,57 @@ function renderMaintenanceBoard() {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhuma preventiva encontrada para os filtros atuais.</td></tr>';
     }
 }
+
+function showMaintenanceHistory(clientName) {
+    const modal = document.getElementById('historyModal');
+    const title = document.getElementById('historyClientName');
+    const tableBody = document.getElementById('historyTableBody');
+
+    if (!modal || !title || !tableBody) return;
+
+    title.textContent = clientName;
+    tableBody.innerHTML = '';
+
+    const history = tasks
+        .filter(t => t.cliente === clientName && t.status.includes('Preventiva'))
+        .sort((a, b) => {
+            const dateA = new Date(a.closedAt || a.createdAt || a.date || '1970-01-01');
+            const dateB = new Date(b.closedAt || b.createdAt || b.date || '1970-01-01');
+            return dateB - dateA;
+        });
+
+    if (history.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum registro encontrado.</td></tr>';
+    } else {
+        const formatDate = (dateStr) => {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateStr;
+        };
+
+        history.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+            const statusClass = t.status === 'Preventiva Concluida' ? 'badge-success' : 'badge-neutral';
+            const dateToShow = t.closedAt || t.createdAt || t.date;
+
+            tr.innerHTML = `
+                <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-primary); font-weight: 600;">#${t.number}</td>
+                <td style="padding: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);">${formatDate(dateToShow)}</td>
+                <td style="padding: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);">${t.responsavel || '-'}</td>
+                <td style="padding: 0.75rem;"><span class="cs-badge ${statusClass}">${t.status}</span></td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    modal.classList.add('active');
+}
+
+// Global scope expose
+window.showMaintenanceHistory = showMaintenanceHistory;
 
 function updateBadgePreventivas() {
     const badge = document.getElementById('badgePreventivas');
@@ -2508,3 +2565,14 @@ function renderImplantacoesBoard() {
         tableBody.appendChild(tr);
     });
 }
+
+// History Modal Listeners
+const btnCloseHistoryModal = document.getElementById('btnCloseHistoryModal');
+const btnOkHistory = document.getElementById('btnOkHistory');
+const historyModal = document.getElementById('historyModal');
+
+if (btnCloseHistoryModal) btnCloseHistoryModal.addEventListener('click', () => historyModal.classList.remove('active'));
+if (btnOkHistory) btnOkHistory.addEventListener('click', () => historyModal.classList.remove('active'));
+if (historyModal) historyModal.addEventListener('click', (e) => {
+    if (e.target === historyModal) historyModal.classList.remove('active');
+});

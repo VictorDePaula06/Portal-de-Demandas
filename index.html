@@ -358,9 +358,6 @@
                             <tr>
                                 <th
                                     style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
-                                    Ticket #</th>
-                                <th
-                                    style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
                                     Posto / Cliente</th>
                                 <th
                                     style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; border-bottom: 1px solid var(--border-color);">
@@ -1297,6 +1294,43 @@
             </div>
             <div class="modal-footer" style="margin-top: 1rem;">
                 <button type="button" class="btn btn-primary" id="btnOkSyncResults" style="width: 100%;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Histórico de Preventivas -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Histórico de Preventivas</h2>
+                <button id="btnCloseHistoryModal" class="btn-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="historyModalContent" style="padding: 1rem;">
+                <h3 id="historyClientName" style="color: var(--accent-primary); margin-bottom: 1rem;">---</h3>
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table class="cs-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead style="background: rgba(0,0,0,0.2); position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 0.75rem; font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Ticket #</th>
+                                <th style="padding: 0.75rem; font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Data</th>
+                                <th style="padding: 0.75rem; font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Responsável</th>
+                                <th style="padding: 0.75rem; font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- JS vai popular -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnOkHistory" class="btn btn-primary" style="width: 100%;">Fechar</button>
             </div>
         </div>
     </div>
