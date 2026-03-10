@@ -16,12 +16,63 @@ let tasks = [];
 let csClients = [];
 let implantacoes = [];
 
-// Realtime listeners for Firestore
+// Função para popular a lista de clientes nos relatórios
+function updateReportCustomerList() {
+    const listContainer = document.getElementById('reportCustomerList');
+    const searchInput = document.getElementById('reportCustomerSearch');
+    if (!listContainer) return;
+
+    // Extrair lista única de clientes
+    const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+
+    const renderList = (filter = '') => {
+        listContainer.innerHTML = '';
+        const filteredClients = allClients.filter(c => 
+            c.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        if (filteredClients.length === 0) {
+            listContainer.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Nenhum cliente encontrado.</div>';
+            return;
+        }
+
+        filteredClients.forEach(client => {
+            const label = document.createElement('label');
+            label.className = 'client-checkbox-item';
+            label.innerHTML = `
+                <input type="checkbox" value="${client}" class="report-client-checkbox">
+                <span title="${client}">${client}</span>
+            `;
+            listContainer.appendChild(label);
+        });
+    };
+
+    // Filtro de busca
+    if (searchInput) {
+        searchInput.oninput = (e) => renderList(e.target.value);
+    }
+
+    // Botão Selecionar Todos
+    const btnSelectAll = document.getElementById('btnSelectAllClients');
+    if (btnSelectAll) {
+        btnSelectAll.onclick = () => {
+            const checkboxes = listContainer.querySelectorAll('.report-client-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+            btnSelectAll.textContent = allChecked ? 'Selecionar Todos' : 'Desmarcar Todos';
+        };
+    }
+
+    renderList();
+}
+
+// Chamar atualização quando as tarefas carregarem
 db.collection('tasks').onSnapshot((snapshot) => {
     tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderBoard();
     if (typeof renderMaintenanceBoard === 'function') renderMaintenanceBoard();
     if (typeof updateBadgePreventivas === 'function') updateBadgePreventivas();
+    updateReportCustomerList(); // Atualiza a lista nos relatórios
 });
 
 db.collection('csClients').onSnapshot((snapshot) => {
@@ -1342,6 +1393,13 @@ if (btnGeneratePDF) {
 
         // Filtra as tarefas baseadas nos critérios da tela de relatórios
         let reportData = tasks.filter(t => {
+            // 0. Filtro de Cliente (Novo)
+            const selectedCheckboxes = document.querySelectorAll('.report-client-checkbox:checked');
+            if (selectedCheckboxes.length > 0) {
+                const selectedClients = Array.from(selectedCheckboxes).map(cb => cb.value);
+                if (!selectedClients.includes(t.cliente || 'Sem Cliente')) return false;
+            }
+
             // 1. Filtro de Tipo de Demanda
             if (reportTypeFilter === 'demandas_all') {
                 if (t.status.includes('Preventiva')) return false;
@@ -1395,11 +1453,19 @@ if (btnGeneratePDF) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape'); // Orientação Paisagem
 
+        // Capturar nomes dos clientes filtrados para o título
+        const selectedCheckboxes = document.querySelectorAll('.report-client-checkbox:checked');
+        let clientTitle = 'Todos os Clientes';
+        if (selectedCheckboxes.length > 0) {
+            const names = Array.from(selectedCheckboxes).map(cb => cb.value);
+            clientTitle = names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} e +${names.length - 3}`;
+        }
+
         doc.setFontSize(18);
         doc.text("Relatório de Demandas - PortalCS", 14, 15);
         doc.setFontSize(11);
         doc.text(`Tipo: ${reportTypeFilter} | Filtro: ${reportSLAFilter} | Período: ${reportMonth || 'Abertas'}`, 14, 23);
-        doc.text(`Total de Registros: ${reportData.length}`, 14, 29);
+        doc.text(`Clientes: ${clientTitle} | Total: ${reportData.length}`, 14, 29);
 
         // Preparar Dados da Tabela
         const tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsável", "Vencimento", "Prioridade"];
