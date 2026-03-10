@@ -2339,8 +2339,11 @@ function renderMaintenanceBoard() {
             return dateB - dateA;
         });
 
-        // Encontrar a última CONCLUÍDA para a data realizada
-        const lastCompleted = clientTasks.find(t => t.status === 'Preventiva Concluida');
+        // Encontrar a última CONCLUÍDA para a data realizada (robusto com acentos)
+        const lastCompleted = clientTasks.find(t => 
+            t.status.toLowerCase().includes('preventiva') && 
+            (t.status.toLowerCase().includes('concluida') || t.status.toLowerCase().includes('concluída'))
+        );
         // Encontrar se existe uma em andamento
         const openTask = clientTasks.find(t => t.status === 'Preventiva');
 
@@ -2438,7 +2441,8 @@ function showMaintenanceHistory(clientName) {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
 
-            const statusClass = t.status === 'Preventiva Concluida' ? 'badge-success' : 'badge-neutral';
+            const isCompleted = t.status.toLowerCase().includes('concluida') || t.status.toLowerCase().includes('concluída');
+            const statusClass = isCompleted ? 'badge-success' : 'badge-neutral';
             const dateToShow = t.closedAt || t.createdAt || t.date;
 
             tr.innerHTML = `
