@@ -1472,11 +1472,15 @@ input:checked+.slider:before {
 }
 
 .client-checkbox-list {
-    max-height: 200px;
+    min-height: 50px;
+    max-height: 250px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    padding: 2px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
 }
 
 .client-checkbox-item {

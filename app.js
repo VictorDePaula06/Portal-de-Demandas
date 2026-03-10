@@ -16,82 +16,108 @@ let tasks = [];
 let csClients = [];
 let implantacoes = [];
 
-// Função para popular a lista de clientes nos relatórios
+// Estado global para o filtro de relatórios
+let reportSelectedClients = new Set();
+let reportListInitialized = false;
+
 function updateReportCustomerList() {
     const listContainer = document.getElementById('reportCustomerList');
     const searchInput = document.getElementById('reportCustomerSearch');
     const header = document.getElementById('reportCustomerHeader');
     const dropdown = document.getElementById('reportCustomerDropdown');
     const selectedText = document.getElementById('selectedClientsText');
+    const btnSelectAll = document.getElementById('btnSelectAllClients');
+    
     if (!listContainer) return;
 
-    // Toggle Dropdown
-    if (header && dropdown) {
-        header.onclick = (e) => {
-            e.stopPropagation();
-            dropdown.classList.toggle('active');
-        };
-        // Fechar ao clicar fora
-        document.addEventListener('click', (e) => {
-            if (!dropdown.contains(e.target)) dropdown.classList.remove('active');
-        });
+    // 1. Inicialização de Listeners (Apenas uma vez)
+    if (!reportListInitialized) {
+        if (header && dropdown) {
+            header.onclick = (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('active');
+            };
+            document.addEventListener('click', (e) => {
+                if (dropdown && !dropdown.contains(e.target)) dropdown.classList.remove('active');
+            });
+        }
+
+        if (searchInput) {
+            searchInput.oninput = (e) => renderReportClients(e.target.value);
+        }
+
+        if (btnSelectAll) {
+            btnSelectAll.onclick = () => {
+                const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+                const areAllSelected = allClients.every(c => reportSelectedClients.has(c));
+                
+                if (areAllSelected) {
+                    reportSelectedClients.clear();
+                } else {
+                    allClients.forEach(c => reportSelectedClients.add(c));
+                }
+                
+                renderReportClients(searchInput?.value || '');
+            };
+        }
+        reportListInitialized = true;
     }
 
-    // Extrair lista única de clientes
-    const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+    // 2. Função de Renderização
+    window.renderReportClients = function(filter = '') {
+        const allClients = [...new Set(tasks.map(t => t.cliente || 'Sem Cliente'))].sort();
+        const listContainer = document.getElementById('reportCustomerList');
+        if (!listContainer) return;
 
-    const updateSelectedCount = () => {
-        const checked = listContainer.querySelectorAll('.report-client-checkbox:checked');
-        if (selectedText) {
-            if (checked.length === 0) selectedText.textContent = 'Selecionar Clientes...';
-            else if (checked.length === 1) selectedText.textContent = checked[0].value;
-            else selectedText.textContent = `${checked.length} Clientes Selecionados`;
-        }
-    };
-
-    const renderList = (filter = '') => {
         listContainer.innerHTML = '';
         const filteredClients = allClients.filter(c => 
-            c.toLowerCase().includes(filter.toLowerCase())
+            String(c).toLowerCase().includes(String(filter).toLowerCase())
         );
 
         if (filteredClients.length === 0) {
             listContainer.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Nenhum cliente encontrado.</div>';
-            return;
+        } else {
+            filteredClients.forEach(client => {
+                const isChecked = reportSelectedClients.has(client);
+                const label = document.createElement('label');
+                label.className = 'client-checkbox-item';
+                label.innerHTML = `
+                    <input type="checkbox" value="${client}" class="report-client-checkbox" ${isChecked ? 'checked' : ''}>
+                    <span title="${client}">${client}</span>
+                `;
+                
+                const checkbox = label.querySelector('input');
+                checkbox.onchange = (e) => {
+                    if (e.target.checked) reportSelectedClients.add(client);
+                    else reportSelectedClients.delete(client);
+                    updateReportSelectedText();
+                };
+                listContainer.appendChild(label);
+            });
         }
-
-        filteredClients.forEach(client => {
-            const label = document.createElement('label');
-            label.className = 'client-checkbox-item';
-            label.innerHTML = `
-                <input type="checkbox" value="${client}" class="report-client-checkbox">
-                <span title="${client}">${client}</span>
-            `;
-            const checkbox = label.querySelector('input');
-            checkbox.onchange = updateSelectedCount;
-            listContainer.appendChild(label);
-        });
-        updateSelectedCount();
+        updateReportSelectedText();
     };
 
-    // Filtro de busca
-    if (searchInput) {
-        searchInput.oninput = (e) => renderList(e.target.value);
+    function updateReportSelectedText() {
+        const selectedText = document.getElementById('selectedClientsText');
+        const btnSelectAll = document.getElementById('btnSelectAllClients');
+        if (!selectedText) return;
+
+        const count = reportSelectedClients.size;
+        if (count === 0) {
+            selectedText.textContent = 'Selecionar Clientes...';
+            if (btnSelectAll) btnSelectAll.textContent = 'Selecionar Todos';
+        } else if (count === 1) {
+            selectedText.textContent = Array.from(reportSelectedClients)[0];
+            if (btnSelectAll) btnSelectAll.textContent = 'Desmarcar Todos';
+        } else {
+            selectedText.textContent = `${count} Clientes Selecionados`;
+            if (btnSelectAll) btnSelectAll.textContent = 'Desmarcar Todos';
+        }
     }
 
-    // Botão Selecionar Todos
-    const btnSelectAll = document.getElementById('btnSelectAllClients');
-    if (btnSelectAll) {
-        btnSelectAll.onclick = () => {
-            const checkboxes = listContainer.querySelectorAll('.report-client-checkbox');
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            checkboxes.forEach(cb => cb.checked = !allChecked);
-            btnSelectAll.textContent = allChecked ? 'Selecionar Todos' : 'Desmarcar Todos';
-            updateSelectedCount();
-        };
-    }
-
-    renderList();
+    // Inicializa a renderização
+    renderReportClients(searchInput?.value || '');
 }
 
 // Chamar atualização quando as tarefas carregarem
@@ -100,7 +126,7 @@ db.collection('tasks').onSnapshot((snapshot) => {
     renderBoard();
     if (typeof renderMaintenanceBoard === 'function') renderMaintenanceBoard();
     if (typeof updateBadgePreventivas === 'function') updateBadgePreventivas();
-    updateReportCustomerList(); // Atualiza a lista nos relatórios
+    updateReportCustomerList();
 });
 
 db.collection('csClients').onSnapshot((snapshot) => {
