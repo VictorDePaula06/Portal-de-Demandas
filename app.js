@@ -2443,13 +2443,14 @@ function showMaintenanceHistory(clientName) {
 
             const isCompleted = t.status.toLowerCase().includes('concluida') || t.status.toLowerCase().includes('concluída');
             const statusClass = isCompleted ? 'badge-success' : 'badge-neutral';
+            const statusText = isCompleted ? 'Concluída' : 'Em andamento';
             const dateToShow = t.closedAt || t.createdAt || t.date;
 
             tr.innerHTML = `
                 <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-primary); font-weight: 600;">#${t.number}</td>
                 <td style="padding: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);">${formatDate(dateToShow)}</td>
                 <td style="padding: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);">${t.responsavel || '-'}</td>
-                <td style="padding: 0.75rem;"><span class="cs-badge ${statusClass}">${t.status}</span></td>
+                <td style="padding: 0.75rem;"><span class="cs-badge ${statusClass}">${statusText}</span></td>
             `;
             tableBody.appendChild(tr);
         });
