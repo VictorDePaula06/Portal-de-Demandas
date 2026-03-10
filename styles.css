@@ -1459,7 +1459,7 @@ input:checked+.slider:before {
     background: #1e293b;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    z-index: 10000; /* Extra high z-index */
+    z-index: 10000;
     padding: 0.75rem;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
     display: none;
@@ -1473,22 +1473,22 @@ input:checked+.slider:before {
 }
 
 .client-checkbox-list {
-    min-height: 50px;
+    min-height: 80px;
     max-height: 250px;
     overflow-y: auto !important;
     overflow-x: hidden;
-    display: block; /* Block is safer for overflow */
+    display: block;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 5px;
 }
 
 .client-checkbox-item {
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    align-items: center !important;
     gap: 0.75rem;
-    padding: 0.50rem 0.6rem; /* Slightly larger padding */
+    padding: 8px 10px;
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s ease;
@@ -1510,21 +1510,23 @@ input:checked+.slider:before {
 }
 
 .client-checkbox-item span {
-    font-size: 0.85rem;
-    color: #e2e8f0; /* Explicit light color */
-    white-space: nowrap;
+    font-size: 0.85rem !important;
+    color: #ffffff !important; /* Force white for maximum visibility */
+    display: inline-block;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
-    pointer-events: none;
+    white-space: normal; /* Allow wrap if needed to avoid being hidden */
+    word-break: break-all;
 }
 
-/* Scrollbar styling for better visibility */
+/* Clear, visible custom scrollbar */
 .client-checkbox-list::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .client-checkbox-list::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1);
+    background: rgba(0,0,0,0.2);
 }
 
 .client-checkbox-list::-webkit-scrollbar-thumb {
@@ -1534,17 +1536,4 @@ input:checked+.slider:before {
 
 .client-checkbox-list::-webkit-scrollbar-thumb:hover {
     background: #64748b;
-}
-
-.client-checkbox-list::-webkit-scrollbar {
-    width: 5px;
-}
-
-.client-checkbox-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.client-checkbox-list::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
 }
