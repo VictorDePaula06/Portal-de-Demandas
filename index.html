@@ -1052,7 +1052,7 @@
                     </svg>
                 </button>
             </div>
-            <form id="implantationForm">
+            <form id="implantationForm" autocomplete="off">
                 <input type="hidden" id="impId">
                 <div class="form-row">
                     <div class="form-group">
@@ -1078,6 +1078,7 @@
                     <div class="form-group">
                         <label for="impTipo">Tipo de Implantação</label>
                         <select id="impTipo">
+                            <option value="" disabled selected>Selecione...</option>
                             <option value="Presencial">Presencial</option>
                             <option value="Remota">Remota</option>
                             <option value="Híbrida">Híbrida</option>
@@ -1086,6 +1087,7 @@
                     <div class="form-group">
                         <label for="impContrato">Contrato</label>
                         <select id="impContrato">
+                            <option value="" disabled selected>Selecione...</option>
                             <option value="WebPosto">WebPosto</option>
                             <option value="T.I">T.I</option>
                             <option value="Automação">Automação</option>
