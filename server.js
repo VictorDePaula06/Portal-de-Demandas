@@ -162,6 +162,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 responsavel: ticket.responsible?.name || 'Não atribuído',
                 createdAt: createdAtFormatted,
                 date: formattedDate,
+                slaUpdated: true,
                 status: finalStatus,
                 obs: '', // Adicionando campo de obs para evitar undefined no frontend vindo do sync
                 closedAt: ticket.closed_at ? ticket.closed_at.split('T')[0].split(' ')[0] : (

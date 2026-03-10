@@ -514,36 +514,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // ATUALIZAÇÃO RETROATIVA DE SLA E DATA DE ABERTURA
             if (!deleted && (data.status === 'Analise' || data.status === 'QP - Melhoria' || data.status === 'QP - Correção')) {
+                // Se o SLA já foi atualizado (pelo backend ou manualmente), não mexemos mais
+                if (data.slaUpdated === true) return;
+
                 let daysToAdd = 0;
                 if (data.status === 'Analise') daysToAdd = 7;
                 else if (data.status.includes('QP')) daysToAdd = 30;
 
-                if (!data.createdAt || data.createdAt === data.date || !data.slaUpdated) {
-                    if (data.slaUpdated) {
-                        const [y, m, d] = data.date.split('-');
+                // Se não tem createdAt, ou se createdAt é igual à date (o que indica que o TiFlux mandou apenas um campo), 
+                // e ainda não marcamos como atualizado.
+                if (!data.createdAt || data.createdAt === data.date) {
+                    const originalDate = data.date;
+                    if (originalDate && originalDate.includes('-')) {
+                        const [y, m, d] = originalDate.split('-');
                         const sla = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-                        sla.setDate(sla.getDate() - daysToAdd);
+                        sla.setDate(sla.getDate() + daysToAdd);
                         const mStr = String(sla.getMonth() + 1).padStart(2, '0');
                         const dStr = String(sla.getDate()).padStart(2, '0');
-                        const newCreatedAt = `${sla.getFullYear()}-${mStr}-${dStr}`;
+                        const newSlaDate = `${sla.getFullYear()}-${mStr}-${dStr}`;
 
-                        doc.ref.update({ createdAt: newCreatedAt });
-                    } else {
-                        const originalDate = data.date;
-                        if (originalDate && originalDate.includes('-')) {
-                            const [y, m, d] = originalDate.split('-');
-                            const sla = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-                            sla.setDate(sla.getDate() + daysToAdd);
-                            const mStr = String(sla.getMonth() + 1).padStart(2, '0');
-                            const dStr = String(sla.getDate()).padStart(2, '0');
-                            const newSlaDate = `${sla.getFullYear()}-${mStr}-${dStr}`;
-
-                            doc.ref.update({
-                                date: newSlaDate,
-                                createdAt: originalDate,
-                                slaUpdated: true
-                            });
-                        }
+                        doc.ref.update({
+                            date: newSlaDate,
+                            createdAt: originalDate,
+                            slaUpdated: true
+                        });
                     }
                 }
             }
@@ -1229,13 +1223,13 @@ taskForm.addEventListener('submit', (e) => {
 
     if (isNew) {
         const finalResponsavel = responsavel || currentUser;
-        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs };
+        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs, slaUpdated: true };
         db.collection('tasks').doc(taskDataNew.id).set(taskDataNew).then(() => {
             showToast('Demanda criada com sucesso!');
         });
     } else {
         const taskObj = tasks.find(t => t.id === id) || {};
-        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs };
+        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs, slaUpdated: true };
         db.collection('tasks').doc(id).set(updatedTask).then(() => {
             showToast('Demanda atualizada!');
         });
@@ -1614,6 +1608,96 @@ if (btnGenerateCSPDF) {
         showToast("Relatório de CS Gerado!");
     });
 }
+
+// Relatório de Implantações (PDF)
+const btnGenerateImplantacoesPDF = document.getElementById('btnGenerateImplantacoesPDF');
+if (btnGenerateImplantacoesPDF) {
+    btnGenerateImplantacoesPDF.addEventListener('click', () => {
+        const monthFilter = document.getElementById('reportImplantationMonth').value;
+        const statusFilter = document.getElementById('reportImplantationFilter').value;
+        const reportRows = [];
+
+        if (!monthFilter) {
+            alert("Por favor, selecione um mês de referência.");
+            return;
+        }
+
+        const sanitizeForPDF = (str) => {
+            if (!str) return '';
+            return String(str).replace(/[^\x00-\xFF]/g, '');
+        };
+
+        const formatDate = (dateStr) => {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateStr;
+        };
+
+        // Filtrar implantações
+        implantacoes.forEach(imp => {
+            // Filtro de Mês (previsao: "YYYY-MM-DD")
+            if (imp.previsao && !imp.previsao.startsWith(monthFilter)) return;
+
+            // Filtro de Status
+            const status = (imp.status || 'Pendente').toLowerCase();
+            if (statusFilter === 'pendente' && status === 'concluido') return;
+            if (statusFilter === 'concluido' && status !== 'concluido') return;
+
+            reportRows.push([
+                sanitizeForPDF(imp.rede || '-'),
+                sanitizeForPDF(imp.unidade || '-'),
+                sanitizeForPDF(imp.cnpj || '-'),
+                formatDate(imp.previsao),
+                sanitizeForPDF(imp.tipo || '-'),
+                sanitizeForPDF(imp.contrato || '-'),
+                sanitizeForPDF(imp.implantador || '-'),
+                sanitizeForPDF(imp.status || 'Pendente'),
+                sanitizeForPDF(imp.qualidade || '-')
+            ]);
+        });
+
+        if (reportRows.length === 0) {
+            alert("Nenhuma implantação encontrada para este mês/filtro.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        doc.setFontSize(18);
+        doc.setTextColor(13, 148, 136); // Emerald 700
+        doc.text("Relatório de Implantações", 14, 15);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        const [y, m] = monthFilter.split('-');
+        doc.text(`Mês de Referência: ${m}/${y} | Filtro: ${statusFilter === 'all' ? 'Todas' : (statusFilter === 'pendente' ? 'Pendentes' : 'Concluídas')}`, 14, 23);
+
+        doc.autoTable({
+            head: [["Rede", "Unidade", "CNPJ", "Previsão", "Tipo", "Contrato", "Implantador", "Status", "Quality"]],
+            body: reportRows,
+            startY: 30,
+            theme: 'striped',
+            headStyles: { fillColor: [13, 148, 136], fontStyle: 'bold', fontSize: 8 },
+            styles: { fontSize: 7, cellPadding: 2 },
+            alternateRowStyles: { fillColor: [240, 253, 250] }, // Very light emerald
+            didDrawPage: function (data) {
+                const str = "Página " + doc.internal.getNumberOfPages();
+                const now = new Date().toLocaleDateString('pt-BR');
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 15, doc.internal.pageSize.height - 10);
+            }
+        });
+
+        const fileName = `relatorio-implantacoes-${monthFilter.trim()}-${statusFilter.trim()}.pdf`;
+        doc.save(fileName);
+        showToast("Relatório de Implantações Gerado!");
+    });
+}
+
+
 
 
 // Delete Task (Secured)
