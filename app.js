@@ -1894,6 +1894,8 @@ if (btnGeneratePDF) {
             return;
         }
 
+        const reportFormat = document.getElementById('reportFormat')?.value || 'simplified';
+
         // Configuração jsPDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape'); // Orientação Paisagem
@@ -1910,11 +1912,7 @@ if (btnGeneratePDF) {
         doc.text("Relatório de Demandas - PortalCS", 14, 15);
         doc.setFontSize(11);
         doc.text(`Tipo: ${reportTypeFilter} | Filtro: ${reportSLAFilter} | Período: ${reportMonth || 'Abertas'}`, 14, 23);
-        doc.text(`Clientes: ${clientTitle} | Total: ${reportData.length}`, 14, 29);
-
-        // Preparar Dados da Tabela
-        const tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsável", "Vencimento", "Prioridade"];
-        const tableRows = [];
+        doc.text(`Clientes: ${clientTitle} | Formato: ${reportFormat === 'simplified' ? 'Simplificado' : 'Analítico'} | Total: ${reportData.length}`, 14, 29);
 
         // Funcão auxiliar para evitar que Emojis (e caracteres com múltiplos bytes além do Latin-1 padrão) corrompam o construtor doc.text do jsPDF
         const sanitizeForPDF = (str) => {
@@ -1922,17 +1920,40 @@ if (btnGeneratePDF) {
             return String(str).replace(/[^\x00-\xFF]/g, '');
         };
 
-        reportData.forEach(t => {
-            const ticketData = [
+        // Preparar Dados da Tabela baseados no formato
+        let tableColumn, tableRows, tableStyles;
+
+        if (reportFormat === 'analytical') {
+            tableColumn = ["Demanda / TiFlux #", "Detalhes (Cliente / Resp / Venc)", "Descrição / Descritivo"];
+            tableRows = reportData.map(t => {
+                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${t.date ? t.date.split('-').reverse().join('/') : '-'}\nPrior: ${t.prioridade || 'Normal'}`;
+                return [
+                    `${sanitizeForPDF(t.status)}\n#${t.number || 'N/A'}`,
+                    sanitizeForPDF(details),
+                    sanitizeForPDF(t.desc || 'Sem descrição informada')
+                ];
+            });
+            tableStyles = {
+                fontSize: 9,
+                cellPadding: 4,
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 55 },
+                    2: { cellWidth: 'auto' }
+                }
+            };
+        } else {
+            tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsável", "Vencimento", "Prioridade"];
+            tableRows = reportData.map(t => [
                 sanitizeForPDF(t.status),
                 t.number || 'N/A',
                 sanitizeForPDF(t.cliente || 'Desconhecido'),
                 sanitizeForPDF(t.responsavel || '-'),
                 t.date ? t.date.split('-').reverse().join('/') : '-',
                 sanitizeForPDF(t.prioridade || 'Normal')
-            ];
-            tableRows.push(ticketData);
-        });
+            ]);
+            tableStyles = { fontSize: 10, cellPadding: 3 };
+        }
 
         // Desenhar a Tabela Usando AutoTable
         doc.autoTable({
@@ -1940,13 +1961,22 @@ if (btnGeneratePDF) {
             body: tableRows,
             startY: 35,
             theme: 'striped',
-            headStyles: { fillColor: [139, 92, 246] }, // Tom de roxo
-            styles: { fontSize: 10, cellPadding: 3 },
-            alternateRowStyles: { fillColor: [245, 245, 245] }
+            headStyles: { fillColor: [139, 92, 246], fontStyle: 'bold' }, // Tom de roxo
+            styles: tableStyles,
+            alternateRowStyles: { fillColor: [248, 248, 250] },
+            margin: { left: 14, right: 14 },
+            didDrawPage: (data) => {
+                const str = "Página " + doc.internal.getNumberOfPages();
+                const now = new Date().toLocaleDateString('pt-BR');
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 10, doc.internal.pageSize.height - 10);
+            }
         });
 
         // Save PDF
-        doc.save(`relatorio_${reportSLAFilter}_${reportMonth || 'hoje'}.pdf`);
+        doc.save(`relatorio_${reportFormat}_${reportSLAFilter}_${reportMonth || 'hoje'}.pdf`);
         showToast("PDF Gerado com Sucesso!");
     });
 }
