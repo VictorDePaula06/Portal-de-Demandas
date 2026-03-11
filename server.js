@@ -36,6 +36,22 @@ if (FIREBASE_SERVICE_ACCOUNT) {
 const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 /**
+ * Utilitário para adicionar dias úteis a uma data (Pula sábados e domingos)
+ */
+function addBusinessDays(startDate, days) {
+    let date = new Date(startDate);
+    let added = 0;
+    while (added < days) {
+        date.setDate(date.getDate() + 1);
+        // getDay() retorna 0 para Domingo e 6 para Sábado
+        if (date.getDay() !== 0 && date.getDay() !== 6) {
+            added++;
+        }
+    }
+    return date;
+}
+
+/**
  * Rota para buscar os chamados no TiFlux (QP e Analise)
  */
 app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
@@ -131,7 +147,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             const titleMatch = rawTitle.match(/\[?(?:qp|quality|an[áa]lise(?:.*?-)?)\s*(\d+)\]?/i);
             const numQuality = titleMatch ? titleMatch[1] : '';
 
-            // Calc SLA Date
+            // Calc SLA Date (Usando Dias Úteis)
             const defaultDate = ticket.created_at ? new Date(ticket.created_at) : new Date();
             const createdAtFormatted = defaultDate.toISOString().split('T')[0];
             let daysToAdd = 0;
@@ -140,8 +156,9 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
             } else if (finalStatus.includes('QP')) {
                 daysToAdd = 30;
             }
-            defaultDate.setDate(defaultDate.getDate() + daysToAdd);
-            const formattedDate = defaultDate.toISOString().split('T')[0];
+            
+            const slaDate = addBusinessDays(defaultDate, daysToAdd);
+            const formattedDate = slaDate.toISOString().split('T')[0];
 
             return {
                 id: String(ticket.ticket_number || Math.random()),

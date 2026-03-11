@@ -641,6 +641,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Se o SLA já foi atualizado (pelo backend ou manualmente), não mexemos mais
                 if (data.slaUpdated === true) return;
 
+                function addBusinessDays(startDate, days) {
+                    let date = new Date(startDate);
+                    let added = 0;
+                    while (added < days) {
+                        date.setDate(date.getDate() + 1);
+                        if (date.getDay() !== 0 && date.getDay() !== 6) {
+                            added++;
+                        }
+                    }
+                    return date;
+                }
+
                 let daysToAdd = 0;
                 if (data.status === 'Analise') daysToAdd = 7;
                 else if (data.status.includes('QP')) daysToAdd = 30;
@@ -651,8 +663,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const originalDate = data.date;
                     if (originalDate && originalDate.includes('-')) {
                         const [y, m, d] = originalDate.split('-');
-                        const sla = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-                        sla.setDate(sla.getDate() + daysToAdd);
+                        const baseDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+                        const sla = addBusinessDays(baseDate, daysToAdd);
                         const mStr = String(sla.getMonth() + 1).padStart(2, '0');
                         const dStr = String(sla.getDate()).padStart(2, '0');
                         const newSlaDate = `${sla.getFullYear()}-${mStr}-${dStr}`;
