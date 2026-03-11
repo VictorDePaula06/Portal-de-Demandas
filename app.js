@@ -1609,7 +1609,11 @@ function openEditModal(id) {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            tasks: [{ ...updatedTask, force: true }]
+                            tasks: [{ 
+                                ...updatedTask, 
+                                force: true,
+                                info: document.getElementById('taskInformativo')?.value || updatedTask?.info 
+                            }]
                         })
                     });
 

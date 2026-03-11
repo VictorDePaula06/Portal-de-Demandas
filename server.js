@@ -285,25 +285,27 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                         <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - Globaltera</p>
                     </div>
                     <div style="padding: 30px; color: #374151; line-height: 1.6;">
-                        <p>Olá,</p>
-                        <p>Há uma atualização importante sobre a sua solicitação:</p>
+                        <p>Olá <strong>${task.cliente}</strong>,</p>
+                        <p>Sua demanda #${task.number} possui <strong>novidades</strong> e atualizações importantes:</p>
                         
-                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                            <strong style="display: block; margin-bottom: 5px;">#${task.number} - ${task.cliente}</strong>
-                            <p style="margin: 0; font-size: 14px; color: #64748b;">${task.desc}</p>
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                            <strong style="display: block; margin-bottom: 5px; color: #1e293b;">#${task.number} - ${task.desc}</strong>
                             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-                            <p style="margin: 0;"><strong>Status Atual:</strong> ${task.status}</p>
-                            <p style="margin: 5px 0 0 0;"><strong>Vencimento:</strong> ${taskDateBR}</p>
+                            <p style="margin: 0; font-size: 14px;"><strong>Status Atual:</strong> <span style="color: #2563eb;">${task.status}</span></p>
+                            <p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Previsão/Vencimento:</strong> ${taskDateBR}</p>
                         </div>
 
-                        ${task.info ? `<div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
-                            <strong>Informativo:</strong><br>${task.info}
+                        ${task.info ? `
+                        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                            <strong style="color: #92400e; display: block; margin-bottom: 8px;">📢 Recado / Novidades:</strong>
+                            <div style="color: #92400e; white-space: pre-wrap;">${task.info}</div>
                         </div>` : ''}
 
-                        <p>Para mais detalhes, acesse o portal ou entre em contato conosco.</p>
+                        <p style="margin-top: 25px;">Para acompanhar mais detalhes, acesse nosso portal ou responda a este e-mail.</p>
+                        <p>Atenciosamente,<br><strong>Equipe Globaltera</strong></p>
                     </div>
-                    <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-                        Enviado automaticamente em ${dateStr}
+                    <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e5e7eb;">
+                        Mensagem automática enviada via Portal de Demandas em ${dateStr}
                     </div>
                 </div>
             `;
