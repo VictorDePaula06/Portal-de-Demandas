@@ -16,6 +16,23 @@ let tasks = [];
 let csClients = [];
 let implantacoes = [];
 
+// Funções Utilitárias Globais
+const formatDate = (dateStr) => {
+    if (!dateStr || dateStr === '-') return '-';
+    // Se já estiver no formato brasileiro DD/MM/YYYY, retorna ele mesmo
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+    
+    // Tenta tratar como YYYY-MM-DD
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        let [y, m, d] = parts;
+        // Correção específica para o bug do ano "32026" ou similares (se o ano tiver mais de 4 dígitos)
+        if (y.length > 4) y = y.slice(-4); 
+        return `${d}/${m}/${y}`;
+    }
+    return dateStr;
+};
+
 // Estado global para o filtro de relatórios
 let reportSelectedClients = new Set();
 let reportListInitialized = false;
@@ -711,77 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSyncTiFlux.addEventListener('click', fetchDemandasDaAPI);
     }
 
-    // Navigation Switch Logic
-    const btnViewDemandas = document.getElementById('btnViewDemandas');
-    const btnViewCS = document.getElementById('btnViewCS');
-    const btnViewMaintenance = document.getElementById('btnViewMaintenance');
-    const btnViewRelatorios = document.getElementById('btnViewRelatorios');
-    const btnViewConfig = document.getElementById('btnViewConfig');
-    const btnViewConcluidas = document.getElementById('btnViewConcluidas');
-
-    const boards = [
-        { btn: btnViewDemandas, board: kanbanBoard },
-        { btn: btnViewCS, board: csBoard },
-        { btn: btnViewImplantacoes, board: implantacoesBoard },
-        { btn: btnViewMaintenance, board: document.getElementById('maintenanceBoard') },
-        { btn: btnViewRelatorios, board: document.getElementById('relatoriosBoard') },
-        { btn: btnViewConfig, board: document.getElementById('configBoard') },
-        { btn: btnViewConcluidas, board: kanbanBoard }
-    ];
-
-    function showBoard(targetBoardId, viewType = 'demandas') {
-        console.log(`Switching to board: ${targetBoardId}, view: ${viewType}`);
-
-        // Define o tipo de visualização no Kanban se for o caso
-        if (kanbanBoard) {
-            kanbanBoard.dataset.view = viewType;
-        }
-
-        boards.forEach(b => {
-            if (!b.board) return;
-
-            // Lógica de visibilidade
-            const isTarget = b.board.id === targetBoardId;
-
-            // Caso especial do Kanban que é compartilhado
-            if (b.board.id === 'kanbanBoard') {
-                b.board.style.setProperty('display', isTarget ? 'flex' : 'none', 'important');
-            } else if (b.board.id === 'maintenanceBoard') {
-                b.board.style.setProperty('display', isTarget ? 'flex' : 'none', 'important');
-            } else {
-                b.board.style.setProperty('display', isTarget ? 'block' : 'none', 'important');
-            }
-
-            // Lógica de ativação do botão
-            if (b.btn) {
-                if (b.board.id === 'kanbanBoard') {
-                    const isCorrectBtn = (viewType === 'demandas' && b.btn.id === 'btnViewDemandas') ||
-                        (viewType === 'concluidas' && b.btn.id === 'btnViewConcluidas');
-                    b.btn.classList.toggle('active', isCorrectBtn);
-                } else {
-                    b.btn.classList.toggle('active', isTarget);
-                }
-            }
-        });
-
-        // Toggle Header Buttons visibility
-        if (btnNewTask) btnNewTask.style.display = (targetBoardId === 'kanbanBoard' && viewType === 'demandas') ? 'flex' : 'none';
-        if (btnNewCS) btnNewCS.style.display = targetBoardId === 'csBoard' ? 'flex' : 'none';
-        if (btnNewImplantation) btnNewImplantation.style.display = targetBoardId === 'implantacoesBoard' ? 'flex' : 'none';
-
-        // Refresh specific boards if needed
-        if (targetBoardId === 'csBoard') renderCSBoard();
-        if (targetBoardId === 'implantacoesBoard') renderImplantacoesBoard();
-        if (targetBoardId === 'kanbanBoard') renderBoard();
-    }
-
-    if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); showBoard('kanbanBoard', 'demandas'); });
-    if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); showBoard('kanbanBoard', 'concluidas'); });
-    if (btnViewCS) btnViewCS.addEventListener('click', (e) => { e.preventDefault(); showBoard('csBoard'); });
-    if (btnViewImplantacoes) btnViewImplantacoes.addEventListener('click', (e) => { e.preventDefault(); showBoard('implantacoesBoard'); });
-    if (btnViewMaintenance) btnViewMaintenance.addEventListener('click', (e) => { e.preventDefault(); showBoard('maintenanceBoard'); });
-    if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); showBoard('relatoriosBoard'); });
-    if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); showBoard('configBoard'); });
+    if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); switchView('config'); });
 
     // Restore Default Email Template
     const btnRestoreEmailDefault = document.getElementById('btnRestoreEmailDefault');
@@ -2554,37 +2501,52 @@ function switchView(viewName) {
     });
 
     // Ocultar tudo inicialmente
-    btnNewTask.style.display = 'none';
-    btnNewCS.style.display = 'none';
-    kanbanBoard.style.display = 'none';
-    csBoard.style.display = 'none';
-    relatoriosBoard.style.display = 'none';
-    configBoard.style.display = 'none';
+    if (btnNewTask) btnNewTask.style.display = 'none';
+    if (btnNewCS) btnNewCS.style.display = 'none';
+    if (btnNewImplantation) btnNewImplantation.style.display = 'none';
+    if (kanbanBoard) kanbanBoard.style.display = 'none';
+    if (csBoard) csBoard.style.display = 'none';
+    if (implantacoesBoard) implantacoesBoard.style.display = 'none';
+    if (relatoriosBoard) relatoriosBoard.style.display = 'none';
+    if (configBoard) configBoard.style.display = 'none';
     if (maintenanceBoard) maintenanceBoard.style.display = 'none';
     if (demandasFilterBar) demandasFilterBar.style.display = 'none';
 
     if (viewName === 'demandas' && btnViewDemandas) {
         btnViewDemandas.classList.add('active');
-        btnNewTask.style.display = 'inline-flex';
-        kanbanBoard.style.display = 'flex';
+        if (btnNewTask) btnNewTask.style.display = 'inline-flex';
+        if (kanbanBoard) {
+            kanbanBoard.style.display = 'flex';
+            kanbanBoard.dataset.view = 'demandas';
+        }
         if (demandasFilterBar) demandasFilterBar.style.display = 'flex';
         if (slaFilter) slaFilter.style.display = 'block';
     }
     else if (viewName === 'cs' && btnViewCS) {
         btnViewCS.classList.add('active');
-        btnNewCS.style.display = 'inline-flex';
-        csBoard.style.display = 'block';
+        if (btnNewCS) btnNewCS.style.display = 'inline-flex';
+        if (csBoard) csBoard.style.display = 'block';
+        if (typeof renderCSBoard === 'function') renderCSBoard();
+    }
+    else if (viewName === 'implantacoes' && btnViewImplantacoes) {
+        if (btnViewImplantacoes) btnViewImplantacoes.classList.add('active');
+        if (btnNewImplantation) btnNewImplantation.style.display = 'inline-flex';
+        if (implantacoesBoard) implantacoesBoard.style.display = 'block';
+        if (typeof renderImplantacoesBoard === 'function') renderImplantacoesBoard();
     }
     else if (viewName === 'maintenance' && btnViewCSMaintenance) {
         btnViewCSMaintenance.classList.add('active');
-        if (maintenanceBoard) maintenanceBoard.style.display = 'block';
+        if (maintenanceBoard) maintenanceBoard.style.display = 'flex';
         if (typeof renderMaintenanceBoard === 'function') renderMaintenanceBoard();
     }
     else if (viewName === 'concluidas' && btnViewConcluidas) {
         btnViewConcluidas.classList.add('active');
-        kanbanBoard.style.display = 'flex';
+        if (kanbanBoard) {
+            kanbanBoard.style.display = 'flex';
+            kanbanBoard.dataset.view = 'concluidas';
+        }
         if (demandasFilterBar) demandasFilterBar.style.display = 'flex';
-        if (slaFilter) slaFilter.style.display = 'none'; // Hide SLA filter as it is irrelevant here
+        if (slaFilter) slaFilter.style.display = 'none';
     }
     else if (viewName === 'relatorios' && btnViewRelatorios) {
         btnViewRelatorios.classList.add('active');
@@ -2928,15 +2890,6 @@ function renderCSBoard() {
         return 'badge-neutral';
     };
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-            const [y, m, d] = parts;
-            return `${d}/${m}/${y}`;
-        }
-        return dateStr;
-    };
 
     getFilteredItems(csClients, 'cs').forEach(client => {
         const tr = document.createElement('tr');
@@ -3023,27 +2976,40 @@ function renderMaintenanceBoard() {
         }
     });
 
-    const clients = Object.keys(preventivasByClient).sort();
+    // 1. Coleta e ordenação de clientes por atividade mais recente
+    const clientsData = Object.keys(preventivasByClient).map(clientName => {
+        const clientTasks = preventivasByClient[clientName];
+        
+        // Ordenar tarefas deste cliente para achar a mais recente
+        clientTasks.sort((a, b) => {
+            const dateA = new Date(a.closedAt || a.createdAt || a.date || '1970-01-01');
+            const dateB = new Date(b.closedAt || b.createdAt || b.date || '1970-01-01');
+            return dateB - dateA;
+        });
 
-    if (clients.length === 0) {
+        const latestTask = clientTasks[0];
+        const latestActivityDate = new Date(latestTask?.closedAt || latestTask?.createdAt || latestTask?.date || '1970-01-01');
+
+        return {
+            name: clientName,
+            tasks: clientTasks,
+            latestActivityDate: latestActivityDate
+        };
+    });
+
+    // Ordenar clientes por data da atividade mais recente (DESC)
+    clientsData.sort((a, b) => b.latestActivityDate - a.latestActivityDate);
+
+    if (clientsData.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhuma preventiva encontrada</td></tr>';
         return;
     }
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-            const [y, m, d] = parts;
-            return `${d}/${m}/${y}`;
-        }
-        return dateStr;
-    };
-
     let count = 0;
 
-    clients.forEach(clientName => {
-        const clientTasks = preventivasByClient[clientName];
+    clientsData.forEach(client => {
+        const clientName = client.name;
+        const clientTasks = client.tasks;
 
         // Ordenar por data (mais recente primeiro)
         clientTasks.sort((a, b) => {
@@ -3249,12 +3215,6 @@ function renderImplantacoesBoard() {
         return;
     }
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        const parts = dateStr.split('-');
-        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        return dateStr;
-    };
 
     implantacoes.sort((a, b) => new Date(b.previsao) - new Date(a.previsao)).forEach(imp => {
         const tr = document.createElement('tr');
