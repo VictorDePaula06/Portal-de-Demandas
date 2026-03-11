@@ -789,6 +789,13 @@ function fetchNetworks() {
         networks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderNetworkList();
         renderNetworkSelect();
+        
+        // NOVO: Renderizar o quadro quando as redes carregarem.
+        // Isso resolve o problema de usuários restritos verem o quadro vazio no load
+        // porque a filtragem depende do array 'networks' estar populado.
+        renderBoard();
+        if (typeof renderCSBoard === 'function') renderCSBoard();
+        if (typeof updateReportCustomerList === 'function') updateReportCustomerList();
     });
 }
 
