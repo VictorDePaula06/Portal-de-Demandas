@@ -1896,6 +1896,27 @@ if (btnGeneratePDF) {
 
         const reportFormat = document.getElementById('reportFormat')?.value || 'simplified';
 
+        // Mapeamento de labels amigáveis para o PDF
+        const slaLabels = {
+            'both': 'Tudo (Abertas + Concluídas)',
+            'open_all': 'Apenas Abertas',
+            'open_overdue': 'Abertas e Atrasadas',
+            'all': 'Apenas Concluídas',
+            'ontime': 'Concluídas No Prazo',
+            'overdue': 'Concluídas Atrasadas'
+        };
+        const typeLabels = {
+            'demandas_all': 'Geral (sem Prev.)',
+            'Análise': 'Análise',
+            'QP - Melhoria': 'QP - Melhoria',
+            'QP - Correção': 'QP - Correção',
+            'Adhoc': 'Adhoc',
+            'all': 'Tudo (incluindo Prev.)'
+        };
+
+        const labelSLA = slaLabels[reportSLAFilter] || reportSLAFilter;
+        const labelType = typeLabels[reportTypeFilter] || reportTypeFilter;
+
         // Configuração jsPDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape'); // Orientação Paisagem
@@ -1908,33 +1929,36 @@ if (btnGeneratePDF) {
             clientTitle = names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} e +${names.length - 3}`;
         }
 
-        doc.setFontSize(18);
-        doc.text("Relatório de Demandas - PortalCS", 14, 15);
-        doc.setFontSize(11);
-        doc.text(`Tipo: ${reportTypeFilter} | Filtro: ${reportSLAFilter} | Período: ${reportMonth || 'Abertas'}`, 14, 23);
-        doc.text(`Clientes: ${clientTitle} | Formato: ${reportFormat === 'simplified' ? 'Simplificado' : 'Analítico'} | Total: ${reportData.length}`, 14, 29);
-
-        // Funcão auxiliar para evitar que Emojis (e caracteres com múltiplos bytes além do Latin-1 padrão) corrompam o construtor doc.text do jsPDF
+        // Função de sanitização robusta para evitar caracteres estranhos no PDF (jsPDF standard fonts)
         const sanitizeForPDF = (str) => {
             if (!str) return '';
-            return String(str).replace(/[^\x00-\xFF]/g, '');
+            // Substitui caracteres acentuados comuns por versões sem acento para máxima compatibilidade
+            return String(str)
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .replace(/[^\x20-\x7E]/g, ''); // Mantém apenas ASCII visível (32-126)
         };
+
+        doc.setFontSize(18);
+        doc.text("Relatorio de Demandas - PortalCS", 14, 15);
+        doc.setFontSize(11);
+        doc.text(`Tipo: ${sanitizeForPDF(labelType)} | Filtro: ${sanitizeForPDF(labelSLA)} | Periodo: ${reportMonth || 'Abertas'}`, 14, 23);
+        doc.text(`Clientes: ${sanitizeForPDF(clientTitle)} | Formato: ${reportFormat === 'simplified' ? 'Simplificado' : 'Analitico'} | Total: ${reportData.length}`, 14, 29);
 
         // Preparar Dados da Tabela baseados no formato
         let tableColumn, tableRows, tableStyles;
 
         if (reportFormat === 'analytical') {
-            tableColumn = ["Demanda / TiFlux #", "Detalhes (Cliente / Resp / Venc)", "Descrição / Descritivo"];
+            tableColumn = ["Demanda / TiFlux #", "Detalhes (Cliente / Resp / Venc)", "Descricao / Descritivo"];
             tableRows = reportData.map(t => {
                 const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${t.date ? t.date.split('-').reverse().join('/') : '-'}\nPrior: ${t.prioridade || 'Normal'}`;
                 return [
                     `${sanitizeForPDF(t.status)}\n#${t.number || 'N/A'}`,
                     sanitizeForPDF(details),
-                    sanitizeForPDF(t.desc || 'Sem descrição informada')
+                    sanitizeForPDF(t.desc || 'Sem descricao informada')
                 ];
             });
-            tableStyles = {
-                fontSize: 9,
+            tableStyles = { 
+                fontSize: 9, 
                 cellPadding: 4,
                 columnStyles: {
                     0: { cellWidth: 40 },
@@ -1943,7 +1967,7 @@ if (btnGeneratePDF) {
                 }
             };
         } else {
-            tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsável", "Vencimento", "Prioridade"];
+            tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsavel", "Vencimento", "Prioridade"];
             tableRows = reportData.map(t => [
                 sanitizeForPDF(t.status),
                 t.number || 'N/A',
@@ -1966,7 +1990,7 @@ if (btnGeneratePDF) {
             alternateRowStyles: { fillColor: [248, 248, 250] },
             margin: { left: 14, right: 14 },
             didDrawPage: (data) => {
-                const str = "Página " + doc.internal.getNumberOfPages();
+                const str = "Pagina " + doc.internal.getNumberOfPages();
                 const now = new Date().toLocaleDateString('pt-BR');
                 doc.setFontSize(8);
                 doc.setTextColor(150);
