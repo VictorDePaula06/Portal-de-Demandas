@@ -496,6 +496,18 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Sync Change Badges (Detailed Sync) */
+.sync-change-badge {
+    font-size: 0.6rem;
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+    padding: 2px 6px;
+    border-radius: 99px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
 .task-cliente {
     font-size: 0.8rem;
     font-weight: 500;

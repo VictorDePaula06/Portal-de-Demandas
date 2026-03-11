@@ -210,17 +210,15 @@ async function fetchDemandasDaAPI() {
 
                     // Se no TiFlux o chamado agora está concluído, mas no portal ainda está aberto
                     // nós permitimos a atualização para que ele mova para a aba de concluídos.
-                    const hasDifferences = apiTask.status !== localTask.status ||
-                        apiTask.desc !== localTask.desc ||
-                        apiTask.prioridade !== localTask.prioridade ||
-                        apiTask.responsavel !== localTask.responsavel ||
-                        apiTask.cliente !== localTask.cliente ||
-                        apiTask.quality !== localTask.quality ||
-                        apiTask.closedAt !== localTask.closedAt ||
-                        apiTask.createdAt !== localTask.createdAt ||
-                        apiTask.clientEmail !== localTask.clientEmail;
+                    const changes = [];
+                    if (apiTask.status !== localTask.status) changes.push('Status');
+                    if (apiTask.desc !== localTask.desc) changes.push('Descrição');
+                    if (apiTask.prioridade !== localTask.prioridade) changes.push('Prioridade');
+                    if (apiTask.responsavel !== localTask.responsavel) changes.push('Responsável');
+                    if (apiTask.cliente !== localTask.cliente) changes.push('Cliente');
+                    if (apiTask.quality !== localTask.quality) changes.push('Quality');
 
-                    if (hasDifferences) {
+                    if (changes.length > 0) {
                         updatedTasksCount++;
                         const taskRef = db.collection('tasks').doc(apiTask.id);
 
@@ -235,7 +233,12 @@ async function fetchDemandasDaAPI() {
 
                         batch.set(taskRef, taskUpdate, { merge: true });
                         hasChanges = true;
-                        syncdItems.push({ number: apiTask.number || 'N/A', type: 'Atu.', client: apiTask.cliente });
+                        syncdItems.push({ 
+                            number: apiTask.number || 'N/A', 
+                            type: 'Atu.', 
+                            client: apiTask.cliente,
+                            changes: changes 
+                        });
                     }
                 }
             });
@@ -404,15 +407,20 @@ function showSyncResultsModal(newCount, updatedCount, items) {
         ${emailPart}
     `;
 
-    list.innerHTML = items.map(item => `
+    list.innerHTML = items.map(item => {
+        const changesHtml = item.changes ? item.changes.map(c => `<span class="sync-change-badge">${c}</span>`).join('') : '';
+        return `
         <div class="sync-item ${item.type === 'Novo' ? 'new' : 'updated'}">
-            <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; flex-direction: column; flex: 1;">
                 <span class="sync-item-number">#${item.number}</span>
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${item.client}</span>
+                <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
+                    ${changesHtml}
+                </div>
             </div>
             <span class="sync-badge ${item.type === 'Novo' ? 'new' : 'updated'}">${item.type}</span>
         </div>
-    `).join('');
+    `}).join('');
 
     modal.classList.add('active');
 }
@@ -1343,9 +1351,9 @@ function checkAuth() {
             if (btnViewMaintenance) btnViewMaintenance.style.display = 'none';
             if (btnViewConfig) btnViewConfig.style.display = 'none';
             
-            // Modo Leitura
+            // Modo Leitura com Sincronização
             if (btnNewTask) btnNewTask.style.display = 'none';
-            if (btnSyncTiFlux) btnSyncTiFlux.style.display = 'none';
+            if (btnSyncTiFlux) btnSyncTiFlux.style.display = 'flex'; // Cliente PODE sincronizar
             if (reportCardPreventivas) reportCardPreventivas.style.display = 'none';
 
             // Se estiver em uma aba proibida, volta para Demandas
@@ -1545,6 +1553,22 @@ function openEditModal(id) {
         document.getElementById('taskInfo').value = task.info || '';
         document.getElementById('taskHasUpdate').checked = task.hasUpdate || false;
 
+        // Ocultar campos admin para clientes
+        const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
+        const infoCont = document.getElementById('infoFieldContainer');
+        const updateCont = document.getElementById('updateFieldContainer');
+        const submitBtn = taskForm.querySelector('button[type="submit"]');
+
+        if (isClientUser) {
+            if (infoCont) infoCont.style.display = 'none';
+            if (updateCont) updateCont.style.display = 'none';
+            if (submitBtn) submitBtn.style.display = 'none'; // Cliente não salva nada no modal
+        } else {
+            if (infoCont) infoCont.style.display = 'block';
+            if (updateCont) updateCont.style.display = 'flex';
+            if (submitBtn) submitBtn.style.display = 'block';
+        }
+
         // Lógica do botão de reenvio individual
         if (btnResendEmail) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1735,6 +1759,12 @@ function showToast(message, type = 'success') {
 // Save Task (Demandas)
 taskForm.addEventListener('submit', (e) => {
     e.preventDefault();
+
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
+    if (isClientUser) {
+        showToast('Acesso restrito: Clientes não podem criar ou alterar demandas.', 'warning');
+        return;
+    }
 
     const id = document.getElementById('taskId').value || Date.now().toString();
     const number = document.getElementById('taskNumber').value;
