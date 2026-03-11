@@ -181,6 +181,7 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 date: formattedDate,
                 slaUpdated: true,
                 status: finalStatus,
+                etapa: ticket.stage?.name || '',
                 obs: '', // Adicionando campo de obs para evitar undefined no frontend vindo do sync
                 closedAt: ticket.closed_at ? ticket.closed_at.split('T')[0].split(' ')[0] : (
                     ticket.is_closed ||
@@ -461,7 +462,7 @@ async function processNetworkReport(networkId) {
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Posto</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Descrição</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Vencimento</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Status</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Status / Etapa</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -471,13 +472,25 @@ async function processNetworkReport(networkId) {
             const isOverdue = t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
             const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
             
+            // Formatar data para PT-BR
+            const formattedDueDate = t.date ? t.date.split('-').reverse().join('/') : 'S/D';
+            
+            // Mapear status amigável (se for QP, mostra Em andamento + etapa)
+            let displayStatus = t.status;
+            if (t.status && t.status.includes('QP')) {
+                displayStatus = 'Em andamento';
+            }
+            if (t.etapa) {
+                displayStatus += ` (${t.etapa})`;
+            }
+
             tasksHtml += `
                 <tr>
                     <td style="padding: 10px; border: 1px solid #e5e7eb;">#${t.number}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.cliente}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.desc}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb; ${statusStyle}">${t.date || 'S/D'} ${isOverdue ? '⏰' : ''}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.status}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; ${statusStyle}">${formattedDueDate} ${isOverdue ? '⏰' : ''}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${displayStatus}</td>
                 </tr>
             `;
         });

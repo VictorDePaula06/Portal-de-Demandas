@@ -3134,6 +3134,11 @@ function showMaintenanceHistory(clientName) {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum registro encontrado.</td></tr>';
     } else {
         const formatDate = (dateStr) => {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('T')[0].split(' ')[0].split(/[\/-]/);
+            if (parts.length < 3) return dateStr;
+            const [y, m, d] = parts;
+            return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y.slice(-4)}`;
         };
 
         history.forEach(t => {
