@@ -781,6 +781,18 @@ function getNetworkNameByClient(clientName) {
     return network ? network.name : '';
 }
 
+function getNetworkEmailByClient(clientName) {
+    if (!clientName || !networks || networks.length === 0) return '';
+    const nameLower = clientName.toLowerCase();
+    const network = networks.find(n => 
+        n.clients && n.clients.some(c => {
+            const cName = typeof c === 'string' ? c : c.name;
+            return nameLower.includes(cName.toLowerCase());
+        })
+    );
+    return network ? (network.reportEmail || '') : '';
+}
+
 function fetchNetworks() {
     db.collection('networks').onSnapshot((snapshot) => {
         networks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
