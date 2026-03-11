@@ -223,8 +223,9 @@ async function fetchDemandasDaAPI() {
                         const taskRef = db.collection('tasks').doc(apiTask.id);
 
                         // Proteção: Não sobrescrever a data de vencimento (SLA) se ela já existe localmente
+                        // EXCETO se o status mudou (ex: de Analise para QP), onde o prazo deve ser recalculado
                         const taskUpdate = { ...apiTask };
-                        if (localTask.date) {
+                        if (localTask.date && apiTask.status === localTask.status) {
                             taskUpdate.date = localTask.date;
                         }
 
