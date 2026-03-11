@@ -975,8 +975,9 @@ if (networkForm) {
     }
 
     window.addClientToNetwork = function(name) {
-        if (!currentNetworkClients.includes(name)) {
-            currentNetworkClients.push(name);
+        const exists = currentNetworkClients.some(c => (typeof c === 'string' ? c : c.name) === name);
+        if (!exists) {
+            currentNetworkClients.push({ name: name, active: true });
             renderCurrentNetworkClients();
             showToast(`"${name}" adicionado.`);
         } else {
@@ -1000,7 +1001,10 @@ if (networkForm) {
         if (countSpan) countSpan.textContent = currentNetworkClients.length;
 
         const filtered = query 
-            ? currentNetworkClients.filter(c => c.toLowerCase().includes(query.toLowerCase()))
+            ? currentNetworkClients.filter(c => {
+                const name = typeof c === 'string' ? c : c.name;
+                return name.toLowerCase().includes(query.toLowerCase());
+            })
             : currentNetworkClients;
 
         if (filtered.length === 0) {
@@ -1009,12 +1013,24 @@ if (networkForm) {
         }
 
         let html = '';
-        filtered.sort().forEach(name => {
+        filtered.sort((a, b) => {
+            const nameA = typeof a === 'string' ? a : a.name;
+            const nameB = typeof b === 'string' ? b : b.name;
+            return nameA.localeCompare(nameB);
+        }).forEach(client => {
+            const name = typeof client === 'string' ? client : client.name;
+            const isActive = typeof client === 'string' ? true : (client.active !== false);
+            
             html += `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                    <span style="color: var(--text-primary); font-size: 0.85rem; font-weight: 500;">${name}</span>
-                    <button type="button" onclick="removeClientFromNetwork('${name.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--status-critical); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; transition: background 0.2s;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); opacity: ${isActive ? '1' : '0.5'};">
+                    <span style="color: var(--text-primary); font-size: 0.85rem; font-weight: 500; text-decoration: ${isActive ? 'none' : 'line-through'};">${name}</span>
+                    <button type="button" onclick="toggleClientStatus('${name.replace(/'/g, "\\'")}')" 
+                        style="background: none; border: none; color: ${isActive ? 'var(--status-critical)' : 'var(--status-normal)'}; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; transition: background 0.2s;"
+                        title="${isActive ? 'Inativar Posto' : 'Reativar Posto'}">
+                        ${isActive ? 
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="15" y1="9" y2="15"/><line x1="15" x2="9" y1="9" y2="15"/></svg>' : 
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                        }
                     </button>
                 </div>
             `;
@@ -1022,9 +1038,25 @@ if (networkForm) {
         listContainer.innerHTML = html;
     }
 
+    window.toggleClientStatus = function(name) {
+        const index = currentNetworkClients.findIndex(c => (typeof c === 'string' ? c : c.name) === name);
+        if (index !== -1) {
+            const client = currentNetworkClients[index];
+            if (typeof client === 'string') {
+                currentNetworkClients[index] = { name: client, active: false };
+            } else {
+                client.active = !client.active;
+            }
+            renderCurrentNetworkClients(document.getElementById('internalClientSearch')?.value || '');
+        }
+    }
+
     window.removeClientFromNetwork = function(name) {
-        currentNetworkClients = currentNetworkClients.filter(c => c !== name);
-        renderCurrentNetworkClients(document.getElementById('internalClientSearch')?.value || '');
+        // Agora inativamos em vez de remover completamente se já estiver no banco? 
+        // O usuário disse: "não pode ter a opção de excluir um posto na rede, somente incluir, editar e inativar"
+        // Vou manter a função caso queira remover antes de salvar, mas no render troquei para toggleClientStatus
+        console.log("Remoção completa desabilitada pela nova regra de Inativação.");
+        toggleClientStatus(name);
     }
 }
 
@@ -1076,6 +1108,7 @@ window.openEditUserModal = function (id) {
         document.getElementById('adminUserEmail').value = user.email;
         document.getElementById('adminUserPass').value = user.pass;
         document.getElementById('adminUserIsAdmin').checked = user.isAdmin || false;
+        document.getElementById('adminUserIsClient').checked = user.isClient || false;
         document.getElementById('adminUserNetwork').value = user.userNetwork || '';
 
         // Change button text or title to indicate editing
@@ -1096,6 +1129,7 @@ if (userAdminForm) {
         const email = document.getElementById('adminUserEmail').value.trim().toLowerCase();
         const pass = document.getElementById('adminUserPass').value.trim();
         const isAdmin = document.getElementById('adminUserIsAdmin').checked;
+        const isClient = document.getElementById('adminUserIsClient').checked;
         const userNetwork = document.getElementById('adminUserNetwork').value;
 
         if (!name || !email || !pass) return;
@@ -1105,6 +1139,7 @@ if (userAdminForm) {
             email: email,
             pass: pass,
             isAdmin: isAdmin,
+            isClient: isClient,
             userNetwork: userNetwork
         };
 
@@ -1260,19 +1295,45 @@ window.deleteCustomUser = function (id) {
 function checkAuth() {
     currentUser = localStorage.getItem(USER_STORAGE_KEY);
     const isAdminUser = localStorage.getItem('portalCS_isAdmin') === 'true';
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
 
     if (currentUser) {
         loginOverlay.classList.remove('active');
         sidebarFooter.style.display = 'block';
         currentUserName.textContent = currentUser;
 
-        // Ocultar Configurações se não for Admin
-        const viewConfigBtn = document.getElementById('btnViewConfig');
-        const isMaster = ADMIN_USERS.some(adm => currentUser.toLowerCase().includes(adm.toLowerCase()));
-        const canSeeConfig = isAdminUser || isMaster;
+        // Ocultar Abas se for Acesso Cliente (Restrito)
+        const btnViewCS = document.getElementById('btnViewCS');
+        const btnViewImplantacoes = document.getElementById('btnViewImplantacoes');
+        const btnViewConcluidas = document.getElementById('btnViewConcluidas');
+        const btnViewMaintenance = document.getElementById('btnViewCSMaintenance');
+        const btnViewConfig = document.getElementById('btnViewConfig');
 
-        if (viewConfigBtn) {
-            viewConfigBtn.style.display = canSeeConfig ? 'flex' : 'none';
+        if (isClientUser) {
+            if (btnViewCS) btnViewCS.style.display = 'none';
+            if (btnViewImplantacoes) btnViewImplantacoes.style.display = 'none';
+            if (btnViewConcluidas) btnViewConcluidas.style.display = 'none';
+            if (btnViewMaintenance) btnViewMaintenance.style.display = 'none';
+            if (btnViewConfig) btnViewConfig.style.display = 'none';
+            
+            // Se estiver em uma aba proibida, volta para Demandas
+            const currentTab = document.querySelector('.nav-item.active')?.id;
+            const prohibitedTabs = ['btnViewCS', 'btnViewImplantacoes', 'btnViewConcluidas', 'btnViewCSMaintenance', 'btnViewConfig'];
+            if (prohibitedTabs.includes(currentTab)) {
+                document.getElementById('btnViewDemandas')?.click();
+            }
+        } else {
+            // Restaurar visibilidade para admins/users normais
+            if (btnViewCS) btnViewCS.style.display = 'flex';
+            if (btnViewImplantacoes) btnViewImplantacoes.style.display = 'flex';
+            if (btnViewConcluidas) btnViewConcluidas.style.display = 'flex';
+            if (btnViewMaintenance) btnViewMaintenance.style.display = 'flex';
+
+            // Configurações tem regra própria de Admin
+            const isMaster = ADMIN_USERS.some(adm => currentUser.toLowerCase().includes(adm.toLowerCase()));
+            if (btnViewConfig) {
+                btnViewConfig.style.display = (isAdminUser || isMaster) ? 'flex' : 'none';
+            }
         }
 
     } else {
@@ -1305,6 +1366,7 @@ loginForm.addEventListener('submit', (e) => {
         if (validUser) {
             localStorage.setItem(USER_STORAGE_KEY, validUser.name);
             localStorage.setItem('portalCS_isAdmin', validUser.isAdmin ? 'true' : 'false');
+            localStorage.setItem('portalCS_isClient', validUser.isClient ? 'true' : 'false');
             localStorage.setItem('portalCS_network', validUser.userNetwork || '');
             loginEmailInput.value = '';
             loginPassInput.value = '';
@@ -1341,7 +1403,10 @@ function getFilteredItems(items, type = 'demanda') {
         return items; // Ou retornar [] se preferir que usuários sem rede não vejam nada
     }
 
-    const networkClients = network.clients.map(c => c.toLowerCase());
+    const networkClients = network.clients
+        .filter(c => typeof c === 'string' || c.active !== false)
+        .map(c => (typeof c === 'string' ? c : c.name).toLowerCase());
+        
     return items.filter(item => {
         const clientName = (type === 'cs' ? item.name : (type === 'implantacao' ? item.unidade || item.rede : item.cliente)) || '';
         return networkClients.some(nc => clientName.toLowerCase().includes(nc));

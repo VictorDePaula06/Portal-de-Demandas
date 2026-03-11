@@ -1547,11 +1547,18 @@ input:checked+.slider:before {
 /* Settings Grid for Config Boards */
 .settings-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 2.5rem;
     max-width: 1200px;
     margin-top: 2.5rem;
     align-items: start;
+}
+
+@media (max-width: 1024px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
 }
 
 /* Custom Scrollbar for Lists within Cards */
