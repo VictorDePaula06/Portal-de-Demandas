@@ -2121,10 +2121,6 @@ if (btnGeneratePreventivasPDF) {
         };
 
         const formatDate = (dateStr) => {
-            if (!dateStr) return '-';
-            const parts = dateStr.split('-');
-            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            return dateStr;
         };
 
         clients.forEach(clientName => {
@@ -2285,10 +2281,6 @@ if (btnGenerateImplantacoesPDF) {
         };
 
         const formatDate = (dateStr) => {
-            if (!dateStr) return '-';
-            const parts = dateStr.split('-');
-            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            return dateStr;
         };
 
         // Filtrar implantações
@@ -3122,10 +3114,6 @@ function showMaintenanceHistory(clientName) {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Nenhum registro encontrado.</td></tr>';
     } else {
         const formatDate = (dateStr) => {
-            if (!dateStr) return '-';
-            const parts = dateStr.split('-');
-            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-            return dateStr;
         };
 
         history.forEach(t => {
