@@ -1309,6 +1309,11 @@ function checkAuth() {
         const btnViewMaintenance = document.getElementById('btnViewCSMaintenance');
         const btnViewConfig = document.getElementById('btnViewConfig');
 
+        // Novos botões para ocultar (Modo Leitura)
+        const btnNewTask = document.getElementById('btnNewTask');
+        const btnSyncTiFlux = document.getElementById('btnSyncTiFlux');
+        const reportCardPreventivas = document.querySelector('.report-card.preventivas');
+
         if (isClientUser) {
             if (btnViewCS) btnViewCS.style.display = 'none';
             if (btnViewImplantacoes) btnViewImplantacoes.style.display = 'none';
@@ -1316,6 +1321,11 @@ function checkAuth() {
             if (btnViewMaintenance) btnViewMaintenance.style.display = 'none';
             if (btnViewConfig) btnViewConfig.style.display = 'none';
             
+            // Modo Leitura
+            if (btnNewTask) btnNewTask.style.display = 'none';
+            if (btnSyncTiFlux) btnSyncTiFlux.style.display = 'none';
+            if (reportCardPreventivas) reportCardPreventivas.style.display = 'none';
+
             // Se estiver em uma aba proibida, volta para Demandas
             const currentTab = document.querySelector('.nav-item.active')?.id;
             const prohibitedTabs = ['btnViewCS', 'btnViewImplantacoes', 'btnViewConcluidas', 'btnViewCSMaintenance', 'btnViewConfig'];
@@ -1328,6 +1338,10 @@ function checkAuth() {
             if (btnViewImplantacoes) btnViewImplantacoes.style.display = 'flex';
             if (btnViewConcluidas) btnViewConcluidas.style.display = 'flex';
             if (btnViewMaintenance) btnViewMaintenance.style.display = 'flex';
+            
+            if (btnNewTask) btnNewTask.style.display = 'flex';
+            if (btnSyncTiFlux) btnSyncTiFlux.style.display = 'flex';
+            if (reportCardPreventivas) reportCardPreventivas.style.display = 'block';
 
             // Configurações tem regra própria de Admin
             const isMaster = ADMIN_USERS.some(adm => currentUser.toLowerCase().includes(adm.toLowerCase()));
@@ -1390,9 +1404,29 @@ function getFilteredItems(items, type = 'demanda') {
     const isAdmin = localStorage.getItem('portalCS_isAdmin') === 'true';
     const userNetworkId = localStorage.getItem('portalCS_network');
     const userRole = localStorage.getItem(USER_STORAGE_KEY);
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
 
     // Victor e outros admins masters ignore tudo
     const isMaster = ADMIN_USERS.some(adm => userRole && userRole.toLowerCase().includes(adm.toLowerCase()));
+
+    // Se for cliente, o filtro deve mostrar APENAS os dele, sem falhas
+    if (isClientUser) {
+        if (!userNetworkId || networks.length === 0) {
+            return []; // Enquanto não carregar a rede, não mostra nada (evita flash de tudo)
+        }
+        const network = networks.find(n => n.id === userNetworkId);
+        if (network && network.clients) {
+            const authorizedClients = network.clients
+                .filter(c => typeof c === 'string' || c.active !== false)
+                .map(c => typeof c === 'string' ? c : c.name);
+            
+            return items.filter(item => {
+                const clientName = (type === 'cs' ? item.name : (type === 'implantacao' ? item.unidade || item.rede : item.cliente)) || '';
+                return authorizedClients.some(nc => clientName.toLowerCase().includes(nc.toLowerCase()));
+            });
+        }
+        return []; 
+    }
 
     if (isAdmin || isMaster || !userNetworkId) {
         return items;
@@ -1400,7 +1434,7 @@ function getFilteredItems(items, type = 'demanda') {
 
     const network = networks.find(n => n.id === userNetworkId);
     if (!network || !network.clients || network.clients.length === 0) {
-        return items; // Ou retornar [] se preferir que usuários sem rede não vejam nada
+        return items; 
     }
 
     const networkClients = network.clients
@@ -1415,6 +1449,12 @@ function getFilteredItems(items, type = 'demanda') {
 
 // Modal Actions
 function openModal() {
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
+    if (isClientUser) {
+        showToast('Acesso restrito: Apenas visualização.', 'warning');
+        return;
+    }
+
     taskForm.reset();
     document.getElementById('taskId').value = '';
     const today = new Date().toISOString().split('T')[0];
@@ -2170,6 +2210,12 @@ if (btnGenerateImplantacoesPDF) {
 
 // Delete Task (Secured)
 function deleteTask(id) {
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
+    if (isClientUser) {
+        showToast('Acesso restrito: Apenas visualização.', 'warning');
+        return;
+    }
+
     // Check if user is in hardcoded list
     const isHardcodedAdmin = ADMIN_USERS.includes(currentUser);
     // Check if user is in Firebase customUsers and has isAdmin == true
@@ -2192,6 +2238,12 @@ let pendingCompleteTaskId = null;
 let pendingCompleteNewStatus = null;
 
 function completeTask(id, newStatus = null) {
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
+    if (isClientUser) {
+        showToast('Acesso restrito: Apenas visualização.', 'warning');
+        return;
+    }
+
     pendingCompleteTaskId = id;
     pendingCompleteNewStatus = newStatus;
 
