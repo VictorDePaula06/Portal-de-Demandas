@@ -895,6 +895,7 @@ window.openEditNetworkModal = function(id) {
         document.getElementById('networkId').value = network.id;
         document.getElementById('networkName').value = network.name;
         document.getElementById('networkReportEmail').value = network.reportEmail || '';
+        document.getElementById('networkAutoReport').checked = network.autoReportEnabled || false;
         
         // Inicializar estado local de clientes para edição
         currentNetworkClients = [...(network.clients || [])];
@@ -903,9 +904,6 @@ window.openEditNetworkModal = function(id) {
         const netForm = document.getElementById('networkForm');
         const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
         if (submitBtn) submitBtn.textContent = 'Atualizar Rede';
-
-        // Garantir que a aba de config role para o topo do formulário
-        document.getElementById('configBoard').scrollTop = 0;
     }
 }
 
@@ -928,6 +926,7 @@ if (networkForm) {
         const id = document.getElementById('networkId').value;
         const name = document.getElementById('networkName').value.trim();
         const reportEmail = document.getElementById('networkReportEmail').value.trim();
+        const autoReportEnabled = document.getElementById('networkAutoReport').checked;
         
         if (!name || currentNetworkClients.length === 0) {
             showToast('Preencha o nome da rede e adicione ao menos um posto.', 'warning');
@@ -937,7 +936,8 @@ if (networkForm) {
         const networkData = { 
             name: name, 
             clients: currentNetworkClients,
-            reportEmail: reportEmail
+            reportEmail: reportEmail,
+            autoReportEnabled: autoReportEnabled
         };
 
         if (id) {
@@ -958,6 +958,7 @@ if (networkForm) {
         if (netForm) netForm.reset();
         document.getElementById('networkId').value = '';
         document.getElementById('networkReportEmail').value = '';
+        document.getElementById('networkAutoReport').checked = false;
         currentNetworkClients = [];
         renderCurrentNetworkClients();
         const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;

@@ -281,10 +281,12 @@ app.get('/api/cron/network-reports', async (req, res) => {
 
         for (const doc of networksSnap.docs) {
             const network = doc.data();
-            if (network.reportEmail) {
+            if (network.reportEmail && network.autoReportEnabled === true) {
                 console.log(`[CRON] Processando rede: ${network.name} -> ${network.reportEmail}`);
                 const res = await processNetworkReport(doc.id);
                 results.push({ network: network.name, ...res });
+            } else {
+                console.log(`[CRON] Skipping rede: ${network.name} (AutoReport not enabled or email missing)`);
             }
         }
 
