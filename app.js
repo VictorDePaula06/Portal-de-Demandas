@@ -16,22 +16,36 @@ let tasks = [];
 let csClients = [];
 let implantacoes = [];
 
-// Funções Utilitárias Globais
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const formatDate = (dateStr) => {
     if (!dateStr || dateStr === '-') return '-';
-    // Se já estiver no formato brasileiro DD/MM/YYYY, retorna ele mesmo
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
     
-    // Tenta tratar como YYYY-MM-DD
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-        let [y, m, d] = parts;
-        // Correção específica para o bug do ano "32026" ou similares (se o ano tiver mais de 4 dígitos)
-        if (y.length > 4) y = y.slice(-4); 
-        return `${d}/${m}/${y}`;
+    // Tenta detectar DD/MM/YYYY ou similar
+    const brMatch = String(dateStr).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4,})$/);
+    if (brMatch) {
+        let [_, d, m, y] = brMatch;
+        if (y.length > 4) y = y.slice(-4);
+        return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
     }
+    
+    // Tenta detectar YYYY-MM-DD ou similar
+    const isoMatch = String(dateStr).match(/^(\d{4,})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if (isoMatch) {
+        let [_, y, m, d] = isoMatch;
+        if (y.length > 4) y = y.slice(-4);
+        return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+    }
+    
     return dateStr;
 };
+
+// NOVO: Busca e-mail da rede pelo nome do cliente
+function getNetworkEmailByClient(clientName) {
+    if (!networks || !clientName) return null;
+    const network = networks.find(n => n.clients && n.clients.includes(clientName));
+    return network ? network.reportEmail : null;
+}
 
 // Estado global para o filtro de relatórios
 let reportSelectedClients = new Set();
@@ -1575,14 +1589,17 @@ function openEditModal(id) {
 
         // Lógica do botão de reenvio individual
         if (btnResendEmail) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const hasValidEmail = task.clientEmail && emailRegex.test(task.clientEmail);
+            // Fallback para e-mail da rede se o e-mail do cliente estiver vazio
+            const networkEmail = getNetworkEmailByClient(task.cliente);
+            const effectiveEmail = task.clientEmail || networkEmail;
+            const hasValidEmail = effectiveEmail && emailRegex.test(effectiveEmail);
             btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
 
             // Remove listener anterior para não acumular
             btnResendEmail.onclick = async () => {
-                const updatedTask = tasks.find(t => t.id === task.id); // Pega a tarefa com e-mail atualizado do formulário se necessário
-                const emailVal = document.getElementById('taskContatoEmail')?.value || updatedTask.clientEmail; // Placeholder caso houver campo de email futuro
+                const updatedTask = tasks.find(t => t.id === task.id); 
+                const networkEmail = getNetworkEmailByClient(updatedTask?.cliente);
+                const emailVal = document.getElementById('taskContatoEmail')?.value || updatedTask?.clientEmail || networkEmail;
 
                 btnResendEmail.disabled = true;
                 btnResendEmail.innerHTML = 'Enviando...';
@@ -2022,7 +2039,7 @@ if (btnGeneratePDF) {
         if (reportFormat === 'analytical') {
             tableColumn = ["Demanda / TiFlux #", "Detalhes (Cliente / Resp / Venc)", "Descricao / Descritivo"];
             tableRows = reportData.map(t => {
-                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${t.date ? t.date.split('-').reverse().join('/') : '-'}\nPrior: ${t.prioridade || 'Normal'}`;
+                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${formatDate(t.date)}\nPrior: ${t.prioridade || 'Normal'}`;
                 return [
                     `${sanitizeForPDF(t.status)}\n#${t.number || 'N/A'}`,
                     sanitizeForPDF(details),
@@ -2045,7 +2062,7 @@ if (btnGeneratePDF) {
                 t.number || 'N/A',
                 sanitizeForPDF(t.cliente || 'Desconhecido'),
                 sanitizeForPDF(t.responsavel || '-'),
-                t.date ? t.date.split('-').reverse().join('/') : '-',
+                formatDate(t.date),
                 sanitizeForPDF(t.prioridade || 'Normal')
             ]);
             tableStyles = { fontSize: 10, cellPadding: 3 };
@@ -2496,7 +2513,7 @@ const maintenanceBoard = document.getElementById('maintenanceBoard');
 
 function switchView(viewName) {
     // Update active class on nav
-    [btnViewDemandas, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig].forEach(btn => {
+    [btnViewDemandas, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes].forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
 
@@ -2576,6 +2593,7 @@ function switchView(viewName) {
 
 if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); switchView('demandas'); });
 if (btnViewCS) btnViewCS.addEventListener('click', (e) => { e.preventDefault(); switchView('cs'); });
+if (btnViewImplantacoes) btnViewImplantacoes.addEventListener('click', (e) => { e.preventDefault(); switchView('implantacoes'); });
 if (btnViewCSMaintenance) btnViewCSMaintenance.addEventListener('click', (e) => { e.preventDefault(); switchView('maintenance'); });
 if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); switchView('concluidas'); });
 if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); switchView('relatorios'); });
@@ -2641,18 +2659,12 @@ function renderBoard() {
     filteredTasks.forEach(task => {
         const sla = checkSLA(task.date);
 
-        // Format date to Brazilian format
-        let dateDisplay = '-';
-        if (task.date) {
-            const [y, m, d] = task.date.split('-');
-            dateDisplay = `${d}/${m}/${y}`;
-        }
+        let dateDisplay = formatDate(task.date);
 
         let createdDisplay = '-';
         const rawCreatedAt = task.createdAt || task.date;
         if (rawCreatedAt) {
-            const [y, m, d] = rawCreatedAt.split('-');
-            createdDisplay = `${d}/${m}/${y}`;
+            createdDisplay = formatDate(rawCreatedAt);
         }
 
         // Fallback extraction for older tasks stored without the quality field
