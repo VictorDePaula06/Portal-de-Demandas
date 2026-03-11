@@ -250,6 +250,94 @@ app.get('/api/tiflux/clients', async (req, res) => {
 });
 
 /**
+ * Rota para Reenviar E-mail de Atualização Individual (Demandas)
+ */
+app.post('/api/send-overdue-emails', async (req, res) => {
+    try {
+        const { tasks: requestedTasks } = req.body;
+        if (!requestedTasks || !Array.isArray(requestedTasks) || requestedTasks.length === 0) {
+            return res.status(400).json({ success: false, error: 'Lista de tarefas inválida.' });
+        }
+
+        const emailSettingsSnap = await db.collection('settings').doc('email').get();
+        const emailSettings = emailSettingsSnap.exists ? emailSettingsSnap.data() : {};
+
+        const transporter = nodemailer.createTransport({
+            host: emailSettings.smtpHost,
+            port: parseInt(emailSettings.smtpPort) || 587,
+            secure: emailSettings.smtpPort == 465,
+            auth: {
+                user: emailSettings.smtpUser,
+                pass: emailSettings.smtpPass
+            }
+        });
+
+        const results = [];
+        for (const task of requestedTasks) {
+            const dateStr = new Date().toLocaleDateString('pt-BR');
+            // Formatar data da tarefa para BR se for ISO
+            const taskDateBR = task.date ? (task.date.includes('-') ? task.date.split('-').reverse().join('/') : task.date) : 'S/D';
+
+            const emailHtml = `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                    <div style="background-color: #1e293b; padding: 25px; text-align: center; color: white;">
+                        <h2 style="margin: 0;">Atualização de Demanda</h2>
+                        <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - Globaltera</p>
+                    </div>
+                    <div style="padding: 30px; color: #374151; line-height: 1.6;">
+                        <p>Olá,</p>
+                        <p>Há uma atualização importante sobre a sua solicitação:</p>
+                        
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                            <strong style="display: block; margin-bottom: 5px;">#${task.number} - ${task.cliente}</strong>
+                            <p style="margin: 0; font-size: 14px; color: #64748b;">${task.desc}</p>
+                            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                            <p style="margin: 0;"><strong>Status Atual:</strong> ${task.status}</p>
+                            <p style="margin: 5px 0 0 0;"><strong>Vencimento:</strong> ${taskDateBR}</p>
+                        </div>
+
+                        ${task.info ? `<div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+                            <strong>Informativo:</strong><br>${task.info}
+                        </div>` : ''}
+
+                        <p>Para mais detalhes, acesse o portal ou entre em contato conosco.</p>
+                    </div>
+                    <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+                        Enviado automaticamente em ${dateStr}
+                    </div>
+                </div>
+            `;
+
+            try {
+                // Se o e-mail não vier na task, tentamos buscar por fallback no banco se necessário, 
+                // mas o frontend já está passando o networkEmail ou clientEmail.
+                const recipient = task.clientEmail || (task.emailVal); // task.emailVal é o nome do campo se houver
+
+                if (!recipient) {
+                    results.push({ task: task.number, success: false, error: 'E-mail não fornecido.' });
+                    continue;
+                }
+
+                await transporter.sendMail({
+                    from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
+                    to: recipient,
+                    subject: `[ATUALIZAÇÃO] Chamado #${task.number} - ${task.cliente}`,
+                    html: emailHtml
+                });
+                results.push({ task: task.number, success: true });
+            } catch (err) {
+                results.push({ task: task.number, success: false, error: err.message });
+            }
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('Erro na rota de envio individual:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * Rota para enviar relatório de uma rede específica (Manual)
  */
 app.post('/api/send-network-report', async (req, res) => {
