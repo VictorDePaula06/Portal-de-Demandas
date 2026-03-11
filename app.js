@@ -2664,7 +2664,7 @@ function renderBoard() {
             <div class="task-card ${sla.class} ${isCompleted ? 'completed-card' : ''}" draggable="${!isCompleted}" data-id="${task.id}">
                 <div class="card-header">
                     <span class="task-num" title="Número TiFlux">#${task.number || '---'}</span>
-                    ${task.quality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Q:${task.quality}</span>` : ''}
+                    ${displayQuality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Q:${displayQuality}</span>` : ''}
                     <div style="flex: 1;"></div>
                     <span class="task-priority priority-${(task.prioridade || 'Normal').toLowerCase()}">${task.prioridade || 'Normal'}</span>
                 </div>
