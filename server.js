@@ -321,7 +321,8 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                 const recipient = task.clientEmail || (task.emailVal); // task.emailVal é o nome do campo se houver
 
                 if (!recipient) {
-                    results.push({ task: task.number, success: false, error: 'E-mail não fornecido.' });
+                    console.error(`[EMAIL] Falha: Recipiente vazio para o chamado #${task.number}`);
+                    results.push({ task: task.number, success: false, error: 'E-mail não fornecido.', recipient: 'N/A' });
                     continue;
                 }
 
@@ -334,9 +335,10 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                     html: emailHtml
                 });
                 console.log(`[EMAIL] Sucesso no envio para: ${recipient}`);
-                results.push({ task: task.number, success: true });
+                results.push({ task: task.number, success: true, recipient });
             } catch (err) {
-                results.push({ task: task.number, success: false, error: err.message });
+                console.error(`[EMAIL] Erro SMTP para ${recipient}:`, err);
+                results.push({ task: task.number, success: false, error: err.message, recipient });
             }
         }
 

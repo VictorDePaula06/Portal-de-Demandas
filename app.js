@@ -1621,9 +1621,16 @@ function openEditModal(id) {
                     });
 
                     if (response.ok) {
-                        showToast('E-mail reenviado com sucesso!');
+                        const data = await response.json();
+                        const result = data.results?.[0];
+                        if (result?.success) {
+                            showToast(`E-mail enviado para ${result.recipient || 'cliente'}!`);
+                        } else {
+                            showToast(`Erro no servidor: ${result?.error || 'Desconhecido'}`, 'critical');
+                        }
                     } else {
-                        showToast('Erro ao reenviar e-mail.', 'critical');
+                        const errData = await response.json().catch(() => ({}));
+                        showToast(`Erro HTTP ${response.status}: ${errData.error || 'Falha no envio'}`, 'critical');
                     }
                 } catch (e) {
                     console.error(e);
