@@ -1591,7 +1591,7 @@ function openEditModal(id) {
         if (btnResendEmail) {
             // Fallback para e-mail da rede se o e-mail do cliente estiver vazio
             const networkEmail = getNetworkEmailByClient(task.cliente);
-            const effectiveEmail = task.clientEmail || networkEmail;
+            const effectiveEmail = networkEmail || task.clientEmail;
             const hasValidEmail = effectiveEmail && emailRegex.test(effectiveEmail);
             btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
 
@@ -1599,7 +1599,7 @@ function openEditModal(id) {
             btnResendEmail.onclick = async () => {
                 const updatedTask = tasks.find(t => t.id === task.id); 
                 const networkEmail = getNetworkEmailByClient(updatedTask?.cliente);
-                const emailVal = updatedTask?.clientEmail || networkEmail;
+                const emailVal = networkEmail || updatedTask?.clientEmail;
 
                 btnResendEmail.disabled = true;
                 btnResendEmail.innerHTML = 'Enviando...';
