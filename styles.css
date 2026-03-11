@@ -379,12 +379,14 @@ body {
 }
 
 .task-num {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 700;
     color: var(--accent-primary);
     background: rgba(59, 130, 246, 0.1);
-    padding: 0.25rem 0.5rem;
+    padding: 0.15rem 0.4rem;
     border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
 }
 
 .task-priority {
@@ -414,6 +416,84 @@ body {
 .priority-urgente {
     background: rgba(239, 68, 68, 0.1);
     color: var(--status-critical);
+}
+
+/* Network Badge */
+.network-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-left: 6px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    vertical-align: middle;
+}
+
+/* Task Info Box (Internal Informative) */
+.task-info-box {
+    background: rgba(59, 130, 246, 0.05);
+    border-left: 2px solid var(--accent-primary);
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+}
+
+.task-info-box svg {
+    margin-top: 2px;
+    color: var(--accent-primary);
+    flex-shrink: 0;
+}
+
+/* Update Indicator */
+.update-indicator {
+    position: absolute;
+    top: 10px;
+    right: 85px; /* Ajustado para não sobrepor a prioridade que fica no canto direito */
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 2;
+    animation: fadeIn 0.5s ease;
+}
+
+.update-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--status-normal);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-green 2s infinite;
+}
+
+.update-text {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--status-normal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .task-cliente {

@@ -230,6 +230,9 @@ async function fetchDemandasDaAPI() {
                             taskUpdate.date = localTask.date;
                         }
 
+                        // NOVO: Marcar que houve uma atualização externa (TiFlux)
+                        taskUpdate.hasUpdate = true;
+
                         batch.set(taskRef, taskUpdate, { merge: true });
                         hasChanges = true;
                         syncdItems.push({ number: apiTask.number || 'N/A', type: 'Atu.', client: apiTask.cliente });
@@ -782,6 +785,18 @@ function fetchCustomUsers() {
         renderUserAdminList();
         renderNetworkSelect();
     });
+}
+
+function getNetworkNameByClient(clientName) {
+    if (!clientName || !networks || networks.length === 0) return '';
+    const nameLower = clientName.toLowerCase();
+    const network = networks.find(n => 
+        n.clients && n.clients.some(c => {
+            const cName = typeof c === 'string' ? c : c.name;
+            return nameLower.includes(cName.toLowerCase());
+        })
+    );
+    return network ? network.name : '';
 }
 
 function fetchNetworks() {
@@ -1473,6 +1488,11 @@ function openModal() {
         document.getElementById('taskResponsavel').value = currentUser;
     }
 
+    // Clear new fields for new task
+    document.getElementById('taskObs').value = '';
+    document.getElementById('taskInfo').value = '';
+    document.getElementById('taskHasUpdate').checked = false;
+
     if (btnResendEmail) btnResendEmail.style.display = 'none';
     modal.classList.add('active');
 }
@@ -1480,6 +1500,21 @@ function openModal() {
 function openEditModal(id) {
     const task = tasks.find(t => t.id === id);
     if (task) {
+        // Se o chamado tinha uma flag de atualização automática e o usuário abriu, 
+        // mas agora o controle é manual, vamos manter a flag se ela foi setada manualmente antes.
+        // No entanto, para seguir o comportamento anterior de "limpar ao abrir", 
+        // poderíamos desmarcar aqui, mas como adicionamos um toggle manual, 
+        // talvez seja melhor deixar o usuário decidir.
+        // Por via das dúvidas, vamos manter o comportamento de 'marcar como lido' apenas se não 
+        // houver um 'info' importante (decisão de UX).
+        
+        // Para simplificar e atender o pedido: Vamos deixar o toggle conforme está no banco.
+
+        // Se o chamado tinha uma flag de atualização, removemos agora que o usuário abriu
+        if (task.hasUpdate) {
+            db.collection('tasks').doc(task.id).update({ hasUpdate: false });
+        }
+
         // Fallback extraction for older tasks stored without the new backend quality field
         let extractedQuality = task.quality || '';
         if (!extractedQuality && task.desc) {
@@ -1507,6 +1542,8 @@ function openEditModal(id) {
 
         const taskObs = document.getElementById('taskObs');
         if (taskObs) taskObs.value = task.obs || '';
+        document.getElementById('taskInfo').value = task.info || '';
+        document.getElementById('taskHasUpdate').checked = task.hasUpdate || false;
 
         // Lógica do botão de reenvio individual
         if (btnResendEmail) {
@@ -1625,7 +1662,6 @@ function openImplantationModal(id = null) {
     if (id) {
         const imp = implantacoes.find(i => i.id === id);
         if (imp) {
-            document.getElementById('impId').value = imp.id;
             document.getElementById('impRede').value = imp.rede || '';
             document.getElementById('impUnidade').value = imp.unidade || '';
             document.getElementById('impCnpj').value = imp.cnpj || '';
@@ -1717,18 +1753,20 @@ taskForm.addEventListener('submit', (e) => {
     const date = document.getElementById('taskDate').value;
     const status = document.getElementById('taskStatus').value;
     const obs = document.getElementById('taskObs').value;
+    const info = document.getElementById('taskInfo').value;
+    const hasUpdate = document.getElementById('taskHasUpdate').checked;
 
     const isNew = !document.getElementById('taskId').value;
 
     if (isNew) {
         const finalResponsavel = responsavel || currentUser;
-        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs, slaUpdated: true };
+        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs, info, hasUpdate, slaUpdated: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
         db.collection('tasks').doc(taskDataNew.id).set(taskDataNew).then(() => {
             showToast('Demanda criada com sucesso!');
         });
     } else {
         const taskObj = tasks.find(t => t.id === id) || {};
-        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs, slaUpdated: true };
+        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs, info, hasUpdate, slaUpdated: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
         db.collection('tasks').doc(id).set(updatedTask).then(() => {
             showToast('Demanda atualizada!');
         });
@@ -2595,19 +2633,32 @@ function renderBoard() {
         const cardHTML = `
             <div class="task-card ${sla.class} ${isCompleted ? 'completed-card' : ''}" draggable="${!isCompleted}" data-id="${task.id}">
                 <div class="card-header">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <span class="task-num" title="Número TiFlux">#${task.number} (TiFlux)</span>
-                        ${displayQuality ? `<span class="task-num" title="Número Quality" style="color: var(--status-warning);">#${displayQuality} (Quality)</span>` : ''}
-                        ${(isCompleted && task.resolvedVersion) ? `<span class="task-num" title="Versão da Solução" style="color: var(--status-success);">Versão: ${task.resolvedVersion}</span>` : ''}
-                    </div>
+                    <span class="task-num" title="Número TiFlux">#${task.number || '---'}</span>
+                    ${task.quality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Q:${task.quality}</span>` : ''}
+                    <div style="flex: 1;"></div>
                     <span class="task-priority priority-${(task.prioridade || 'Normal').toLowerCase()}">${task.prioridade || 'Normal'}</span>
                 </div>
+                ${task.info ? `
+                <div class="task-info-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span>${task.info}</span>
+                </div>
+                ` : ''}
+                ${task.hasUpdate ? `
+                <div class="update-indicator" title="Este chamado tem novidades!">
+                    <span class="update-dot"></span>
+                    <span class="update-text">Novidade</span>
+                </div>
+                ` : ''}
                 <div class="task-cliente" title="Cliente" style="line-height: 1.4;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px; vertical-align:middle;">
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
                     </svg>
                     ${task.cliente || 'Cliente não informado'} ${contatoTexto}
+                    ${getNetworkNameByClient(task.cliente) ? `<span class="network-badge">${getNetworkNameByClient(task.cliente)}</span>` : ''}
                 </div>
                 <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 2px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
