@@ -285,7 +285,7 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                         <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - Globaltera</p>
                     </div>
                     <div style="padding: 30px; color: #374151; line-height: 1.6;">
-                        <p>Olá <strong>${task.cliente}</strong>,</p>
+                        <p>Olá <strong>${task.solicitante || task.cliente}</strong>,</p>
                         <p>Sua demanda #${task.number} possui <strong>novidades</strong> e atualizações importantes:</p>
                         
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
@@ -295,10 +295,10 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                             <p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Previsão/Vencimento:</strong> ${taskDateBR}</p>
                         </div>
 
-                        ${task.info ? `
+                        ${(task.info || task.obs) ? `
                         <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                            <strong style="color: #92400e; display: block; margin-bottom: 8px;">📢 Recado / Novidades:</strong>
-                            <div style="color: #92400e; white-space: pre-wrap;">${task.info}</div>
+                            <strong style="color: #92400e; display: block; margin-bottom: 8px;">📢 Mensagem / Novidades:</strong>
+                            <div style="color: #92400e; white-space: pre-wrap;">${task.info || task.obs}</div>
                         </div>` : ''}
 
                         <p style="margin-top: 25px;">Para acompanhar mais detalhes, acesse nosso portal ou responda a este e-mail.</p>

@@ -1599,7 +1599,7 @@ function openEditModal(id) {
             btnResendEmail.onclick = async () => {
                 const updatedTask = tasks.find(t => t.id === task.id); 
                 const networkEmail = getNetworkEmailByClient(updatedTask?.cliente);
-                const emailVal = document.getElementById('taskContatoEmail')?.value || updatedTask?.clientEmail || networkEmail;
+                const emailVal = updatedTask?.clientEmail || networkEmail;
 
                 btnResendEmail.disabled = true;
                 btnResendEmail.innerHTML = 'Enviando...';
@@ -1612,7 +1612,10 @@ function openEditModal(id) {
                             tasks: [{ 
                                 ...updatedTask, 
                                 force: true,
-                                info: document.getElementById('taskInformativo')?.value || updatedTask?.info 
+                                clientEmail: emailVal,
+                                solicitante: document.getElementById('taskSolicitante')?.value || updatedTask?.solicitante,
+                                info: document.getElementById('taskInfo')?.value || updatedTask?.info,
+                                obs: document.getElementById('taskObs')?.value || updatedTask?.obs
                             }]
                         })
                     });
