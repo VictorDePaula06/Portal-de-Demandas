@@ -782,7 +782,10 @@ function getNetworkNameByClient(clientName) {
 }
 
 function getNetworkEmailByClient(clientName) {
-    if (!clientName || !networks || networks.length === 0) return '';
+    if (!clientName || !networks || networks.length === 0) {
+        console.log('[DEBUG-EMAIL] Sem cliente ou redes vazias:', { clientName, networksLength: networks?.length });
+        return '';
+    }
     const nameLower = clientName.toLowerCase();
     const network = networks.find(n => 
         n.clients && n.clients.some(c => {
@@ -790,6 +793,7 @@ function getNetworkEmailByClient(clientName) {
             return nameLower.includes(cName.toLowerCase());
         })
     );
+    console.log('[DEBUG-EMAIL] Busca de rede para:', clientName, 'Encontrado:', network?.name, 'Email:', network?.reportEmail);
     return network ? (network.reportEmail || '') : '';
 }
 
