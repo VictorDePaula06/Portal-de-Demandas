@@ -262,13 +262,18 @@ app.post('/api/send-overdue-emails', async (req, res) => {
         const emailSettingsSnap = await db.collection('settings').doc('email').get();
         const emailSettings = emailSettingsSnap.exists ? emailSettingsSnap.data() : {};
 
+        console.log(`[EMAIL] Iniciando envio individual para ${requestedTasks.length} tarefas. Recipient fallback: ${emailSettings.senderEmail}`);
+
         const transporter = nodemailer.createTransport({
             host: emailSettings.smtpHost,
             port: parseInt(emailSettings.smtpPort) || 587,
-            secure: emailSettings.smtpPort == 465,
+            secure: emailSettings.smtpSecure || (emailSettings.smtpPort == 465),
             auth: {
                 user: emailSettings.smtpUser,
                 pass: emailSettings.smtpPass
+            },
+            tls: {
+                rejectUnauthorized: false
             }
         });
 
@@ -320,12 +325,15 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                     continue;
                 }
 
+                console.log(`[EMAIL] Enviando para: ${recipient} | Assunto: [ATUALIZAÇÃO] Chamado #${task.number}`);
+
                 await transporter.sendMail({
                     from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
                     to: recipient,
                     subject: `[ATUALIZAÇÃO] Chamado #${task.number} - ${task.cliente}`,
                     html: emailHtml
                 });
+                console.log(`[EMAIL] Sucesso no envio para: ${recipient}`);
                 results.push({ task: task.number, success: true });
             } catch (err) {
                 results.push({ task: task.number, success: false, error: err.message });
