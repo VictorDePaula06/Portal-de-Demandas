@@ -786,6 +786,9 @@ function getNetworkEmailByClient(clientName) {
         console.log('[DEBUG-EMAIL] Sem cliente ou redes vazias:', { clientName, networksLength: networks?.length });
         return '';
     }
+    console.log('[DEBUG-EMAIL] Buscando rede para:', clientName);
+    console.table(networks.map(n => ({ id: n.id, name: n.name, email: n.reportEmail, clients: n.clients?.length })));
+    
     const nameLower = clientName.toLowerCase();
     const network = networks.find(n => 
         n.clients && n.clients.some(c => {
@@ -793,7 +796,7 @@ function getNetworkEmailByClient(clientName) {
             return nameLower.includes(cName.toLowerCase());
         })
     );
-    console.log('[DEBUG-EMAIL] Busca de rede para:', clientName, 'Encontrado:', network?.name, 'Email:', network?.reportEmail);
+    console.log('[DEBUG-EMAIL] Rede Encontrada:', network?.name, 'Email:', network?.reportEmail);
     return network ? (network.reportEmail || '') : '';
 }
 
