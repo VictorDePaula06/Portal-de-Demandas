@@ -873,6 +873,9 @@ function renderNetworkList() {
                     </div>
                 </div>
                 <div style="display: flex; gap: 4px;">
+                    <button class="action-btn" onclick="sendNetworkReport('${n.id}')" title="Enviar Relatório de Demandas Abertas" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                    </button>
                     <button class="action-btn edit" onclick="openEditNetworkModal('${n.id}')" title="Editar Rede">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                     </button>
@@ -891,6 +894,7 @@ window.openEditNetworkModal = function(id) {
     if (network) {
         document.getElementById('networkId').value = network.id;
         document.getElementById('networkName').value = network.name;
+        document.getElementById('networkReportEmail').value = network.reportEmail || '';
         
         // Inicializar estado local de clientes para edição
         currentNetworkClients = [...(network.clients || [])];
@@ -923,13 +927,18 @@ if (networkForm) {
         e.preventDefault();
         const id = document.getElementById('networkId').value;
         const name = document.getElementById('networkName').value.trim();
+        const reportEmail = document.getElementById('networkReportEmail').value.trim();
         
         if (!name || currentNetworkClients.length === 0) {
             showToast('Preencha o nome da rede e adicione ao menos um posto.', 'warning');
             return;
         }
 
-        const networkData = { name: name, clients: currentNetworkClients };
+        const networkData = { 
+            name: name, 
+            clients: currentNetworkClients,
+            reportEmail: reportEmail
+        };
 
         if (id) {
             db.collection('networks').doc(id).update(networkData).then(() => {
@@ -948,6 +957,7 @@ if (networkForm) {
         const netForm = document.getElementById('networkForm');
         if (netForm) netForm.reset();
         document.getElementById('networkId').value = '';
+        document.getElementById('networkReportEmail').value = '';
         currentNetworkClients = [];
         renderCurrentNetworkClients();
         const submitBtn = netForm ? netForm.querySelector('button[type="submit"]') : null;
@@ -1100,6 +1110,39 @@ if (networkForm) {
         // Vou manter a função caso queira remover antes de salvar, mas no render troquei para toggleClientStatus
         console.log("Remoção completa desabilitada pela nova regra de Inativação.");
         toggleClientStatus(name);
+    }
+}
+
+window.sendNetworkReport = async function(networkId) {
+    const network = networks.find(n => n.id === networkId);
+    if (!network) return;
+
+    if (!network.reportEmail) {
+        showToast('Esta rede não possui e-mail de relatório cadastrado.', 'warning');
+        return;
+    }
+
+    const ok = confirm(`Deseja enviar o relatório de demandas abertas para o e-mail: ${network.reportEmail}?`);
+    if (!ok) return;
+
+    showToast('Gerando e enviando relatório...');
+
+    try {
+        const response = await fetch('/api/send-network-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ networkId: networkId })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            showToast('Relatório enviado com sucesso!', 'success');
+        } else {
+            showToast('Erro ao enviar relatório: ' + (result.error || 'Erro desconhecido'), 'critical');
+        }
+    } catch (error) {
+        console.error('Erro ao disparar relatório:', error);
+        showToast('Erro de conexão com o servidor.', 'critical');
     }
 }
 

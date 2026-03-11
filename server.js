@@ -250,91 +250,175 @@ app.get('/api/tiflux/clients', async (req, res) => {
 });
 
 /**
- * Rota para enviar e-mails de chamados vencidos
+ * Rota para enviar relatório de uma rede específica (Manual)
  */
-app.post('/api/send-overdue-emails', async (req, res) => {
-    if (!db) {
-        return res.status(503).json({
-            success: false,
-            error: 'Firebase Admin não configurado.',
-            details: 'Configure FIREBASE_SERVICE_ACCOUNT no .env para habilitar notificações.'
-        });
-    }
+app.post('/api/send-network-report', async (req, res) => {
+    if (!db) return res.status(503).json({ error: 'Firebase Admin não configurado.' });
+
+    const { networkId } = req.body;
+    if (!networkId) return res.status(400).json({ error: 'ID da rede não fornecido.' });
 
     try {
-        const settingsSnap = await db.collection('settings').doc('email').get();
-        if (!settingsSnap.exists) {
-            return res.status(404).json({ error: 'Configurações de e-mail não encontradas no Firestore.' });
-        }
-        const emailSettings = settingsSnap.data();
+        const result = await processNetworkReport(networkId);
+        res.json(result);
+    } catch (error) {
+        console.error('Erro ao processar relatório de rede:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
-        if (!emailSettings.smtpHost || !emailSettings.smtpUser || !emailSettings.smtpPass) {
-            return res.status(400).json({ error: 'Configurações de SMTP incompletas.' });
-        }
+/**
+ * Rota Cron para enviar relatórios de todas as redes (Segundas-feiras)
+ */
+app.get('/api/cron/network-reports', async (req, res) => {
+    if (!db) return res.status(503).json({ error: 'Firebase Admin não configurado.' });
 
-        const transporter = nodemailer.createTransport({
-            host: emailSettings.smtpHost,
-            port: parseInt(emailSettings.smtpPort) || 587,
-            secure: emailSettings.smtpSecure || false,
-            auth: {
-                user: emailSettings.smtpUser,
-                pass: emailSettings.smtpPass
-            }
-        });
-
-        const overdueTasks = req.body.tasks || [];
+    console.log('[CRON] Iniciando processamento de relatórios semanais...');
+    
+    try {
+        const networksSnap = await db.collection('networks').get();
         const results = [];
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        for (const task of overdueTasks) {
-            // Verificar se o chamado já foi notificado recentemente para evitar spam
-            // Se force: true, ignoramos essa trava (reenvio individual)
-            if (task.notified && !task.force) continue;
-
-            if (!task.clientEmail || !emailRegex.test(task.clientEmail)) {
-                console.log(`[E-mail Skip] Chamado #${task.number} ignorado por e-mail inválido: "${task.clientEmail}"`);
-                results.push({ id: task.id, status: 'skipped', reason: 'Email inválido ou ausente' });
-                continue;
-            }
-
-            const subject = emailSettings.subjectTemplate
-                .replace(/{cliente}/g, task.cliente || '')
-                .replace(/{numero}/g, task.number || '');
-
-            const html = (emailSettings.bodyTemplate || '')
-                .replace(/\n/g, '<br>')
-                .replace(/{cliente}/g, task.cliente || '')
-                .replace(/{numero}/g, task.number || '')
-                .replace(/{descricao}/g, task.desc || '')
-                .replace(/{vencimento}/g, task.date || '');
-
-            try {
-                await transporter.sendMail({
-                    from: `"${emailSettings.senderName}" <${emailSettings.senderEmail}>`,
-                    to: task.clientEmail,
-                    subject: subject,
-                    html: html
-                });
-
-                // Marcar como notificado no Firestore para evitar envios duplicados
-                await db.collection('tasks').doc(task.id).update({
-                    notified: true,
-                    lastNotifiedAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-
-                results.push({ id: task.id, status: 'sent' });
-            } catch (err) {
-                console.error(`Erro ao enviar e-mail para ${task.id}:`, err.message);
-                results.push({ id: task.id, status: 'error', error: err.message });
+        for (const doc of networksSnap.docs) {
+            const network = doc.data();
+            if (network.reportEmail) {
+                console.log(`[CRON] Processando rede: ${network.name} -> ${network.reportEmail}`);
+                const res = await processNetworkReport(doc.id);
+                results.push({ network: network.name, ...res });
             }
         }
 
         res.json({ success: true, results });
     } catch (error) {
-        console.error('Erro ao processar envios de e-mail:', error);
-        res.status(500).json({ error: 'Falha ao processar envios', details: error.message });
+        console.error('[CRON] Erro no processamento semanal:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
+
+/**
+ * Função Nucleo para Gerar e Enviar Relatório de Rede
+ */
+async function processNetworkReport(networkId) {
+    const networkSnap = await db.collection('networks').doc(networkId).get();
+    if (!networkSnap.exists) throw new Error('Rede não encontrada.');
+    
+    const network = networkSnap.data();
+    if (!network.reportEmail) throw new Error('E-mail de relatório não configurado para esta rede.');
+
+    // 1. Obter lista de postos ativos da rede
+    const clientNames = (network.clients || [])
+        .filter(c => typeof c === 'string' || c.active !== false)
+        .map(c => typeof c === 'string' ? c : c.name);
+
+    if (clientNames.length === 0) return { success: true, status: 'skipped', reason: 'Nenhum posto ativo na rede.' };
+
+    // 2. Buscar demandas abertas para estes postos
+    // Firestore não suporta "IN" com muitos itens (>30), então buscamos todas as abertas e filtramos em memória
+    // ou fazemos múltiplas queries. Como o volume de demandas abertas costuma ser controlado, filtramos em memória.
+    const tasksSnap = await db.collection('tasks').get();
+    const openTasks = [];
+    
+    tasksSnap.forEach(doc => {
+        const task = doc.data();
+        const isClosed = task.status && task.status.toLowerCase().includes('concluido');
+        if (!isClosed && clientNames.includes(task.cliente)) {
+            openTasks.push({ id: doc.id, ...task });
+        }
+    });
+
+    if (openTasks.length === 0) {
+        // Enviar e-mail mesmo se não houver nada? Geralmente é bom informar que está tudo limpo.
+        // Mas o usuário não especificou. Vou assumir que enviamos um relatório de "Nada Pendente".
+    }
+
+    // 3. Configurar Transporter
+    const settingsSnap = await db.collection('settings').doc('email').get();
+    const emailSettings = settingsSnap.data() || {};
+
+    const transporter = nodemailer.createTransport({
+        host: emailSettings.smtpHost,
+        port: parseInt(emailSettings.smtpPort) || 587,
+        secure: emailSettings.smtpSecure || false,
+        auth: {
+            user: emailSettings.smtpUser,
+            pass: emailSettings.smtpPass
+        }
+    });
+
+    // 4. Gerar HTML do Relatório
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    let tasksHtml = '';
+    
+    if (openTasks.length > 0) {
+        // Agrupar por status ou apenas listar
+        tasksHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: sans-serif;">
+                <thead>
+                    <tr style="background-color: #f3f4f6; text-align: left;">
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Chamado</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Posto</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Descrição</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Vencimento</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        openTasks.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
+            const isOverdue = t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
+            const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
+            
+            tasksHtml += `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb;">#${t.number}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.cliente}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.desc}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; ${statusStyle}">${t.date || 'S/D'} ${isOverdue ? '⏰' : ''}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.status}</td>
+                </tr>
+            `;
+        });
+
+        tasksHtml += `</tbody></table>`;
+    } else {
+        tasksHtml = `
+            <div style="padding: 20px; background-color: #f0fdf4; color: #166534; border-radius: 8px; margin-top: 20px; text-align: center;">
+                <strong>Excelente!</strong> Não existem demandas abertas para os postos desta rede no momento.
+            </div>
+        `;
+    }
+
+    const fullHtml = `
+        <div style="max-width: 800px; margin: 0 auto; font-family: sans-serif; color: #374151;">
+            <div style="background-color: #1e293b; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Relatório de Demandas - Rede ${network.name}</h1>
+                <p style="color: #94a3b8; margin: 10px 0 0 0;">Posicionamento atualizado em ${dateStr}</p>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+                <p>Olá,</p>
+                <p>Segue abaixo a listagem consolidada de todas as demandas que encontram-se <strong>abertas</strong> no portal para os postos da rede <strong>${network.name}</strong>.</p>
+                
+                ${tasksHtml}
+
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #94a3b8; text-align: center;">
+                    Este é um relatório automático gerado pelo Portal de Demandas - Globaltera.<br>
+                    Para dúvidas ou ajustes, entre em contato com nosso suporte técnico.
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 5. Enviar e-mail
+    await transporter.sendMail({
+        from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
+        to: network.reportEmail,
+        subject: `[RELATÓRIO] Demandas Abertas - Rede ${network.name} - ${dateStr}`,
+        html: fullHtml
+    });
+
+    return { success: true, status: 'sent', taskCount: openTasks.length };
+}
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     app.listen(PORT, () => {
