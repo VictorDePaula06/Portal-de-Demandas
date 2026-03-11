@@ -40,12 +40,6 @@ const formatDate = (dateStr) => {
     return dateStr;
 };
 
-// NOVO: Busca e-mail da rede pelo nome do cliente
-function getNetworkEmailByClient(clientName) {
-    if (!networks || !clientName) return null;
-    const network = networks.find(n => n.clients && n.clients.includes(clientName));
-    return network ? network.reportEmail : null;
-}
 
 // Estado global para o filtro de relatórios
 let reportSelectedClients = new Set();
