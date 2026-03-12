@@ -719,7 +719,7 @@ body {
 .modal-content {
     background-color: var(--bg-secondary);
     width: 100%;
-    max-width: 500px;
+    max-width: 800px;
     border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
