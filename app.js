@@ -377,10 +377,23 @@ async function checkAndSendOverdueEmails() {
         }
 
         const result = await response.json();
-        if (result.success) {
-            const sentCount = result.results ? result.results.filter(r => r.status === 'sent').length : 0;
-            const skippedCount = result.results ? result.results.filter(r => r.status === 'skipped').length : 0;
-            const errorCount = result.results ? result.results.filter(r => r.status === 'error').length : 0;
+        if (result.success && result.results) {
+            const sentCount = result.results.filter(r => r.success).length;
+            const skippedCount = result.results.filter(r => r.error === 'E-mail não fornecido.').length;
+            const errorCount = result.results.length - sentCount - skippedCount;
+
+            // PERSISTÊNCIA: Marcar como notificado no banco para não repetir
+            const batch = db.batch();
+            result.results.forEach(res => {
+                // Mesmo que dê erro de SMTP (ex: endereço inexistente), marcamos como notificado 
+                // para parar de tentar e poluir a caixa do Victor com erros
+                const matchingTask = overdueToNotify.find(t => t.number === res.task);
+                if (matchingTask) {
+                    const taskRef = db.collection('tasks').doc(matchingTask.id);
+                    batch.update(taskRef, { notified: true });
+                }
+            });
+            await batch.commit();
 
             // Armazena temporariamente para o modal de sync
             window.lastEmailResult = { sentCount, skippedCount, errorCount };
@@ -485,8 +498,20 @@ if (btnSendEmails) {
 
             if (response.ok) {
                 const result = await response.json();
-                if (result.success) {
-                    const sentCount = result.results ? result.results.filter(r => r.status === 'sent').length : 0;
+                if (result.success && result.results) {
+                    const sentCount = result.results.filter(r => r.success).length;
+                    
+                    // PERSISTÊNCIA: Marcar como notificado no banco para não repetir
+                    const batch = db.batch();
+                    result.results.forEach(res => {
+                        const matchingTask = overdueToNotify.find(t => t.number === res.task);
+                        if (matchingTask) {
+                            const taskRef = db.collection('tasks').doc(matchingTask.id);
+                            batch.update(taskRef, { notified: true });
+                        }
+                    });
+                    await batch.commit();
+
                     window.lastEmailResult = { sentCount };
                     window.pendingOverdueToNotify = null;
                     showToast(`${sentCount} e-mails enviados!`);

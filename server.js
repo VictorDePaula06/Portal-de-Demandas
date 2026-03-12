@@ -338,8 +338,21 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                 console.log(`[EMAIL] Sucesso no envio para: ${recipient}`);
                 results.push({ task: task.number, success: true, recipient });
             } catch (err) {
-                console.error(`[EMAIL] Erro SMTP para ${recipient}:`, err);
-                results.push({ task: task.number, success: false, error: err.message, recipient });
+                console.error(`[EMAIL] Falha crítica de envio para ${recipient || 'N/A'} (#${task.number}):`, err.message);
+                
+                let errorType = err.message;
+                if (err.message.includes('Invalid login') || err.message.includes('auth')) {
+                    errorType = 'Erro de Autenticação SMTP (Verifique as configurações e senha de app)';
+                } else if (err.message.includes('recipient') || err.message.includes('No recipients')) {
+                    errorType = 'Endereço de e-mail inválido ou recusado pelo servidor de destino';
+                }
+
+                results.push({ 
+                    task: task.number, 
+                    success: false, 
+                    error: errorType,
+                    recipient: recipient || 'Inexistente'
+                });
             }
         }
 
