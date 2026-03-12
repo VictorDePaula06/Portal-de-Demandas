@@ -1464,32 +1464,19 @@ function getFilteredItems(items, type = 'demanda') {
     // Victor e outros admins masters ignore tudo
     const isMaster = ADMIN_USERS.some(adm => userRole && userRole.toLowerCase().includes(adm.toLowerCase()));
 
-    // Se for cliente, o filtro deve mostrar APENAS os dele, sem falhas
-    if (isClientUser) {
-        if (!userNetworkId || networks.length === 0) {
-            return []; // Enquanto não carregar a rede, não mostra nada (evita flash de tudo)
-        }
-        const network = networks.find(n => n.id === userNetworkId);
-        if (network && network.clients) {
-            const authorizedClients = network.clients
-                .filter(c => typeof c === 'string' || c.active !== false)
-                .map(c => typeof c === 'string' ? c : c.name);
-            
-            return items.filter(item => {
-                const clientName = (type === 'cs' ? item.name : (type === 'implantacao' ? item.unidade || item.rede : item.cliente)) || '';
-                return authorizedClients.some(nc => clientName.toLowerCase().includes(nc.toLowerCase()));
-            });
-        }
-        return []; 
+    // Master Admins e Admin Global ignoram filtros
+    if (isAdmin || isMaster) {
+        return items;
     }
 
-    if (isAdmin || isMaster || !userNetworkId) {
-        return items;
+    // Se NÃO for admin/master, o filtro deve ser RIGOROSO
+    if (!userNetworkId || networks.length === 0) {
+        return []; // Enquanto não carregar a rede ou se não tiver rede, NÃO mostra nada
     }
 
     const network = networks.find(n => n.id === userNetworkId);
     if (!network || !network.clients || network.clients.length === 0) {
-        return items; 
+        return []; // Se a rede não foi encontrada ou não tem clientes, NÃO mostra nada (segurança)
     }
 
     const networkClients = network.clients
