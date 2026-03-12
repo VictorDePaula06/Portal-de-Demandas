@@ -1585,16 +1585,23 @@ function openEditModal(id) {
             if (submitBtn) submitBtn.style.display = 'block';
         }
 
-        // Lógica do botão de reenvio individual
+        // Ocultar botões de e-mail para clientes
         if (btnResendEmail) {
-            // Fallback para e-mail da rede se o e-mail do cliente estiver vazio
-            const networkEmail = getNetworkEmailByClient(task.cliente);
-            const effectiveEmail = networkEmail || task.clientEmail;
-            const hasValidEmail = effectiveEmail && emailRegex.test(effectiveEmail);
-            btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
-            if (emailStatusSelect) {
-                emailStatusSelect.style.display = hasValidEmail ? 'block' : 'none';
-                emailStatusSelect.value = 'Em andamento';
+            const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
+            
+            if (isClientUser) {
+                btnResendEmail.style.display = 'none';
+                if (emailStatusSelect) emailStatusSelect.style.display = 'none';
+            } else {
+                // Fallback para e-mail da rede se o e-mail do cliente estiver vazio
+                const networkEmail = getNetworkEmailByClient(task.cliente);
+                const effectiveEmail = networkEmail || task.clientEmail;
+                const hasValidEmail = effectiveEmail && emailRegex.test(effectiveEmail);
+                btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
+                if (emailStatusSelect) {
+                    emailStatusSelect.style.display = hasValidEmail ? 'block' : 'none';
+                    emailStatusSelect.value = 'Em andamento';
+                }
             }
 
             // Remove listener anterior para não acumular
@@ -2612,6 +2619,7 @@ if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDef
 function renderBoard() {
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     const slaFilterValue = slaFilter ? slaFilter.value : 'all';
+    const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
 
     let filteredTasks = getFilteredItems(tasks).filter(task => {
         // Texto Filter
@@ -2757,7 +2765,7 @@ function renderBoard() {
                         <span>${dateDisplay}</span>
                     </div>
                     <div class="card-actions" style="display: flex; gap: 4px;">
-                        ${!isCompleted ? `
+                        ${(!isCompleted && !isClientUser) ? `
                         <button class="btn-whatsapp" onclick="sendWhatsappCobrança('${task.id}')" title="Cobrar via WhatsApp" style="background: none; border: none; cursor: pointer; color: #25D366; display:flex; align-items:center;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21zm6.5-10.5c.34-.34 1.1-.34 1.45 0 .4.4 1.05.4 1.45 0l1.2-1.2c.4-.4.4-1.05 0-1.45l-.73-.73c-.4-.4-1.05-.4-1.45 0-.5.5-1.3 1.1-2 1.4-1.4.6-3-.2-3.8-1.5-.4-.7-.2-1.6.3-2.1.3-.3.9-.3 1.2 0l1.4 1.4z"/></svg>
                         </button>
@@ -2765,9 +2773,11 @@ function renderBoard() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         </button>
                         ` : ''}
+                        ${!isClientUser ? `
                         <button class="btn-delete" onclick="deleteTask('${task.id}')" title="Excluir" style="background: none; border: none; cursor: pointer; color: var(--status-critical);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
