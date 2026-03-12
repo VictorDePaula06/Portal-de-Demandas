@@ -552,6 +552,7 @@ const taskForm = document.getElementById('taskForm');
 const toast = document.getElementById('toast');
 const taskStatusInput = document.getElementById('taskStatus');
 const btnResendEmail = document.getElementById('btnResendEmail');
+const emailStatusSelect = document.getElementById('emailStatusSelect');
 
 // DOM Elements Implantações
 const btnViewImplantacoes = document.getElementById('btnViewImplantacoes');
@@ -1526,6 +1527,10 @@ function openModal() {
     document.getElementById('taskHasUpdate').checked = false;
 
     if (btnResendEmail) btnResendEmail.style.display = 'none';
+    if (emailStatusSelect) {
+        emailStatusSelect.style.display = 'none';
+        emailStatusSelect.value = 'Em andamento';
+    }
     modal.classList.add('active');
 }
 
@@ -1600,6 +1605,10 @@ function openEditModal(id) {
             const effectiveEmail = networkEmail || task.clientEmail;
             const hasValidEmail = effectiveEmail && emailRegex.test(effectiveEmail);
             btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
+            if (emailStatusSelect) {
+                emailStatusSelect.style.display = hasValidEmail ? 'block' : 'none';
+                emailStatusSelect.value = 'Em andamento';
+            }
 
             // Remove listener anterior para não acumular
             btnResendEmail.onclick = async () => {
@@ -1619,6 +1628,7 @@ function openEditModal(id) {
                                 ...updatedTask, 
                                 force: true,
                                 clientEmail: emailVal,
+                                emailStatus: emailStatusSelect?.value || updatedTask?.status,
                                 solicitante: document.getElementById('taskSolicitante')?.value || updatedTask?.solicitante,
                                 info: document.getElementById('taskInfo')?.value || updatedTask?.info,
                                 obs: document.getElementById('taskObs')?.value || updatedTask?.obs

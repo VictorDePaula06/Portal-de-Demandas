@@ -297,7 +297,7 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
                             <strong style="display: block; margin-bottom: 5px; color: #1e293b;">#${task.number} - ${task.desc}</strong>
                             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-                            <p style="margin: 0; font-size: 14px;"><strong>Status Atual:</strong> <span style="color: #2563eb;">${task.status}</span></p>
+                            <p style="margin: 0; font-size: 14px;"><strong>Status Atual:</strong> <span style="color: #2563eb;">${task.emailStatus || task.status}</span></p>
                             <p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Previsão/Vencimento:</strong> ${taskDateBR}</p>
                         </div>
 
