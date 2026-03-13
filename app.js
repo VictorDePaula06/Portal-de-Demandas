@@ -317,11 +317,12 @@ async function fetchDemandasDaAPI() {
                     hasChanges = true;
                     syncdItems.push({ number: apiTask.number || 'N/A', type: 'Novo', client: apiTask.cliente });
                 } else {
-                    // Proteção CRÍTICA contra sobrescrita de demandas já concluídas localmente
+                    // Proteção contra sobrescrita de demandas já concluídas localmente
                     const isLocalCompleted = localTask.status && localTask.status.includes('Concluida');
 
-                    // Se já está concluído localmente, só atualizamos campos auxiliares, mas mantemos o status concluído
-                    if (isLocalCompleted) {
+                    // Se já está concluído localmente, e no TiFlux também está, ignoramos.
+                    // MAS se no TiFlux ele foi REABERTO (agora não contém 'Concluida'), permitimos a atualização.
+                    if (isLocalCompleted && isApiTaskCompleted) {
                         return;
                     }
 
@@ -351,11 +352,23 @@ async function fetchDemandasDaAPI() {
 
                         batch.set(taskRef, taskUpdate, { merge: true });
                         hasChanges = true;
+
+                        // Detecção de Transição para Concluído:
+                        // Se o novo status é concluído E o local NÃO era concluído
+                        const becomesCompleted = isApiTaskCompleted && !isLocalCompleted;
+                        
+                        // Detecção de Reabertura:
+                        // Se o local era concluído e no API está aberto
+                        const becomesReopened = isLocalCompleted && !isApiTaskCompleted;
+
                         syncdItems.push({ 
+                            id: apiTask.id, // Adicionado para facilitar o botão de conclusão
                             number: apiTask.number || 'N/A', 
                             type: 'Atu.', 
                             client: apiTask.cliente,
-                            changes: changes 
+                            changes: changes,
+                            isTransitionToClosed: becomesCompleted,
+                            isReopened: becomesReopened
                         });
                     }
                 }
@@ -540,14 +553,42 @@ function showSyncResultsModal(newCount, updatedCount, items) {
 
     list.innerHTML = items.map(item => {
         const changesHtml = item.changes ? item.changes.map(c => `<span class="sync-change-badge">${c}</span>`).join('') : '';
+        
+        let actionBtn = '';
+        let statusBadge = '';
+        let reopendNotice = '';
+        
+        if (item.isTransitionToClosed) {
+            statusBadge = `<span class="sync-badge updated" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">FECHADO NO TIFLUX</span>`;
+            actionBtn = `
+                <button type="button" class="btn btn-primary btn-sync-complete" data-id="${item.id}" 
+                    style="margin-top: 8px; padding: 6px 12px; font-size: 0.75rem; background: #10b981; border-color: #10b981; width: fit-content;">
+                    Concluir e Notificar
+                </button>
+            `;
+        } else if (item.isReopened) {
+            statusBadge = `<span class="sync-badge updated" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">REABERTO</span>`;
+            reopendNotice = `
+                <div style="margin-top: 4px; display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #f59e0b;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    Reaberto no TiFlux e movido para a coluna original.
+                </div>
+            `;
+        }
+
         return `
         <div class="sync-item ${item.type === 'Novo' ? 'new' : 'updated'}">
             <div style="display: flex; flex-direction: column; flex: 1;">
-                <span class="sync-item-number">#${item.number}</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="sync-item-number">#${item.number}</span>
+                    ${statusBadge}
+                </div>
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${item.client}</span>
                 <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
                     ${changesHtml}
                 </div>
+                ${reopendNotice}
+                ${actionBtn}
             </div>
             <span class="sync-badge ${item.type === 'Novo' ? 'new' : 'updated'}">${item.type}</span>
         </div>
@@ -555,6 +596,21 @@ function showSyncResultsModal(newCount, updatedCount, items) {
 
     modal.classList.add('active');
 }
+
+// Handler global para botões de conclusão no modal de sync
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-sync-complete')) {
+        const taskId = e.target.dataset.id;
+        if (taskId) {
+            // Fechar modal de resultados antes de abrir o de conclusão
+            const syncResultsModal = document.getElementById('syncResultsModal');
+            if (syncResultsModal) syncResultsModal.classList.remove('active');
+            
+            // Abrir modal de conclusão
+            completeTask(taskId);
+        }
+    }
+});
 
 const btnCloseSyncResults = document.getElementById('btnCloseSyncResults');
 const btnOkSyncResults = document.getElementById('btnOkSyncResults');
@@ -902,14 +958,18 @@ function getNetworkNameByClient(clientName) {
 
 function getNetworkEmailByClient(clientName) {
     if (!clientName || !networks || networks.length === 0) return '';
-    const nameLower = clientName.toLowerCase();
+    const nameLower = clientName.toLowerCase().trim();
     const network = networks.find(n => 
         n.clients && n.clients.some(c => {
-            const cName = typeof c === 'string' ? c : c.name;
-            return nameLower.includes(cName.toLowerCase());
+            const cName = (typeof c === 'string' ? c : (c.name || '')).toLowerCase().trim();
+            if (!cName) return false;
+            // Comparação exata ou se o nome do cliente na rede é o nome completo do cliente
+            return nameLower === cName;
         })
     );
-    return network ? (network.reportEmail || '') : '';
+    const email = network ? (network.reportEmail || '') : '';
+    console.log(`[Email Check] Cliente: "${clientName}" -> Rede: ${network ? network.name : 'Nenhuma'} -> Email: ${email || 'Não encontrado'}`);
+    return email;
 }
 
 function fetchNetworks() {
@@ -2595,6 +2655,21 @@ function completeTask(id, newStatus = null) {
     document.getElementById('taskResolvedVersion').value = ''; // clear previous
     document.getElementById('taskResolvedValidator').value = ''; // clear previous
     document.getElementById('taskResolvedDesc').value = ''; // clear previous
+    
+    // Verificar e-mail do cliente para preenchimento automático
+    const task = tasks.find(t => t.id === id);
+    const recipient = task ? getNetworkEmailByClient(task.cliente) : '';
+    const emailField = document.getElementById('taskResolvedEmail');
+    
+    if (emailField) {
+        emailField.value = recipient || '';
+        if (recipient) {
+            console.log(`[Email Prep] Preenchendo e-mail automático: ${recipient}`);
+        } else {
+            console.log(`[Email Prep] Nenhum e-mail automático encontrado para o cliente: ${task ? task.cliente : 'N/A'}`);
+        }
+    }
+
     if (document.getElementById('sendCompletionEmail')) {
         document.getElementById('sendCompletionEmail').checked = false;
     }
@@ -2677,7 +2752,13 @@ resolveForm.addEventListener('submit', (e) => {
         if (resolvedDesc) taskObj.resolvedDesc = resolvedDesc;
 
         const sendEmail = document.getElementById('sendCompletionEmail').checked;
-        const recipient = getNetworkEmailByClient(taskObj.cliente);
+        let recipient = getNetworkEmailByClient(taskObj.cliente);
+        const manualRecipient = document.getElementById('taskResolvedEmail').value.trim();
+        
+        // Se não tem e-mail automático, usar o manual se disponível
+        if (!recipient && manualRecipient) {
+            recipient = manualRecipient;
+        }
 
         db.collection('tasks').doc(taskObj.id).set(taskObj).then(() => {
             showToast('Demanda concluída com sucesso!', 'success');
@@ -2702,7 +2783,7 @@ resolveForm.addEventListener('submit', (e) => {
                     console.error('Erro de rede ao enviar e-mail:', err);
                 });
             } else if (sendEmail && !recipient) {
-                showToast('Não foi possível encontrar o e-mail da rede para este cliente.', 'warning');
+                showToast('Não foi possível encontrar o e-mail para envio da notificação.', 'warning');
             }
 
             // Mudar automaticamente para a aba de concluídas para mostrar o resultado
