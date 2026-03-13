@@ -40,6 +40,98 @@ const formatDate = (dateStr) => {
     return dateStr;
 };
 
+// --- Custom Modal System ---
+function showConfirmModal(title, message, onConfirm, isCritical = false) {
+    const modal = document.getElementById('customConfirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const messageEl = document.getElementById('confirmMessage');
+    const btnAccept = document.getElementById('btnAcceptConfirm');
+    const btnCancel = document.getElementById('btnCancelConfirm');
+    const iconContainer = document.getElementById('confirmIcon');
+
+    if (!modal || !titleEl || !messageEl || !btnAccept || !btnCancel) return;
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+
+    // Ajustar cores baseadas na criticidade
+    if (isCritical) {
+        btnAccept.style.background = 'var(--status-critical)';
+        btnAccept.style.borderColor = 'var(--status-critical)';
+        iconContainer.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--status-critical)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.3));">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        `;
+    } else {
+        btnAccept.style.background = 'var(--accent-primary)';
+        btnAccept.style.borderColor = 'var(--accent-primary)';
+        iconContainer.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--status-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.3));">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        `;
+    }
+
+    const handleConfirm = () => {
+        onConfirm();
+        closeCustomConfirm();
+    };
+
+    const closeCustomConfirm = () => {
+        modal.classList.remove('active');
+        btnAccept.removeEventListener('click', handleConfirm);
+        btnCancel.removeEventListener('click', closeCustomConfirm);
+    };
+
+    btnAccept.addEventListener('click', handleConfirm);
+    btnCancel.addEventListener('click', closeCustomConfirm);
+    modal.classList.add('active');
+
+    // Fechar ao clicar fora
+    modal.onclick = (e) => {
+        if (e.target === modal) closeCustomConfirm();
+    };
+}
+
+function showAlertModal(title, message) {
+    // Reutiliza o sistema de confirm mas esconde o botão cancelar e muda o ícone
+    const modal = document.getElementById('customConfirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const messageEl = document.getElementById('confirmMessage');
+    const btnAccept = document.getElementById('btnAcceptConfirm');
+    const btnCancel = document.getElementById('btnCancelConfirm');
+    const iconContainer = document.getElementById('confirmIcon');
+
+    if (!modal || !titleEl || !messageEl || !btnAccept || !btnCancel) return;
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    btnCancel.style.display = 'none';
+    btnAccept.textContent = 'OK';
+    btnAccept.style.background = 'var(--accent-primary)';
+    btnAccept.style.borderColor = 'var(--accent-primary)';
+    
+    iconContainer.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3));">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+    `;
+
+    const closeAlert = () => {
+        modal.classList.remove('active');
+        btnAccept.removeEventListener('click', closeAlert);
+        // Restaurar estado do modal para modo confirm
+        setTimeout(() => {
+            btnCancel.style.display = 'inline-block';
+            btnAccept.textContent = 'Confirmar';
+        }, 300);
+    };
+
+    btnAccept.addEventListener('click', closeAlert);
+    modal.classList.add('active');
+}
+
 
 // Estado global para o filtro de relatórios
 let reportSelectedClients = new Set();
@@ -534,29 +626,32 @@ if (btnSkipEmails) {
     btnSkipEmails.addEventListener('click', async () => {
         if (!window.pendingOverdueToNotify || window.pendingOverdueToNotify.length === 0) return;
 
-        const ok = confirm(`Deseja marcar ${window.pendingOverdueToNotify.length} chamados como avisados sem enviar e-mail para ninguém?`);
-        if (!ok) return;
-
-        btnSkipEmails.disabled = true;
-        try {
-            const batch = db.batch();
-            window.pendingOverdueToNotify.forEach(task => {
-                const ref = db.collection('tasks').doc(task.id);
-                batch.update(ref, {
-                    notified: true,
-                    lastNotifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    skipReason: 'Manual backlog skip'
-                });
-            });
-            await batch.commit();
-            showToast('Backlog limpo com sucesso!');
-            window.pendingOverdueToNotify = null;
-            syncResultsModal.classList.remove('active');
-        } catch (e) {
-            console.error(e);
-        } finally {
-            btnSkipEmails.disabled = false;
-        }
+        showConfirmModal(
+            'Confirmar Limpeza',
+            `Deseja marcar ${window.pendingOverdueToNotify.length} chamados como avisados sem enviar e-mail para ninguém?`,
+            async () => {
+                btnSkipEmails.disabled = true;
+                try {
+                    const batch = db.batch();
+                    window.pendingOverdueToNotify.forEach(task => {
+                        const ref = db.collection('tasks').doc(task.id);
+                        batch.update(ref, {
+                            notified: true,
+                            lastNotifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            skipReason: 'Manual backlog skip'
+                        });
+                    });
+                    await batch.commit();
+                    showToast('Backlog limpo com sucesso!');
+                    window.pendingOverdueToNotify = null;
+                    syncResultsModal.classList.remove('active');
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    btnSkipEmails.disabled = false;
+                }
+            }
+        );
     });
 }
 
@@ -768,10 +863,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRestoreEmailDefault = document.getElementById('btnRestoreEmailDefault');
     if (btnRestoreEmailDefault) {
         btnRestoreEmailDefault.addEventListener('click', () => {
-            if (confirm('Deseja restaurar o assunto e o corpo do e-mail para o padrão do sistema?')) {
-                if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = DEFAULT_EMAIL_SUBJECT;
-                if (document.getElementById('emailBody')) document.getElementById('emailBody').value = DEFAULT_EMAIL_BODY;
-            }
+            showConfirmModal(
+                'Restaurar Padrão',
+                'Deseja restaurar o assunto e o corpo do e-mail para o padrão do sistema?',
+                () => {
+                    if (document.getElementById('emailSubject')) document.getElementById('emailSubject').value = DEFAULT_EMAIL_SUBJECT;
+                    if (document.getElementById('emailBody')) document.getElementById('emailBody').value = DEFAULT_EMAIL_BODY;
+                }
+            );
         });
     }
 });
@@ -901,11 +1000,16 @@ window.openEditNetworkModal = function(id) {
 }
 
 window.deleteNetwork = function(id) {
-    if (confirm("Deseja realmente excluir esta rede? Usuários associados a ela perderão o filtro de acesso.")) {
-        db.collection('networks').doc(id).delete().then(() => {
-            showToast('Rede removida com sucesso!', 'critical');
-        });
-    }
+    showConfirmModal(
+        'Excluir Rede',
+        'Deseja realmente excluir esta rede? Usuários associados a ela perderão o filtro de acesso.',
+        () => {
+            db.collection('networks').doc(id).delete().then(() => {
+                showToast('Rede removida com sucesso!', 'critical');
+            });
+        },
+        true // isCritical
+    );
 }
 
 // Estado global para o formulário de Redes
@@ -1116,28 +1220,31 @@ window.sendNetworkReport = async function(networkId) {
         return;
     }
 
-    const ok = confirm(`Deseja enviar o relatório de demandas abertas para o e-mail: ${network.reportEmail}?`);
-    if (!ok) return;
+    showConfirmModal(
+        'Enviar Relatório',
+        `Deseja enviar o relatório de demandas abertas para o e-mail: ${network.reportEmail}?`,
+        async () => {
+            showToast('Gerando e enviando relatório...');
 
-    showToast('Gerando e enviando relatório...');
+            try {
+                const response = await fetch('/api/send-network-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ networkId: networkId })
+                });
 
-    try {
-        const response = await fetch('/api/send-network-report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ networkId: networkId })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            showToast('Relatório enviado com sucesso!', 'success');
-        } else {
-            showToast('Erro ao enviar relatório: ' + (result.error || 'Erro desconhecido'), 'critical');
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Relatório enviado com sucesso!', 'success');
+                } else {
+                    showToast('Erro ao enviar relatório: ' + (result.error || 'Erro desconhecido'), 'critical');
+                }
+            } catch (error) {
+                console.error('Erro ao disparar relatório:', error);
+                showToast('Erro de conexão com o servidor.', 'critical');
+            }
         }
-    } catch (error) {
-        console.error('Erro ao disparar relatório:', error);
-        showToast('Erro de conexão com o servidor.', 'critical');
-    }
+    );
 }
 
 function renderUserAdminList() {
@@ -1282,40 +1389,43 @@ if (emailSettingsForm) {
         e.preventDefault();
 
         const smtpUser = document.getElementById('smtpUser').value.trim();
-        const ok = confirm(`Deseja salvar as novas configurações de e-mail para ${smtpUser}?\n\nCERTIFIQUE-SE QUE OS DADOS ESTÃO CORRETOS PARA NÃO INTERROMPER A AUTOMAÇÃO.`);
-        if (!ok) return;
+        showConfirmModal(
+            'Salvar Configurações',
+            `Deseja salvar as novas configurações de e-mail para ${smtpUser}?\n\nCERTIFIQUE-SE QUE OS DADOS ESTÃO CORRETOS PARA NÃO INTERROMPER A AUTOMAÇÃO.`,
+            async () => {
+                const settings = {
+                    smtpHost: document.getElementById('smtpHost').value.trim(),
+                    smtpPort: document.getElementById('smtpPort').value.trim(),
+                    smtpUser: smtpUser,
+                    smtpPass: document.getElementById('smtpPass').value.trim(),
+                    smtpSecure: document.getElementById('smtpSecure').checked,
+                    senderName: document.getElementById('senderName').value.trim(),
+                    senderEmail: document.getElementById('senderEmail').value.trim(),
+                    subjectTemplate: document.getElementById('emailSubject').value.trim(),
+                    bodyTemplate: document.getElementById('emailBody').value.trim()
+                };
 
-        const settings = {
-            smtpHost: document.getElementById('smtpHost').value.trim(),
-            smtpPort: document.getElementById('smtpPort').value.trim(),
-            smtpUser: smtpUser,
-            smtpPass: document.getElementById('smtpPass').value.trim(),
-            smtpSecure: document.getElementById('smtpSecure').checked,
-            senderName: document.getElementById('senderName').value.trim(),
-            senderEmail: document.getElementById('senderEmail').value.trim(),
-            subjectTemplate: document.getElementById('emailSubject').value.trim(),
-            bodyTemplate: document.getElementById('emailBody').value.trim()
-        };
+                try {
+                    await db.collection('settings').doc('email').set(settings);
+                    showToast('Configurações de e-mail salvas!');
 
-        try {
-            await db.collection('settings').doc('email').set(settings);
-            showToast('Configurações de e-mail salvas!');
+                    // Bloquear novamente após salvar
+                    if (emailSettingsFields) emailSettingsFields.setAttribute('disabled', 'true');
+                    if (btnSaveEmailSettings) btnSaveEmailSettings.style.display = 'none';
+                    if (btnUnlockSettings) {
+                        btnUnlockSettings.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Habilitar Edição';
+                        btnUnlockSettings.style.background = 'rgba(139, 92, 246, 0.1)';
+                        btnUnlockSettings.style.color = '#a78bfa';
+                        btnUnlockSettings.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                    }
 
-            // Bloquear novamente após salvar
-            if (emailSettingsFields) emailSettingsFields.setAttribute('disabled', 'true');
-            if (btnSaveEmailSettings) btnSaveEmailSettings.style.display = 'none';
-            if (btnUnlockSettings) {
-                btnUnlockSettings.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Habilitar Edição';
-                btnUnlockSettings.style.background = 'rgba(139, 92, 246, 0.1)';
-                btnUnlockSettings.style.color = '#a78bfa';
-                btnUnlockSettings.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                    loadEmailSettings(); // Recarrega para atualizar o badge
+                } catch (error) {
+                    console.error('Erro ao salvar config de e-mail:', error);
+                    showToast('Erro ao salvar configurações.', 'critical');
+                }
             }
-
-            loadEmailSettings(); // Recarrega para atualizar o badge
-        } catch (error) {
-            console.error('Erro ao salvar config de e-mail:', error);
-            showToast('Erro ao salvar configurações.', 'critical');
-        }
+        );
     });
 }
 
@@ -1365,11 +1475,16 @@ async function loadEmailSettings() {
 }
 
 window.deleteCustomUser = function (id) {
-    if (confirm("Remover este usuário do acesso ao Portal?")) {
-        db.collection('customUsers').doc(id).delete().then(() => {
-            showToast('Usuário removido.', 'critical');
-        });
-    }
+    showConfirmModal(
+        'Remover Usuário',
+        'Remover este usuário do acesso ao Portal?',
+        () => {
+            db.collection('customUsers').doc(id).delete().then(() => {
+                showToast('Usuário removido.', 'critical');
+            });
+        },
+        true // isCritical
+    );
 };
 
 function checkAuth() {
@@ -2425,15 +2540,20 @@ function deleteTask(id) {
     const isCustomAdmin = customUsers.find(u => u.name === currentUser && u.isAdmin);
 
     if (!currentUser || (!isHardcodedAdmin && !isCustomAdmin)) {
-        alert('Acesso Negado: Apenas administradores podem excluir demandas.');
+        showAlertModal('Acesso Negado', 'Apenas administradores podem excluir demandas.');
         return;
     }
 
-    if (confirm('Tem certeza que deseja EXCLUIR esta demanda? Esta ação não pode ser desfeita.')) {
-        db.collection('tasks').doc(id).delete().then(() => {
-            showToast('Demanda excluída!', 'critical');
-        });
-    }
+    showConfirmModal(
+        'Excluir Demanda',
+        'Tem certeza que deseja EXCLUIR esta demanda? Esta ação não pode ser desfeita.',
+        () => {
+            db.collection('tasks').doc(id).delete().then(() => {
+                showToast('Demanda excluída!', 'critical');
+            });
+        },
+        true // isCritical
+    );
 }
 
 // Complete Task Trigger (Opens Modal)
@@ -3247,11 +3367,16 @@ window.sendWhatsappCobrança = sendWhatsappCobrança;
 window.openEditCsModal = openEditCsModal;
 window.editImplantation = openImplantationModal;
 window.deleteImplantation = function (id) {
-    if (confirm("Deseja realmente excluir esta implantação?")) {
-        db.collection('implantacoes').doc(id).delete().then(() => {
-            showToast('Implantação excluída.', 'critical');
-        });
-    }
+    showConfirmModal(
+        'Excluir Implantação',
+        'Deseja realmente excluir esta implantação?',
+        () => {
+            db.collection('implantacoes').doc(id).delete().then(() => {
+                showToast('Implantação excluída.', 'critical');
+            });
+        },
+        true // isCritical
+    );
 };
 
 function renderImplantacoesBoard() {

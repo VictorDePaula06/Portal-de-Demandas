@@ -1471,6 +1471,23 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmação Customizado -->
+    <div id="customConfirmModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px; text-align: center; padding: 2rem;">
+            <div id="confirmIcon" style="margin-bottom: 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--status-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.3));">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <h2 id="confirmTitle" style="margin-bottom: 0.75rem; font-size: 1.5rem;">Confirmar Ação</h2>
+            <p id="confirmMessage" style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;">Você tem certeza que deseja realizar esta operação?</p>
+            <div class="modal-footer" style="justify-content: center; gap: 12px; margin-top: 0;">
+                <button id="btnCancelConfirm" class="btn btn-secondary" style="padding: 0.75rem 2rem;">Cancelar</button>
+                <button id="btnAcceptConfirm" class="btn btn-primary" style="padding: 0.75rem 2rem; background: var(--status-critical); border-color: var(--status-critical);">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>

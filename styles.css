@@ -1155,7 +1155,8 @@ textarea {
     color: var(--text-muted);
 }
 
-.input-with-icon input {
+.input-with-icon input,
+.input-with-icon select {
     padding-left: 40px !important;
 }
 
