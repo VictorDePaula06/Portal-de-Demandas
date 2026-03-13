@@ -1160,6 +1160,11 @@ textarea {
     padding-left: 40px !important;
 }
 
+.input-with-icon select option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
 /* Toggle Switch */
 .switch {
     position: relative;
