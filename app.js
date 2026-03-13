@@ -597,6 +597,15 @@ function showSyncResultsModal(newCount, updatedCount, items) {
     modal.classList.add('active');
 }
 
+// Listener para auto-marcar o envio de e-mail ao digitar
+document.getElementById('taskResolvedEmail').addEventListener('input', (e) => {
+    const email = e.target.value.trim();
+    const checkbox = document.getElementById('sendCompletionEmail');
+    if (email && email.includes('@') && checkbox) {
+        checkbox.checked = true;
+    }
+});
+
 // Handler global para botões de conclusão no modal de sync
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('btn-sync-complete')) {
@@ -2660,13 +2669,16 @@ function completeTask(id, newStatus = null) {
     const task = tasks.find(t => t.id === id);
     const recipient = task ? getNetworkEmailByClient(task.cliente) : '';
     const emailField = document.getElementById('taskResolvedEmail');
+    const sendEmailCheckbox = document.getElementById('sendCompletionEmail');
     
     if (emailField) {
         emailField.value = recipient || '';
         if (recipient) {
             console.log(`[Email Prep] Preenchendo e-mail automático: ${recipient}`);
+            if (sendEmailCheckbox) sendEmailCheckbox.checked = true;
         } else {
             console.log(`[Email Prep] Nenhum e-mail automático encontrado para o cliente: ${task ? task.cliente : 'N/A'}`);
+            if (sendEmailCheckbox) sendEmailCheckbox.checked = false;
         }
     }
 
