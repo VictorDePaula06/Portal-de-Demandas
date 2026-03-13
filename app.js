@@ -1092,6 +1092,27 @@ if (networkForm) {
 
     if (tifluxClientSearch) {
         tifluxClientSearch.addEventListener('input', (e) => renderTifluxSearchResults(e.target.value));
+        
+        // Também permitir busca ao apertar Enter
+        tifluxClientSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnSearchTiflux?.click();
+            }
+        });
+    }
+
+    const btnAddManualClient = document.getElementById('btnAddManualClient');
+    if (btnAddManualClient) {
+        btnAddManualClient.addEventListener('click', () => {
+            const name = tifluxClientSearch?.value.trim();
+            if (name) {
+                addClientToNetwork(name);
+                tifluxClientSearch.value = '';
+            } else {
+                showToast('Digite o nome do posto para adicionar.', 'warning');
+            }
+        });
     }
 
     function renderTifluxSearchResults(query) {

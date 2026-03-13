@@ -832,7 +832,22 @@
                                     <span style="font-size: 0.75rem; color: var(--text-muted);">Habilitar envio automático (Segunda-feira)</span>
                                 </div>
                             </div>
-                            <div class="form-group" style="margin-top: 0.5rem;">
+                            <div class="form-group" style="margin-top: 0.5rem; position: relative;">
+                                <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">ADICIONAR POSTO (TIFLUX OU MANUAL)</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="tifluxClientSearch" placeholder="Digite o nome do posto..." style="flex: 1; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                                    <button type="button" id="btnSearchTiflux" class="btn btn-secondary" style="padding: 0.85rem; display: flex; align-items: center; justify-content: center; min-width: 48px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                    </button>
+                                    <button type="button" id="btnAddManualClient" class="btn btn-secondary" style="padding: 0.85rem; display: flex; align-items: center; justify-content: center; min-width: 48px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);" title="Adicionar Manualmente">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                                    </button>
+                                </div>
+                                <div id="tifluxSearchResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1a1b1e; border: 1px solid var(--border-color); border-radius: 10px; z-index: 100; max-height: 200px; overflow-y: auto; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                                    <!-- Resultados via JS -->
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top: 1rem;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                                     <label style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">POSTOS NESTA REDE (<span id="networkClientsCount">0</span>)</label>
                                 </div>
