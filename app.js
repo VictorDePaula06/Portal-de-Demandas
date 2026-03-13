@@ -2752,13 +2752,7 @@ resolveForm.addEventListener('submit', (e) => {
         if (resolvedDesc) taskObj.resolvedDesc = resolvedDesc;
 
         const sendEmail = document.getElementById('sendCompletionEmail').checked;
-        let recipient = getNetworkEmailByClient(taskObj.cliente);
-        const manualRecipient = document.getElementById('taskResolvedEmail').value.trim();
-        
-        // Se não tem e-mail automático, usar o manual se disponível
-        if (!recipient && manualRecipient) {
-            recipient = manualRecipient;
-        }
+        const recipient = document.getElementById('taskResolvedEmail').value.trim();
 
         db.collection('tasks').doc(taskObj.id).set(taskObj).then(() => {
             showToast('Demanda concluída com sucesso!', 'success');
