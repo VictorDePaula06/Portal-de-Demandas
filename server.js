@@ -503,7 +503,7 @@ async function processNetworkReport(networkId, customRecipient = null) {
     if (!networkSnap.exists) throw new Error('Rede não encontrada.');
     
     const network = networkSnap.data();
-    const recipient = customRecipient || network.reportEmail;
+    const recipient = (customRecipient || network.reportEmail || '').toString().replace(/;/g, ',');
     if (!recipient) throw new Error('E-mail de relatório não configurado para esta rede.');
 
     // 1. Obter lista de postos ativos da rede
