@@ -815,7 +815,7 @@
                             </svg>
                             <h3 style="margin: 0; font-size: 1.25rem;">Cadastrar Nova Rede</h3>
                         </div>
-                        <form id="networkForm" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                        <form id="networkForm" novalidate style="display: flex; flex-direction: column; gap: 1.25rem;">
                             <input type="hidden" id="networkId">
                             <div class="form-group">
                                 <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">NOME DA REDE</label>
@@ -907,7 +907,7 @@
                         </button>
                     </div>
 
-                    <form id="emailSettingsForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <form id="emailSettingsForm" novalidate style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                         <fieldset id="emailSettingsFields" disabled
                             style="display: contents; border: none; padding: 0; margin: 0;">
                             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -1036,7 +1036,7 @@
                     </svg>
                 </button>
             </div>
-            <form id="taskForm">
+            <form id="taskForm" novalidate>
                 <input type="hidden" id="taskId">
                 <div class="form-row">
                     <div class="form-group">
