@@ -2698,6 +2698,13 @@ function renderBoard() {
         }
 
         return true;
+    }).sort((a, b) => {
+        // Ordenação por Vencimento (mais próximo/atrasado primeiro)
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;  // Sem data vai para o fim
+        if (!b.date) return -1; // Sem data vai para o fim
+        
+        return new Date(a.date) - new Date(b.date);
     });
 
     // Clear all columns
