@@ -3522,3 +3522,23 @@ if (btnOkHistory) btnOkHistory.addEventListener('click', () => historyModal.clas
 if (historyModal) historyModal.addEventListener('click', (e) => {
     if (e.target === historyModal) historyModal.classList.remove('active');
 });
+
+// Gerenciamento de Abas nas Configurações
+window.switchSettingsTab = function(tabId) {
+    document.querySelectorAll(.settings-tab-content).forEach(tab => { tab.classList.remove(ctive); });
+    document.querySelectorAll(.settings-tab-btn).forEach(btn => { btn.classList.remove(ctive); });
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.classList.add(ctive);
+        const btn = document.querySelector(.settings-tab-btn[onclick*=\" + tabId + \\\]);
+ if (btn) btn.classList.add(ctive);
+ localStorage.setItem(ctiveSettingsTab, tabId);
+ }
+};
+
+document.addEventListener(DOMContentLoaded, () => {
+ const savedTab = localStorage.getItem(ctiveSettingsTab);
+ if (savedTab && document.getElementById(savedTab)) {
+ switchSettingsTab(savedTab);
+ }
+});

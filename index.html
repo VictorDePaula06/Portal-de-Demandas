@@ -656,340 +656,359 @@
                     críticas, como excluir demandas ou concluir tarefas.
                 </p>
 
-                <div class="settings-grid">
-                    <!-- Formulário de Cadastro -->
-                    <div class="glass-card">
-                        <div
-                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                                fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <line x1="19" x2="19" y1="8" y2="14" />
-                                <line x1="22" x2="16" y1="11" y2="11" />
-                            </svg>
-                            <h3 style="margin: 0; font-size: 1.25rem;">Cadastrar Novo Usuário</h3>
+                <div class="settings-tabs-container">
+                    <button class="settings-tab-btn active" onclick="switchSettingsTab('tab-users')">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Usuários
+                    </button>
+                    <button class="settings-tab-btn" onclick="switchSettingsTab('tab-networks')">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        Redes
+                    </button>
+                    <button class="settings-tab-btn" onclick="switchSettingsTab('tab-email')">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        E-mail
+                    </button>
+                </div>
+
+                <!-- Tab: Usuários -->
+                <div id="tab-users" class="settings-tab-content active">
+                    <div class="settings-grid">
+                        <!-- Formulário de Cadastro -->
+                        <div class="glass-card">
+                            <div
+                                style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <line x1="19" x2="19" y1="8" y2="14" />
+                                    <line x1="22" x2="16" y1="11" y2="11" />
+                                </svg>
+                                <h3 style="margin: 0; font-size: 1.25rem;">Cadastrar Novo Usuário</h3>
+                            </div>
+
+                            <form id="userAdminForm" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                <input type="hidden" id="adminUserId">
+
+                                <div class="form-group">
+                                    <label
+                                        style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">NOME
+                                        COMPLETO</label>
+                                    <div class="input-with-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
+                                        <input type="text" id="adminUserName" required placeholder="Ex: Victor De Paula"
+                                            style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">E-MAIL
+                                        DE ACESSO</label>
+                                    <div class="input-with-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect width="20" height="16" x="2" y="4" rx="2" />
+                                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                        </svg>
+                                        <input type="email" id="adminUserEmail" required
+                                            placeholder="victor@gtholding.com.br"
+                                            style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">SENHA
+                                        PROVISÓRIA</label>
+                                    <div class="input-with-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                        <input type="password" id="adminUserPass" required
+                                            placeholder="Digite uma senha forte"
+                                            style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">REDE (OPCIONAL)</label>
+                                    <div class="input-with-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                                        </svg>
+                                        <select id="adminUserNetwork"
+                                            style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-weight: 500;">
+                                            <option value="">Nenhuma (Acesso Geral)</option>
+                                            <!-- Populado via JS -->
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); margin-top: 0.5rem;">
+                                    <div>
+                                        <span style="display: block; font-weight: 600; font-size: 0.9rem;">Acesso de
+                                            Administrador</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">Permite excluir e editar
+                                            registros</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="adminUserIsAdmin">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color);">
+                                    <div>
+                                        <span style="display: block; font-weight: 600; font-size: 0.9rem;">Acesso Cliente (Restrito)</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">Oculta abas extras (CS, Implant., etc)</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="adminUserIsClient">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary"
+                                    style="margin-top: 1rem; padding: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">
+                                    Salvar Usuário
+                                </button>
+                            </form>
                         </div>
 
-                        <form id="userAdminForm" style="display: flex; flex-direction: column; gap: 1.25rem;">
-                            <input type="hidden" id="adminUserId">
-
-                            <div class="form-group">
-                                <label
-                                    style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">NOME
-                                    COMPLETO</label>
-                                <div class="input-with-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                    <input type="text" id="adminUserName" required placeholder="Ex: Victor De Paula"
-                                        style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label
-                                    style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">E-MAIL
-                                    DE ACESSO</label>
-                                <div class="input-with-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <rect width="20" height="16" x="2" y="4" rx="2" />
-                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                                    </svg>
-                                    <input type="email" id="adminUserEmail" required
-                                        placeholder="victor@gtholding.com.br"
-                                        style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label
-                                    style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">SENHA
-                                    PROVISÓRIA</label>
-                                <div class="input-with-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                    </svg>
-                                    <input type="password" id="adminUserPass" required
-                                        placeholder="Digite uma senha forte"
-                                        style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit;">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label
-                                    style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">REDE (OPCIONAL)</label>
-                                <div class="input-with-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                                    </svg>
-                                    <select id="adminUserNetwork"
-                                        style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-family: inherit; font-weight: 500;">
-                                        <option value="">Nenhuma (Acesso Geral)</option>
-                                        <!-- Populado via JS -->
-                                    </select>
-                                </div>
-                            </div>
-
+                        <!-- Lista de Usuários -->
+                        <div class="glass-card">
                             <div
-                                style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); margin-top: 0.5rem;">
-                                <div>
-                                    <span style="display: block; font-weight: 600; font-size: 0.9rem;">Acesso de
-                                        Administrador</span>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Permite excluir e editar
-                                        registros</span>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="adminUserIsAdmin">
-                                    <span class="slider"></span>
-                                </label>
+                                style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                                <h3 style="margin: 0; font-size: 1.25rem;">Usuários Ativos</h3>
                             </div>
-
-                            <div
-                                style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color);">
-                                <div>
-                                    <span style="display: block; font-weight: 600; font-size: 0.9rem;">Acesso Cliente (Restrito)</span>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Oculta abas extras (CS, Implant., etc)</span>
+                            <div id="userAdminList"
+                                style="flex: 1; overflow-y: auto; max-height: 480px; padding-right: 5px;">
+                                <!-- Populated by JS -->
+                                <div style="color: var(--text-secondary); text-align: center; padding: 3rem;">
+                                    <div class="rotating" style="display: inline-block; margin-bottom: 1rem;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                        </svg>
+                                    </div>
+                                    <p>Sincronizando usuários...</p>
                                 </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="adminUserIsClient">
-                                    <span class="slider"></span>
-                                </label>
                             </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <button type="submit" class="btn btn-primary"
-                                style="margin-top: 1rem; padding: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">
-                                Salvar Usuário
+                <!-- Tab: Redes -->
+                <div id="tab-networks" class="settings-tab-content">
+                    <div class="settings-grid">
+                        <div class="glass-card">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                                </svg>
+                                <h3 style="margin: 0; font-size: 1.25rem;">Cadastrar Nova Rede</h3>
+                            </div>
+                            <form id="networkForm" novalidate style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                <input type="hidden" id="networkId">
+                                <div class="form-group">
+                                    <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">NOME DA REDE</label>
+                                    <input type="text" id="networkName" required placeholder="Ex: GULF" style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">E-MAIL PARA RELATÓRIOS (MONDAY REPORT)</label>
+                                    <input type="text" id="networkReportEmail" placeholder="email1@exemplo.com; email2@exemplo.com" style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                                        <label class="switch" style="width: 34px; height: 18px;">
+                                            <input type="checkbox" id="networkAutoReport">
+                                            <span class="slider" style="border-radius: 20px;"></span>
+                                        </label>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">Habilitar envio automático (Segunda-feira)</span>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-top: 0.5rem; position: relative;">
+                                    <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">ADICIONAR POSTO (TIFLUX OU MANUAL)</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="text" id="tifluxClientSearch" placeholder="Digite o nome do posto..." style="flex: 1; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
+                                        <button type="button" id="btnSearchTiflux" class="btn btn-secondary" style="padding: 0.85rem; display: flex; align-items: center; justify-content: center; min-width: 48px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                        </button>
+                                        <button type="button" id="btnAddManualClient" class="btn btn-secondary" style="padding: 0.85rem; display: flex; align-items: center; justify-content: center; min-width: 48px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);" title="Adicionar Manualmente">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                                        </button>
+                                    </div>
+                                    <div id="tifluxSearchResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1a1b1e; border: 1px solid var(--border-color); border-radius: 10px; z-index: 100; max-height: 200px; overflow-y: auto; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                                        <!-- Resultados via JS -->
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <label style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">POSTOS NESTA REDE (<span id="networkClientsCount">0</span>)</label>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                        <input type="text" id="internalClientSearch" placeholder="🔍 Pesquisar nos postos já vinculados..." style="flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-size: 0.85rem;">
+                                    </div>
+                                    <div id="networkClientsList" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 10px; border: 1px solid var(--border-color); padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+                                        <p style="color: var(--text-muted); text-align: center; padding: 2rem; font-size: 0.85rem;">Carregando postos...</p>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; padding: 0.85rem; font-weight: 700;">Salvar Rede</button>
+                            </form>
+                        </div>
+
+                        <div class="glass-card">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                                </svg>
+                                <h3 style="margin: 0; font-size: 1.25rem;">Redes Cadastradas</h3>
+                            </div>
+                            <div id="networkList" style="max-height: 400px; overflow-y: auto;">
+                                <!-- Populado via JS -->
+                                <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Buscando redes...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: E-mail -->
+                <div id="tab-email" class="settings-tab-content">
+                    <div class="glass-card" style="max-width: 1000px;">
+                        <div
+                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect width="20" height="16" x="2" y="4" rx="2" />
+                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                            <h3 style="margin: 0; font-size: 1.25rem;">Configurações de E-mail (Automação)</h3>
+                            <div id="activeEmailBadge"
+                                style="margin-left: auto; display: none; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">
+                                <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                                E-mail Ativo: <strong id="activeEmailDisplay">---</strong>
+                            </div>
+                            <button type="button" id="btnUnlockSettings" class="btn btn-secondary"
+                                style="margin-left: 10px; padding: 4px 12px; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                Habilitar Edição
+                            </button>
+                        </div>
+
+                        <form id="emailSettingsForm" novalidate style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <fieldset id="emailSettingsFields" disabled
+                                style="display: contents; border: none; padding: 0; margin: 0;">
+                                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                    <h4
+                                        style="font-size: 0.9rem; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                        Servidor SMTP</h4>
+                                    <!-- ... rest of the fields continue inside this fieldset ... -->
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label style="font-size: 0.75rem;">HOST SMTP</label>
+                                            <input type="text" id="smtpHost" placeholder="smtp.gmail.com" required>
+                                        </div>
+                                        <div class="form-group" style="flex: 0 0 100px;">
+                                            <label style="font-size: 0.75rem;">PORTA</label>
+                                            <input type="number" id="smtpPort" placeholder="587" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label style="font-size: 0.75rem;">USUÁRIO (E-MAIL)</label>
+                                        <input type="email" id="smtpUser" placeholder="empresa@exemplo.com" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label style="font-size: 0.75rem;">SENHA / APP PASSWORD</label>
+                                        <input type="password" id="smtpPass" placeholder="******" required>
+                                    </div>
+
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <label class="switch" style="width: 40px; height: 20px;">
+                                            <input type="checkbox" id="smtpSecure">
+                                            <span class="slider" style="border-radius: 20px;"></span>
+                                        </label>
+                                        <span style="font-size: 0.8rem; color: var(--text-muted);">Usar Conexão Segura
+                                            (SSL/TLS)</span>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                        <h4 style="font-size: 0.9rem; color: var(--accent-primary); margin: 0;">Template do
+                                            E-mail</h4>
+                                        <button type="button" id="btnRestoreEmailDefault"
+                                            style="background: none; border: none; color: var(--accent-primary); cursor: pointer; font-size: 0.75rem; text-decoration: underline; padding: 0;">Carregar
+                                            Padrão</button>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label style="font-size: 0.75rem;">NOME REMETENTE</label>
+                                            <input type="text" id="senderName" placeholder="GTHolding Suporte" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label style="font-size: 0.75rem;">E-MAIL REMETENTE</label>
+                                            <input type="email" id="senderEmail" placeholder="nao-responder@gtholding.com"
+                                                required>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label style="font-size: 0.75rem;">ASSUNTO</label>
+                                        <input type="text" id="emailSubject"
+                                            placeholder="Chamado #{numero} ainda em análise" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label style="font-size: 0.75rem;">CORPO DO E-MAIL (Placeholders: {cliente},
+                                            {numero},
+                                            {descricao}, {vencimento})</label>
+                                        <textarea id="emailBody" rows="5" style="font-size: 0.85rem;"
+                                            placeholder="Olá {cliente}, informamos que o chamado #{numero} referente a {descricao} ainda encontra-se em análise..."></textarea>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <button type="submit" id="btnSaveEmailSettings" class="btn btn-primary"
+                                style="grid-column: span 2; margin-top: 0.5rem; padding: 0.85rem; font-weight: 700; display: none;">
+                                Salvar Configurações de E-mail
                             </button>
                         </form>
                     </div>
-
-                    <!-- Lista de Usuários -->
-                    <div class="glass-card">
-                        <div
-                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                                fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
-                            <h3 style="margin: 0; font-size: 1.25rem;">Usuários Ativos</h3>
-                        </div>
-                        <div id="userAdminList"
-                            style="flex: 1; overflow-y: auto; max-height: 480px; padding-right: 5px;">
-                            <!-- Populated by JS -->
-                            <div style="color: var(--text-secondary); text-align: center; padding: 3rem;">
-                                <div class="rotating" style="display: inline-block; margin-bottom: 1rem;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                    </svg>
-                                </div>
-                                <p>Sincronizando usuários...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gestão de Redes (NOVO) -->
-                <div class="settings-grid">
-                    <div class="glass-card">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                            </svg>
-                            <h3 style="margin: 0; font-size: 1.25rem;">Cadastrar Nova Rede</h3>
-                        </div>
-                        <form id="networkForm" novalidate style="display: flex; flex-direction: column; gap: 1.25rem;">
-                            <input type="hidden" id="networkId">
-                            <div class="form-group">
-                                <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">NOME DA REDE</label>
-                                <input type="text" id="networkName" required placeholder="Ex: GULF" style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
-                            </div>
-                            <div class="form-group">
-                                <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">E-MAIL PARA RELATÓRIOS (MONDAY REPORT)</label>
-                                <input type="text" id="networkReportEmail" placeholder="email1@exemplo.com; email2@exemplo.com" style="width: 100%; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-                                    <label class="switch" style="width: 34px; height: 18px;">
-                                        <input type="checkbox" id="networkAutoReport">
-                                        <span class="slider" style="border-radius: 20px;"></span>
-                                    </label>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);">Habilitar envio automático (Segunda-feira)</span>
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-top: 0.5rem; position: relative;">
-                                <label style="font-size: 0.8rem; margin-bottom: 6px; display: block; color: var(--text-muted);">ADICIONAR POSTO (TIFLUX OU MANUAL)</label>
-                                <div style="display: flex; gap: 8px;">
-                                    <input type="text" id="tifluxClientSearch" placeholder="Digite o nome do posto..." style="flex: 1; padding: 0.85rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary);">
-                                    <button type="button" id="btnSearchTiflux" class="btn btn-secondary" style="padding: 0.85rem; display: flex; align-items: center; justify-content: center; min-width: 48px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                    </button>
-                                    <button type="button" id="btnAddManualClient" class="btn btn-secondary" style="padding: 0.85rem; display: flex; align-items: center; justify-content: center; min-width: 48px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);" title="Adicionar Manualmente">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                                    </button>
-                                </div>
-                                <div id="tifluxSearchResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1a1b1e; border: 1px solid var(--border-color); border-radius: 10px; z-index: 100; max-height: 200px; overflow-y: auto; margin-top: 5px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                                    <!-- Resultados via JS -->
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-top: 1rem;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                    <label style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">POSTOS NESTA REDE (<span id="networkClientsCount">0</span>)</label>
-                                </div>
-                                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                                    <input type="text" id="internalClientSearch" placeholder="🔍 Pesquisar nos postos já vinculados..." style="flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-primary); font-size: 0.85rem;">
-                                </div>
-                                <div id="networkClientsList" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.15); border-radius: 10px; border: 1px solid var(--border-color); padding: 8px; display: flex; flex-direction: column; gap: 6px;">
-                                    <p style="color: var(--text-muted); text-align: center; padding: 2rem; font-size: 0.85rem;">Carregando postos...</p>
-                                </div>
-                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 10px; display: block; line-height: 1.4;">
-                                    ⚠️ Os nomes dos postos são sincronizados com o banco e não podem ser editados manualmente para garantir a integridade dos filtros.
-                                </small>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; padding: 0.85rem; font-weight: 700;">Salvar Rede</button>
-                        </form>
-                    </div>
-
-                    <div class="glass-card">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                            </svg>
-                            <h3 style="margin: 0; font-size: 1.25rem;">Redes Cadastradas</h3>
-                        </div>
-                        <div id="networkList" style="max-height: 400px; overflow-y: auto;">
-                            <!-- Populado via JS -->
-                            <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Buscando redes...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Configurações de E-mail (NOVO) -->
-                <div class="glass-card" style="margin-top: 2.5rem; max-width: 1000px;">
-                    <div
-                        style="display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                            stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <rect width="20" height="16" x="2" y="4" rx="2" />
-                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                        </svg>
-                        <h3 style="margin: 0; font-size: 1.25rem;">Configurações de E-mail (Automação)</h3>
-                        <div id="activeEmailBadge"
-                            style="margin-left: auto; display: none; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">
-                            <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
-                            E-mail Ativo: <strong id="activeEmailDisplay">---</strong>
-                        </div>
-                        <button type="button" id="btnUnlockSettings" class="btn btn-secondary"
-                            style="margin-left: 10px; padding: 4px 12px; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; background: rgba(139, 92, 246, 0.1); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
-                            Habilitar Edição
-                        </button>
-                    </div>
-
-                    <form id="emailSettingsForm" novalidate style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <fieldset id="emailSettingsFields" disabled
-                            style="display: contents; border: none; padding: 0; margin: 0;">
-                            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                                <h4
-                                    style="font-size: 0.9rem; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                                    Servidor SMTP</h4>
-                                <!-- ... rest of the fields continue inside this fieldset ... -->
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label style="font-size: 0.75rem;">HOST SMTP</label>
-                                        <input type="text" id="smtpHost" placeholder="smtp.gmail.com" required>
-                                    </div>
-                                    <div class="form-group" style="flex: 0 0 100px;">
-                                        <label style="font-size: 0.75rem;">PORTA</label>
-                                        <input type="number" id="smtpPort" placeholder="587" required>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label style="font-size: 0.75rem;">USUÁRIO (E-MAIL)</label>
-                                    <input type="email" id="smtpUser" placeholder="empresa@exemplo.com" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label style="font-size: 0.75rem;">SENHA / APP PASSWORD</label>
-                                    <input type="password" id="smtpPass" placeholder="******" required>
-                                </div>
-
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <label class="switch" style="width: 40px; height: 20px;">
-                                        <input type="checkbox" id="smtpSecure">
-                                        <span class="slider" style="border-radius: 20px;"></span>
-                                    </label>
-                                    <span style="font-size: 0.8rem; color: var(--text-muted);">Usar Conexão Segura
-                                        (SSL/TLS)</span>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                                    <h4 style="font-size: 0.9rem; color: var(--accent-primary); margin: 0;">Template do
-                                        E-mail</h4>
-                                    <button type="button" id="btnRestoreEmailDefault"
-                                        style="background: none; border: none; color: var(--accent-primary); cursor: pointer; font-size: 0.75rem; text-decoration: underline; padding: 0;">Carregar
-                                        Padrão</button>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label style="font-size: 0.75rem;">NOME REMETENTE</label>
-                                        <input type="text" id="senderName" placeholder="GTHolding Suporte" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label style="font-size: 0.75rem;">E-MAIL REMETENTE</label>
-                                        <input type="email" id="senderEmail" placeholder="nao-responder@gtholding.com"
-                                            required>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label style="font-size: 0.75rem;">ASSUNTO</label>
-                                    <input type="text" id="emailSubject"
-                                        placeholder="Chamado #{numero} ainda em análise" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label style="font-size: 0.75rem;">CORPO DO E-MAIL (Placeholders: {cliente},
-                                        {numero},
-                                        {descricao}, {vencimento})</label>
-                                    <textarea id="emailBody" rows="5" style="font-size: 0.85rem;"
-                                        placeholder="Olá {cliente}, informamos que o chamado #{numero} referente a {descricao} ainda encontra-se em análise..."></textarea>
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <button type="submit" id="btnSaveEmailSettings" class="btn btn-primary"
-                            style="grid-column: span 2; margin-top: 0.5rem; padding: 0.85rem; font-weight: 700; display: none;">
-                            Salvar Configurações de E-mail
-                        </button>
-                    </form>
                 </div>
             </div>
     </main>

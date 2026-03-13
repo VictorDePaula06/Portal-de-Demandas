@@ -1685,3 +1685,69 @@ input:checked+.slider:before {
 #networkClientsList::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
 }
+
+/* Settings Tabs */
+.settings-tabs-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1px;
+}
+
+.settings-tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-tab-btn svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+}
+
+.settings-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+.settings-tab-btn.active svg {
+    opacity: 1;
+    color: var(--accent-primary);
+}
+
+.settings-tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Adjusting grid for single column focus in tabs if needed */
+.settings-tab-content .settings-grid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
