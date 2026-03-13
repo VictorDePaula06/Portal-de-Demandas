@@ -3523,22 +3523,37 @@ if (historyModal) historyModal.addEventListener('click', (e) => {
     if (e.target === historyModal) historyModal.classList.remove('active');
 });
 
-// Gerenciamento de Abas nas Configura��es
+// Gerenciamento de Abas nas Configurações
 window.switchSettingsTab = function(tabId) {
-    document.querySelectorAll(.settings-tab-content).forEach(tab => { tab.classList.remove(ctive); });
-    document.querySelectorAll(.settings-tab-btn).forEach(btn => { btn.classList.remove(ctive); });
+    // Esconder todos os conteúdos
+    document.querySelectorAll('.settings-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Desativar todos os botões
+    document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Mostrar aba selecionada
     const targetTab = document.getElementById(tabId);
     if (targetTab) {
-        targetTab.classList.add(ctive);
-        const btn = document.querySelector(.settings-tab-btn[onclick*=\" + tabId + \\\]);
- if (btn) btn.classList.add(ctive);
- localStorage.setItem(ctiveSettingsTab, tabId);
- }
+        targetTab.classList.add('active');
+        
+        // Ativar botão correspondente
+        const btn = document.querySelector(`.settings-tab-btn[onclick*="${tabId}"]`);
+        if (btn) btn.classList.add('active');
+        
+        // Persistir no localStorage
+        localStorage.setItem('activeSettingsTab', tabId);
+    }
 };
 
-document.addEventListener(DOMContentLoaded, () => {
- const savedTab = localStorage.getItem(ctiveSettingsTab);
- if (savedTab && document.getElementById(savedTab)) {
- switchSettingsTab(savedTab);
- }
+// Inicializar aba ativa ao carregar
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTab = localStorage.getItem('activeSettingsTab');
+    if (savedTab && document.getElementById(savedTab)) {
+        switchSettingsTab(savedTab);
+    }
 });
+
