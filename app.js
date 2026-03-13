@@ -1460,7 +1460,7 @@ Previsão de conclusão: {vencimento}
 Estamos trabalhando para finalizá-lo o mais breve possível. Qualquer dúvida, estamos à disposição.
 
 Atentamente,
-Equipe de Suporte @ Globaltera`;
+Equipe de Suporte @ GTHolding`;
 
 async function loadEmailSettings() {
     try {
@@ -2284,7 +2284,7 @@ if (btnGeneratePDF) {
                 const now = new Date().toLocaleDateString('pt-BR');
                 doc.setFontSize(8);
                 doc.setTextColor(150);
-                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(`Gerado em ${now} | Portal de Demandas GTHolding`, data.settings.margin.left, doc.internal.pageSize.height - 10);
                 doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 10, doc.internal.pageSize.height - 10);
             }
         });
@@ -2388,7 +2388,7 @@ if (btnGeneratePreventivasPDF) {
                 const now = new Date().toLocaleDateString('pt-BR');
                 doc.setFontSize(8);
                 doc.setTextColor(150);
-                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(`Gerado em ${now} | Portal de Demandas GTHolding`, data.settings.margin.left, doc.internal.pageSize.height - 10);
                 doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 15, doc.internal.pageSize.height - 10);
             }
         });
@@ -2451,7 +2451,7 @@ if (btnGenerateCSPDF) {
                 const now = new Date().toLocaleDateString('pt-BR');
                 doc.setFontSize(8);
                 doc.setTextColor(150);
-                doc.text(`Gerado em ${now} | Portal de Demandas Globaltera`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                doc.text(`Gerado em ${now} | Portal de Demandas GTHolding`, data.settings.margin.left, doc.internal.pageSize.height - 10);
                 doc.text(str, doc.internal.pageSize.width - data.settings.margin.right - 15, doc.internal.pageSize.height - 10);
             }
         });

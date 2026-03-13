@@ -288,7 +288,7 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
                     <div style="background-color: #1e293b; padding: 25px; text-align: center; color: white;">
                         <h2 style="margin: 0;">Atualização de Demanda</h2>
-                        <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - Globaltera</p>
+                        <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - GTHolding</p>
                     </div>
                     <div style="padding: 30px; color: #374151; line-height: 1.6;">
                         <p>Olá <strong>${task.solicitante || task.cliente}</strong>,</p>
@@ -308,7 +308,7 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                         </div>` : ''}
 
                         <p style="margin-top: 25px;">Para acompanhar mais detalhes, acesse nosso portal ou responda a este e-mail.</p>
-                        <p>Atenciosamente,<br><strong>Equipe Globaltera</strong></p>
+                        <p>Atenciosamente,<br><strong>Equipe GTHolding</strong></p>
                     </div>
                     <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e5e7eb;">
                         Mensagem automática enviada via Portal de Demandas em ${dateStr}
@@ -330,7 +330,7 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                 console.log(`[EMAIL] Enviando para: ${recipient} | Assunto: [ATUALIZAÇÃO] Chamado #${task.number}`);
 
                 await transporter.sendMail({
-                    from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
+                    from: `"${emailSettings.senderName || 'GTHolding Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
                     to: recipient,
                     subject: `[ATUALIZAÇÃO] Chamado #${task.number} - ${task.cliente}`,
                     html: emailHtml
@@ -396,7 +396,7 @@ app.post('/api/send-completion-email', async (req, res) => {
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
                 <div style="background-color: #10b981; padding: 25px; text-align: center; color: white;">
                     <h2 style="margin: 0;">✅ Demanda Concluída</h2>
-                    <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - Globaltera</p>
+                    <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - GTHolding</p>
                 </div>
                 <div style="padding: 30px; color: #374151; line-height: 1.6;">
                     <p>Olá,</p>
@@ -417,7 +417,7 @@ app.post('/api/send-completion-email', async (req, res) => {
                     </div>` : ''}
 
                     <p style="margin-top: 25px;">Se houver alguma dúvida, entre em contato com nossa equipe.</p>
-                    <p>Atenciosamente,<br><strong>Equipe Globaltera</strong></p>
+                    <p>Atenciosamente,<br><strong>Equipe GTHolding</strong></p>
                 </div>
                 <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e5e7eb;">
                     Mensagem automática enviada via Portal de Demandas em ${dateStr}
@@ -426,7 +426,7 @@ app.post('/api/send-completion-email', async (req, res) => {
         `;
 
         await transporter.sendMail({
-            from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
+            from: `"${emailSettings.senderName || 'GTHolding Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
             to: recipient,
             subject: `[CONCLUÍDO] Chamado #${task.number} - ${task.cliente}`,
             html: emailHtml
@@ -606,7 +606,7 @@ async function processNetworkReport(networkId) {
                 ${tasksHtml}
 
                 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #94a3b8; text-align: center;">
-                    Este é um relatório automático gerado pelo Portal de Demandas - Globaltera.<br>
+                    Este é um relatório automático gerado pelo Portal de Demandas - GTHolding.<br>
                     Para dúvidas ou ajustes, entre em contato com nosso suporte técnico.
                 </div>
             </div>
@@ -615,7 +615,7 @@ async function processNetworkReport(networkId) {
 
     // 5. Enviar e-mail
     await transporter.sendMail({
-        from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
+        from: `"${emailSettings.senderName || 'GTHolding Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
         to: network.reportEmail,
         subject: `[RELATÓRIO] Demandas Abertas - Rede ${network.name} - ${dateStr}`,
         html: fullHtml
