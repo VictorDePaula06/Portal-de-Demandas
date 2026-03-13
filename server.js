@@ -364,6 +364,82 @@ app.post('/api/send-overdue-emails', async (req, res) => {
 });
 
 /**
+ * Rota para enviar e-mail de conclusão de demanda
+ */
+app.post('/api/send-completion-email', async (req, res) => {
+    try {
+        const { task, recipient } = req.body;
+        if (!task || !recipient) {
+            return res.status(400).json({ success: false, error: 'Tarefa ou destinatário inválido.' });
+        }
+
+        const emailSettingsSnap = await db.collection('settings').doc('email').get();
+        const emailSettings = emailSettingsSnap.exists ? emailSettingsSnap.data() : {};
+
+        console.log(`[COMPLETION-EMAIL] Enviando para: ${recipient} | Chamado: #${task.number}`);
+
+        const transporter = nodemailer.createTransport({
+            host: emailSettings.smtpHost,
+            port: parseInt(emailSettings.smtpPort) || 587,
+            secure: emailSettings.smtpSecure || (emailSettings.smtpPort == 465),
+            auth: {
+                user: emailSettings.smtpUser,
+                pass: emailSettings.smtpPass
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+
+        const dateStr = new Date().toLocaleDateString('pt-BR');
+        const emailHtml = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                <div style="background-color: #10b981; padding: 25px; text-align: center; color: white;">
+                    <h2 style="margin: 0;">✅ Demanda Concluída</h2>
+                    <p style="margin: 10px 0 0 0; opacity: 0.8;">Portal de Demandas - Globaltera</p>
+                </div>
+                <div style="padding: 30px; color: #374151; line-height: 1.6;">
+                    <p>Olá,</p>
+                    <p>Informamos que o chamado <strong>#${task.number}</strong> foi concluído com sucesso.</p>
+                    
+                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                        <strong style="display: block; margin-bottom: 5px; color: #1e293b;">#${task.number} - ${task.desc}</strong>
+                        <p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Cliente:</strong> ${task.cliente}</p>
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                        <p style="margin: 0; font-size: 14px;"><strong>Status:</strong> <span style="color: #10b981;">CONCLUÍDO</span></p>
+                        ${task.resolvedVersion ? `<p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Versão:</strong> ${task.resolvedVersion}</p>` : ''}
+                    </div>
+
+                    ${task.resolvedDesc ? `
+                    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                        <strong style="color: #166534; display: block; margin-bottom: 8px;">📋 Detalhes da Solução:</strong>
+                        <div style="color: #166534; white-space: pre-wrap;">${task.resolvedDesc}</div>
+                    </div>` : ''}
+
+                    <p style="margin-top: 25px;">Se houver alguma dúvida, entre em contato com nossa equipe.</p>
+                    <p>Atenciosamente,<br><strong>Equipe Globaltera</strong></p>
+                </div>
+                <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e5e7eb;">
+                    Mensagem automática enviada via Portal de Demandas em ${dateStr}
+                </div>
+            </div>
+        `;
+
+        await transporter.sendMail({
+            from: `"${emailSettings.senderName || 'Globaltera Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
+            to: recipient,
+            subject: `[CONCLUÍDO] Chamado #${task.number} - ${task.cliente}`,
+            html: emailHtml
+        });
+
+        res.json({ success: true, message: 'E-mail de conclusão enviado com sucesso.' });
+    } catch (error) {
+        console.error('[COMPLETION-EMAIL] Erro:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * Rota para enviar relatório de uma rede específica (Manual)
  */
 app.post('/api/send-network-report', async (req, res) => {

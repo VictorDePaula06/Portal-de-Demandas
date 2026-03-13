@@ -1162,6 +1162,16 @@
                     <textarea id="taskResolvedDesc" rows="3"
                         placeholder="Detalhes sobre como o problema foi resolvido..."></textarea>
                 </div>
+                <div class="form-group" style="margin-top: 1rem; flex-direction: row; align-items: center; justify-content: space-between; background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <div style="flex: 1;">
+                        <label for="sendCompletionEmail" style="margin: 0; color: var(--accent-primary); font-weight: 600; cursor: pointer;">Enviar e-mail de conclusão para a Rede</label>
+                        <small style="display: block; color: var(--text-muted); font-size: 0.7rem;">Notifica o e-mail cadastrado na rede do cliente.</small>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="sendCompletionEmail">
+                        <span class="slider"></span>
+                    </label>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="btnCancelResolveModal">Cancelar</button>
                     <button type="submit" class="btn btn-primary"
