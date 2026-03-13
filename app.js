@@ -2185,8 +2185,6 @@ if (btnGeneratePreventivasPDF) {
             return String(str).replace(/[^\x00-\xFF]/g, '');
         };
 
-        const formatDate = (dateStr) => {
-        };
 
         clients.forEach(clientName => {
             const clientTasks = preventivasByClient[clientName].sort((a, b) => {
@@ -2345,8 +2343,6 @@ if (btnGenerateImplantacoesPDF) {
             return String(str).replace(/[^\x00-\xFF]/g, '');
         };
 
-        const formatDate = (dateStr) => {
-        };
 
         // Filtrar implantações
         getFilteredItems(implantacoes, 'implantacao').forEach(imp => {
