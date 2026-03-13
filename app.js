@@ -1451,6 +1451,7 @@ loginForm.addEventListener('submit', (e) => {
             loginPassInput.value = '';
             checkAuth();
             showToast(`Bem-vindo, Administrador!`);
+            setTimeout(() => location.reload(), 1000);
             return;
         }
 
@@ -1466,6 +1467,7 @@ loginForm.addEventListener('submit', (e) => {
             loginPassInput.value = '';
             checkAuth();
             showToast(`Bem-vindo, ${validUser.name}!`);
+            setTimeout(() => location.reload(), 1000);
         } else {
             loginErrorMsg.style.display = 'block';
         }
@@ -1475,8 +1477,11 @@ loginForm.addEventListener('submit', (e) => {
 btnLogout.addEventListener('click', () => {
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem('portalCS_isAdmin');
+    localStorage.removeItem('portalCS_isClient');
+    localStorage.removeItem('portalCS_network');
     checkAuth();
     showToast('Sessão encerrada.');
+    setTimeout(() => location.reload(), 1000);
 });
 
 // Helper para Filtragem por Rede (NOVO)
