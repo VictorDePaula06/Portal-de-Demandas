@@ -2977,43 +2977,12 @@ function renderCSBoard() {
         const engageBadge = client.engage ? `<span class="cs-badge ${getBadgeClass(client.engage, 'engage')}">${client.engage}</span>` : '-';
         const riskBadge = client.risk ? `<span class="cs-badge ${getBadgeClass(client.risk, 'risk')}">${client.risk}</span>` : '-';
 
-        // Lógica de Preventiva
-        // Busca o último chamado de preventiva para este cliente
-        const lastPreventiva = tasks
-            .filter(t => t.cliente === client.name && t.status.includes('Preventiva') && t.closedAt)
-            .sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt))[0];
-
-        let proxPreventiva = '-';
-        let preventivaStatusClass = '';
-
-        if (lastPreventiva && lastPreventiva.closedAt) {
-            const closedDate = new Date(lastPreventiva.closedAt + 'T12:00:00'); // Use noon to avoid TZ issues
-            closedDate.setDate(closedDate.getDate() + 90);
-
-            const y = closedDate.getFullYear();
-            const m = String(closedDate.getMonth() + 1).padStart(2, '0');
-            const d = String(closedDate.getDate()).padStart(2, '0');
-            proxPreventiva = `${d}/${m}/${y}`;
-
-            // Check if upcoming
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const diff = closedDate - today;
-            const daysToMaintenance = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-            if (daysToMaintenance <= 0) preventivaStatusClass = 'badge-critical';
-            else if (daysToMaintenance <= 15) preventivaStatusClass = 'badge-warning';
-            else preventivaStatusClass = 'badge-success';
-        }
-
-        const maintenanceBadge = proxPreventiva !== '-' ? `<span class="cs-badge ${preventivaStatusClass}">${proxPreventiva}</span>` : '<span class="cs-badge badge-neutral">Não agendada</span>';
 
         tr.innerHTML = `
             <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">${client.name}</td>
             <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${client.contact || '-'}</td>
             <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${formatDate(client.dateLastContact)}</td>
             <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${formatDate(client.dateDue)}</td>
-            <td style="padding: 1rem;">${maintenanceBadge}</td>
             <td style="padding: 1rem;">${interacaoBadge}</td>
             <td style="padding: 1rem;">${growBadge}</td>
             <td style="padding: 1rem;">${engageBadge}</td>
