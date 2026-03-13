@@ -319,7 +319,7 @@ app.post('/api/send-overdue-emails', async (req, res) => {
             try {
                 // Se o e-mail não vier na task, tentamos buscar por fallback no banco se necessário, 
                 // mas o frontend já está passando o networkEmail ou clientEmail.
-                const recipient = task.clientEmail || (task.emailVal); // task.emailVal é o nome do campo se houver
+                let recipient = (task.clientEmail || task.emailVal || '').toString().replace(/;/g, ',');
 
                 if (!recipient) {
                     console.error(`[EMAIL] Falha: Recipiente vazio para o chamado #${task.number}`);
@@ -368,7 +368,8 @@ app.post('/api/send-overdue-emails', async (req, res) => {
  */
 app.post('/api/send-completion-email', async (req, res) => {
     try {
-        const { task, recipient } = req.body;
+        let { task, recipient } = req.body;
+        if (recipient) recipient = recipient.toString().replace(/;/g, ',');
         if (!task || !recipient) {
             return res.status(400).json({ success: false, error: 'Tarefa ou destinatário inválido.' });
         }
@@ -448,8 +449,15 @@ app.post('/api/send-network-report', async (req, res) => {
     const { networkId } = req.body;
     if (!networkId) return res.status(400).json({ error: 'ID da rede não fornecido.' });
 
+    const networkSnap = await db.collection('networks').doc(networkId).get();
+    if (!networkSnap.exists) return res.status(404).json({ error: 'Rede não encontrada.' });
+    const network = networkSnap.data();
+
+    if (!network.reportEmail) return res.status(400).json({ error: 'Rede sem e-mail de relatório.' });
+    const recipient = network.reportEmail.toString().replace(/;/g, ',');
+
     try {
-        const result = await processNetworkReport(networkId);
+        const result = await processNetworkReport(networkId, recipient); // Pass recipient to processNetworkReport
         res.json(result);
     } catch (error) {
         console.error('Erro ao processar relatório de rede:', error);
@@ -490,12 +498,13 @@ app.get('/api/cron/network-reports', async (req, res) => {
 /**
  * Função Nucleo para Gerar e Enviar Relatório de Rede
  */
-async function processNetworkReport(networkId) {
+async function processNetworkReport(networkId, customRecipient = null) {
     const networkSnap = await db.collection('networks').doc(networkId).get();
     if (!networkSnap.exists) throw new Error('Rede não encontrada.');
     
     const network = networkSnap.data();
-    if (!network.reportEmail) throw new Error('E-mail de relatório não configurado para esta rede.');
+    const recipient = customRecipient || network.reportEmail;
+    if (!recipient) throw new Error('E-mail de relatório não configurado para esta rede.');
 
     // 1. Obter lista de postos ativos da rede
     const clientNames = (network.clients || [])
@@ -616,7 +625,7 @@ async function processNetworkReport(networkId) {
     // 5. Enviar e-mail
     await transporter.sendMail({
         from: `"${emailSettings.senderName || 'GTHolding Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
-        to: network.reportEmail,
+        to: recipient,
         subject: `[RELATÓRIO] Demandas Abertas - Rede ${network.name} - ${dateStr}`,
         html: fullHtml
     });
