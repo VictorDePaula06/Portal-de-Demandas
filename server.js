@@ -54,7 +54,7 @@ function addBusinessDays(startDate, days) {
 /**
  * Rota para buscar os chamados no TiFlux (QP e Analise)
  */
-app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
+app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
     // Se bater na raiz da function, redireciona ou trata como demandas
     if (req.path === '/' || req.path === '/api' || req.path === '/api/') {
         // Prossegue para buscar demandas
@@ -85,8 +85,34 @@ app.get(['/api/demandas', '/demandas', '/'], async (req, res) => {
         const allRaw = [...ticketsTI_O, ...ticketsTI_C1, ...ticketsTI_C2, ...ticketsGen_O, ...ticketsGen_C];
         const uniqueMap = new Map();
         allRaw.forEach(t => {
-            if (t && t.ticket_number) uniqueMap.set(t.ticket_number, t);
+            if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
         });
+
+        // --- BUSCA INDIVIDUAL DE CHAMADOS ABERTOS NÃO ENCONTRADOS ---
+        const openTicketsIds = req.body && req.body.openTickets ? req.body.openTickets : [];
+        if (openTicketsIds.length > 0) {
+            const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
+            if (missingIds.length > 0) {
+                console.log(`[SYNC] Buscando ${missingIds.length} chamados abertos faltantes individualmente:`, missingIds.slice(0, 10));
+                // Limitar a 30 por motivos de segurança contra rate limit da API
+                const idsToFetch = missingIds.slice(0, 30);
+                const individualPromises = idsToFetch.map(id => 
+                    axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
+                );
+                
+                const individualResults = await Promise.all(individualPromises);
+                let addedCount = 0;
+                individualResults.forEach(res => {
+                    const ticket = res && res.data;
+                    if (ticket && ticket.ticket_number) {
+                        uniqueMap.set(String(ticket.ticket_number), ticket);
+                        addedCount++;
+                    }
+                });
+                console.log(`[SYNC] Recuperados ${addedCount} chamados individualmente.`);
+            }
+        }
+
         const rawTickets = Array.from(uniqueMap.values());
 
         if (rawTickets.length > 0) {

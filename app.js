@@ -276,20 +276,35 @@ async function fetchDemandasDaAPI() {
         if (syncButton) syncButton.disabled = true;
         if (lastSyncLabel) lastSyncLabel.innerText = 'Sincronizando...';
 
-        let response = await fetch('/api/demandas');
+        // Busca estado atual do banco PRIMEIRO, para listar o que está aberto
+        const currentSnap = await db.collection('tasks').get();
+        const currentTasksMap = new Map();
+        const openTicketsIds = [];
+        
+        currentSnap.forEach(doc => {
+            const data = doc.data();
+            currentTasksMap.set(doc.id, data);
+            // Identifica chamados abertos válidos para forçar a verificação de novidades/fechamento
+            if (data.status && !data.status.includes('Concluida') && data.number && data.number !== 'N/A' && data.number !== 'undefined') {
+                openTicketsIds.push(data.number);
+            }
+        });
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ openTickets: openTicketsIds })
+        };
+
+        let response = await fetch('/api/demandas', fetchOptions);
         if (!response.ok) {
             // Fallback para caso a Vercel esteja limpando o prefixo /api
-            response = await fetch('/demandas');
+            response = await fetch('/demandas', fetchOptions);
         }
         if (!response.ok) {
             throw new Error('Falha ao buscar demandas do servidor');
         }
         const apiTasks = await response.json();
-
-        // Busca estado atual do banco para garantir que não vamos sobrescrever conclusões recentes
-        const currentSnap = await db.collection('tasks').get();
-        const currentTasksMap = new Map();
-        currentSnap.forEach(doc => currentTasksMap.set(doc.id, doc.data()));
 
         // Merge API tasks with local tasks (avoiding duplicates by ID, updating existing ones)
         if (apiTasks.length > 0) {
