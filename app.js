@@ -2997,7 +2997,14 @@ function renderDashboard() {
     let clientCounter = {};
 
     filteredTasks.forEach(t => {
-        const isCompleted = t.status.includes('Concluida');
+        if (!t.status) return;
+        
+        // Ignorar Preventivas, pois pertencem ao board Manutenção CS e não ao Quadro de Demandas
+        if (t.status.toLowerCase().includes('preventiva')) {
+            return;
+        }
+
+        const isCompleted = t.status.includes('Concluida') || t.status.includes('Concluída');
         if (isCompleted) {
             closedTasks++;
         } else {
