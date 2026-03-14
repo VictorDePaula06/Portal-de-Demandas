@@ -41,6 +41,15 @@
                     </svg>
                     <span>Quadro Demandas</span>
                 </a>
+                <a href="#" class="nav-item" id="btnViewDashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10" />
+                        <line x1="12" y1="20" x2="12" y2="4" />
+                        <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
                 <a href="#" class="nav-item" id="btnViewCS">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -420,6 +429,44 @@
                             <!-- JS vai popular -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Dashboard de Indicadores -->
+            <div id="dashboardBoard"
+                style="display: none; padding: 2rem; width: 100%; box-sizing: border-box; flex: 1; overflow-y: auto; padding-bottom: 4rem;">
+
+                <div class="header-titles" style="margin-bottom: 2rem;">
+                    <h2 style="color: var(--text-primary); font-size: 1.75rem;">Dashboard de Indicadores</h2>
+                    <p style="color: var(--text-muted);">Visões analíticas e acompanhamento do volume de demandas</p>
+                </div>
+
+                <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Chart 1 -->
+                    <div class="chart-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem; text-align: center;">Volume de Demandas</h3>
+                        <div style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="volDemandasChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart 2 -->
+                    <div class="chart-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); grid-column: span 1;">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem; text-align: center;">Tipos de Demandas Abertas</h3>
+                        <div style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="tiposDemandasChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                    <!-- Chart 3 -->
+                    <div class="chart-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem;">Top 5 Clientes c/ Pendências (SLA Ativo)</h3>
+                        <div style="position: relative; height: 350px; width: 100%;">
+                            <canvas id="topClientesChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1542,6 +1589,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 

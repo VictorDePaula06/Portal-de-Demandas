@@ -2861,6 +2861,7 @@ function checkSLA(dateStr) {
 
 // View Toggle Logic
 const btnViewDemandas = document.getElementById('btnViewDemandas');
+const btnViewDashboard = document.getElementById('btnViewDashboard');
 const btnViewCS = document.getElementById('btnViewCS');
 const btnViewConcluidas = document.getElementById('btnViewConcluidas');
 const btnViewCSMaintenance = document.getElementById('btnViewCSMaintenance');
@@ -2868,13 +2869,14 @@ const btnViewRelatorios = document.getElementById('btnViewRelatorios');
 const btnViewConfig = document.getElementById('btnViewConfig');
 
 const demandasFilterBar = document.getElementById('demandasFilterBar');
+const dashboardBoard = document.getElementById('dashboardBoard');
 const relatoriosBoard = document.getElementById('relatoriosBoard');
 const configBoard = document.getElementById('configBoard');
 const maintenanceBoard = document.getElementById('maintenanceBoard');
 
 function switchView(viewName) {
     // Update active class on nav
-    [btnViewDemandas, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes].forEach(btn => {
+    [btnViewDemandas, btnViewDashboard, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes].forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
 
@@ -2883,6 +2885,7 @@ function switchView(viewName) {
     if (btnNewCS) btnNewCS.style.display = 'none';
     if (btnNewImplantation) btnNewImplantation.style.display = 'none';
     if (kanbanBoard) kanbanBoard.style.display = 'none';
+    if (dashboardBoard) dashboardBoard.style.display = 'none';
     if (csBoard) csBoard.style.display = 'none';
     if (implantacoesBoard) implantacoesBoard.style.display = 'none';
     if (relatoriosBoard) relatoriosBoard.style.display = 'none';
@@ -2899,6 +2902,11 @@ function switchView(viewName) {
         }
         if (demandasFilterBar) demandasFilterBar.style.display = 'flex';
         if (slaFilter) slaFilter.style.display = 'block';
+    }
+    else if (viewName === 'dashboard' && btnViewDashboard) {
+        btnViewDashboard.classList.add('active');
+        if (dashboardBoard) dashboardBoard.style.display = 'block';
+        if (typeof renderDashboard === 'function') renderDashboard();
     }
     else if (viewName === 'cs' && btnViewCS) {
         btnViewCS.classList.add('active');
@@ -2953,12 +2961,166 @@ function switchView(viewName) {
 }
 
 if (btnViewDemandas) btnViewDemandas.addEventListener('click', (e) => { e.preventDefault(); switchView('demandas'); });
+if (btnViewDashboard) btnViewDashboard.addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
 if (btnViewCS) btnViewCS.addEventListener('click', (e) => { e.preventDefault(); switchView('cs'); });
 if (btnViewImplantacoes) btnViewImplantacoes.addEventListener('click', (e) => { e.preventDefault(); switchView('implantacoes'); });
 if (btnViewCSMaintenance) btnViewCSMaintenance.addEventListener('click', (e) => { e.preventDefault(); switchView('maintenance'); });
 if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); switchView('concluidas'); });
 if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); switchView('relatorios'); });
 if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); switchView('config'); });
+
+// Chart instances
+let volDemandasChartInst = null;
+let topClientesChartInst = null;
+let tiposDemandasChartInst = null;
+
+// Dashboard Render Logic
+function renderDashboard() {
+    if (!window.Chart) {
+        console.warn("Chart.js não carregado ainda.");
+        return;
+    }
+
+    const filteredTasks = getFilteredItems(tasks);
+
+    // 1. Calculations
+    let openTasks = 0;
+    let closedTasks = 0;
+    
+    let typesCounter = {
+        'Análise': 0,
+        'QP - Melhoria': 0,
+        'QP - Correção': 0,
+        'Adhoc': 0
+    };
+
+    let clientCounter = {};
+
+    filteredTasks.forEach(t => {
+        const isCompleted = t.status.includes('Concluida');
+        if (isCompleted) {
+            closedTasks++;
+        } else {
+            openTasks++;
+            
+            // Collect Types
+            if (typesCounter[t.status] !== undefined) {
+                typesCounter[t.status]++;
+            }
+
+            // Collect Client Counts
+            const clientName = t.cliente || 'Sem Cliente';
+            clientCounter[clientName] = (clientCounter[clientName] || 0) + 1;
+        }
+    });
+
+    // Top 5 Clientes calculation
+    const topClientsArr = Object.entries(clientCounter)
+        .sort((a, b) => b[1] - a[1]) // sort by count desc
+        .slice(0, 5);
+        
+    const topClientsLabels = topClientsArr.map(c => c[0].length > 20 ? c[0].substring(0, 20) + '...' : c[0]);
+    const topClientsData = topClientsArr.map(c => c[1]);
+
+    // CSS variables to style the charts
+    const rootStyles = getComputedStyle(document.body);
+    const colorSuccess = rootStyles.getPropertyValue('--status-normal').trim() || '#10b981';
+    const colorWarning = rootStyles.getPropertyValue('--status-warning').trim() || '#f59e0b';
+    const colorCritical = rootStyles.getPropertyValue('--status-critical').trim() || '#ef4444';
+    const colorPrimary = rootStyles.getPropertyValue('--accent-primary').trim() || '#3b82f6';
+    const colorTextMuted = rootStyles.getPropertyValue('--text-muted').trim() || '#94a3b8';
+    
+    Chart.defaults.color = colorTextMuted;
+    Chart.defaults.font.family = 'Inter, sans-serif';
+
+    // 2. Render Panel 1: Volume Abertas vs Concluidas (Pie)
+    const ctxVol = document.getElementById('volDemandasChart');
+    if (ctxVol) {
+        if (volDemandasChartInst) volDemandasChartInst.destroy();
+        volDemandasChartInst = new Chart(ctxVol, {
+            type: 'pie',
+            data: {
+                labels: ['Abertas', 'Concluídas'],
+                datasets: [{
+                    data: [openTasks, closedTasks],
+                    backgroundColor: [colorPrimary, colorSuccess],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // 3. Render Panel 2: Tipos de Demandas Abertas (Doughnut)
+    const ctxTipos = document.getElementById('tiposDemandasChart');
+    if (ctxTipos) {
+        if (tiposDemandasChartInst) tiposDemandasChartInst.destroy();
+        tiposDemandasChartInst = new Chart(ctxTipos, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(typesCounter),
+                datasets: [{
+                    data: Object.values(typesCounter),
+                    backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#14b8a6'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+
+    // 4. Render Panel 3: Top Clientes Abertos (Bar)
+    const ctxTop = document.getElementById('topClientesChart');
+    if (ctxTop) {
+        if (topClientesChartInst) topClientesChartInst.destroy();
+        topClientesChartInst = new Chart(ctxTop, {
+            type: 'bar',
+            data: {
+                labels: topClientsLabels,
+                datasets: [{
+                    label: 'Demandas Abertas',
+                    data: topClientsData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, precision: 0 },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+}
 
 // Render Board
 function renderBoard() {
