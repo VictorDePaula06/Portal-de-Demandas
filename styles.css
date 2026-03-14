@@ -597,6 +597,39 @@ body {
     color: var(--text-muted);
 }
 
+/* Sla Indicator (Traffic Light) */
+.sla-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    margin-left: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.status-normal .sla-indicator {
+    background-color: var(--status-normal);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.status-warning .sla-indicator {
+    background-color: var(--status-warning);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+}
+
+.status-critical .sla-indicator {
+    background-color: var(--status-critical);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.9);
+    animation: pulse-red-indicator 1.5s infinite;
+}
+
+@keyframes pulse-red-indicator {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 /* Tabela CS Badges Específicos */
 .cs-badge {
     display: inline-flex;

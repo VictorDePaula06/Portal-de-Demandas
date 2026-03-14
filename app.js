@@ -2840,8 +2840,8 @@ function checkSLA(dateStr) {
             icon: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
             text: diffDays === 0 ? 'Vence Hoje' : 'Vencido'
         };
-    } else if (diffDays <= 2) {
-        // Warning (2 days or less)
+    } else if (diffDays <= 3) {
+        // Warning (3 days or less)
         return {
             class: 'status-warning',
             badge: 'badge-warning',
@@ -3063,8 +3063,11 @@ function renderBoard() {
         const cardHTML = `
             <div class="task-card ${sla.class} ${isCompleted ? 'completed-card' : ''}" draggable="${!isCompleted}" data-id="${task.id}">
                 <div class="card-header">
-                    <span class="task-num" title="Número TiFlux">#${task.number || '---'}</span>
-                    ${displayQuality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Q:${displayQuality}</span>` : ''}
+                    <div>
+                        <span class="task-num" title="Número TiFlux">#${task.number || '---'}</span>
+                        ${displayQuality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Q:${displayQuality}</span>` : ''}
+                    </div>
+                    ${!isCompleted ? `<div class="sla-indicator" title="Status SLA: ${sla.text}"></div>` : ''}
                 </div>
                 ${task.info ? `
                 <div class="task-info-box">
