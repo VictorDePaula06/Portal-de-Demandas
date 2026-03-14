@@ -2774,6 +2774,7 @@ resolveForm.addEventListener('submit', (e) => {
 
         const taskObj = { ...tasks[index] }; // Garantir cópia para evitar problemas de referência
         taskObj.status = finalStatus;
+        taskObj.hasUpdate = false; // Remove novidade when concluding
         if (resolvedVersion) taskObj.resolvedVersion = resolvedVersion;
         if (resolvedValidator) taskObj.resolvedValidator = resolvedValidator;
         if (resolvedDesc) taskObj.resolvedDesc = resolvedDesc;
@@ -3289,7 +3290,7 @@ function renderBoard() {
                     <span>${task.info}</span>
                 </div>
                 ` : ''}
-                ${task.hasUpdate ? `
+                ${task.hasUpdate && !isCompleted ? `
                 <div class="update-indicator" title="Este chamado tem novidades!">
                     <span class="update-dot"></span>
                     <span class="update-text">Novidade</span>
