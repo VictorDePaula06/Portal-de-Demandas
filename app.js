@@ -2988,7 +2988,7 @@ function renderDashboard() {
     let closedTasks = 0;
     
     let typesCounter = {
-        'Análise': 0,
+        'Analise': 0,
         'QP - Melhoria': 0,
         'QP - Correção': 0,
         'Adhoc': 0
@@ -3022,69 +3022,101 @@ function renderDashboard() {
     const topClientsLabels = topClientsArr.map(c => c[0].length > 20 ? c[0].substring(0, 20) + '...' : c[0]);
     const topClientsData = topClientsArr.map(c => c[1]);
 
-    // CSS variables to style the charts
+    // CSS variables to style the charts dynamically based on the current theme
     const rootStyles = getComputedStyle(document.body);
     const colorSuccess = rootStyles.getPropertyValue('--status-normal').trim() || '#10b981';
     const colorWarning = rootStyles.getPropertyValue('--status-warning').trim() || '#f59e0b';
     const colorCritical = rootStyles.getPropertyValue('--status-critical').trim() || '#ef4444';
     const colorPrimary = rootStyles.getPropertyValue('--accent-primary').trim() || '#3b82f6';
+    const colorSecondary = rootStyles.getPropertyValue('--bg-tertiary').trim() || '#1e293b';
+    const colorText = rootStyles.getPropertyValue('--text-primary').trim() || '#f8fafc';
     const colorTextMuted = rootStyles.getPropertyValue('--text-muted').trim() || '#94a3b8';
+    const colorGrid = 'rgba(255,255,255,0.05)';
     
     Chart.defaults.color = colorTextMuted;
     Chart.defaults.font.family = 'Inter, sans-serif';
 
-    // 2. Render Panel 1: Volume Abertas vs Concluidas (Pie)
+    // 2. Render Panel 1: Volume Abertas vs Concluidas (Gauge/Semi-Doughnut)
     const ctxVol = document.getElementById('volDemandasChart');
     if (ctxVol) {
         if (volDemandasChartInst) volDemandasChartInst.destroy();
         volDemandasChartInst = new Chart(ctxVol, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
-                labels: ['Abertas', 'Concluídas'],
+                labels: ['Abertas (Pendentes)', 'Concluídas'],
                 datasets: [{
                     data: [openTasks, closedTasks],
-                    backgroundColor: [colorPrimary, colorSuccess],
+                    backgroundColor: [colorWarning, colorSuccess],
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 4,
+                    borderRadius: 5,
+                    spacing: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                rotation: -90,
+                circumference: 180,
+                cutout: '75%',
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                    },
+                    tooltip: {
+                        backgroundColor: colorSecondary,
+                        titleColor: colorText,
+                        bodyColor: colorTextMuted,
+                        padding: 12,
+                        cornerRadius: 8,
+                        boxPadding: 6
+                    }
                 }
             }
         });
     }
 
-    // 3. Render Panel 2: Tipos de Demandas Abertas (Doughnut)
+    // 3. Render Panel 2: Tipos de Demandas Abertas (Modern Thin Doughnut)
     const ctxTipos = document.getElementById('tiposDemandasChart');
     if (ctxTipos) {
         if (tiposDemandasChartInst) tiposDemandasChartInst.destroy();
         tiposDemandasChartInst = new Chart(ctxTipos, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(typesCounter),
+                labels: Object.keys(typesCounter).map(k => k === 'Analise' ? 'Análise' : k),
                 datasets: [{
                     data: Object.values(typesCounter),
-                    backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#14b8a6'],
+                    backgroundColor: [colorPrimary, '#8b5cf6', colorWarning, '#14b8a6'],
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 6,
+                    borderRadius: 4,
+                    spacing: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '80%',
                 plugins: {
-                    legend: { position: 'bottom' }
-                },
-                cutout: '70%'
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' }
+                    },
+                    tooltip: {
+                        backgroundColor: colorSecondary,
+                        titleColor: colorText,
+                        bodyColor: colorTextMuted,
+                        padding: 12,
+                        cornerRadius: 8,
+                        boxPadding: 6
+                    }
+                }
             }
         });
     }
 
-    // 4. Render Panel 3: Top Clientes Abertos (Bar)
+    // 4. Render Panel 3: Top Clientes Abertos (Floating Rounded Bar)
     const ctxTop = document.getElementById('topClientesChart');
     if (ctxTop) {
         if (topClientesChartInst) topClientesChartInst.destroy();
@@ -3093,28 +3125,39 @@ function renderDashboard() {
             data: {
                 labels: topClientsLabels,
                 datasets: [{
-                    label: 'Demandas Abertas',
+                    label: 'Demandas em Andamento',
                     data: topClientsData,
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
-                    borderRadius: 4
+                    backgroundColor: colorPrimary,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barThickness: 'flex',
+                    maxBarThickness: 50
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: colorSecondary,
+                        titleColor: colorText,
+                        bodyColor: colorTextMuted,
+                        padding: 12,
+                        cornerRadius: 8
+                    }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { stepSize: 1, precision: 0 },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        border: { display: false },
+                        ticks: { stepSize: 1, precision: 0, padding: 10 },
+                        grid: { color: colorGrid, drawBorder: false }
                     },
                     x: {
-                        grid: { display: false }
+                        border: { display: false },
+                        grid: { display: false },
+                        ticks: { padding: 10, maxRotation: 45, minRotation: 0 }
                     }
                 }
             }
