@@ -3517,8 +3517,8 @@ function renderBoard() {
             <div class="task-card ${sla.class} ${isCompleted ? 'completed-card' : ''}" draggable="${!isCompleted}" data-id="${task.id}">
                 <div class="card-header">
                     <div>
-                        <span class="task-num" title="Número TiFlux">#${task.number || '---'}</span>
-                        ${displayQuality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Q:${displayQuality}</span>` : ''}
+                        <span class="task-num" title="Número TiFlux">TiFlux: ${task.number || '---'}</span>
+                        ${displayQuality ? `<span class="task-num" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa; margin-left: 4px;" title="Número Quality">Quality: ${displayQuality}</span>` : ''}
                     </div>
                     ${!isCompleted ? `<div class="sla-indicator" title="Status SLA: ${sla.text}"></div>` : ''}
                 </div>
@@ -3553,14 +3553,6 @@ function renderBoard() {
                     </svg>
                     Data Abertura: ${createdDisplay}
                 </div>
-                ${task.lastDevCheck ? `
-                <div style="font-size: 0.70rem; color: #a78bfa; margin-top: -4px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; font-weight: 500;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
-                    </svg>
-                    Verif. Dev: ${formatDate(task.lastDevCheck)}
-                </div>
-                ` : ''}
                 <div class="task-desc">${task.desc}</div>
                 ${obsHtml}
                 ${(isCompleted && (task.resolvedValidator || task.resolvedDesc)) ? `
