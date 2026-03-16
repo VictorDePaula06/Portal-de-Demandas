@@ -910,6 +910,55 @@ textarea {
     background: radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-main) 100%);
 }
 
+.sidebar-footer {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: auto;
+}
+
+/* Sub-tabs Navigation (internal to boards) */
+.sub-tabs-header {
+    display: flex;
+    gap: 2rem;
+    padding: 0 2rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+}
+
+.sub-tab-btn {
+    padding: 1rem 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sub-tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.sub-tab-btn.active {
+    color: var(--accent-primary);
+}
+
+.sub-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
 .login-box {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);

@@ -2940,18 +2940,18 @@ const btnViewConcluidas = document.getElementById('btnViewConcluidas');
 const btnViewCSMaintenance = document.getElementById('btnViewCSMaintenance');
 const btnViewRelatorios = document.getElementById('btnViewRelatorios');
 const btnViewConfig = document.getElementById('btnViewConfig');
-const btnViewCSIntelligence = document.getElementById('btnViewCSIntelligence');
+const csListView = document.getElementById('csListView');
+const csAnalyticsView = document.getElementById('csAnalyticsView');
 
 const demandasFilterBar = document.getElementById('demandasFilterBar');
 const dashboardBoard = document.getElementById('dashboardBoard');
 const relatoriosBoard = document.getElementById('relatoriosBoard');
 const configBoard = document.getElementById('configBoard');
 const maintenanceBoard = document.getElementById('maintenanceBoard');
-const csinteligenciaBoard = document.getElementById('csinteligenciaBoard');
 
 function switchView(viewName) {
     // Update active class on nav
-    [btnViewDemandas, btnViewDashboard, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes, btnViewCSIntelligence].forEach(btn => {
+    [btnViewDemandas, btnViewDashboard, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes].forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
 
@@ -2966,7 +2966,6 @@ function switchView(viewName) {
     if (relatoriosBoard) relatoriosBoard.style.display = 'none';
     if (configBoard) configBoard.style.display = 'none';
     if (maintenanceBoard) maintenanceBoard.style.display = 'none';
-    if (csinteligenciaBoard) csinteligenciaBoard.style.display = 'none';
     if (demandasFilterBar) demandasFilterBar.style.display = 'none';
 
     if (viewName === 'demandas' && btnViewDemandas) {
@@ -2987,8 +2986,9 @@ function switchView(viewName) {
     else if (viewName === 'cs' && btnViewCS) {
         btnViewCS.classList.add('active');
         if (btnNewCS) btnNewCS.style.display = 'inline-flex';
-        if (csBoard) csBoard.style.display = 'block';
-        if (typeof renderCSBoard === 'function') renderCSBoard();
+        if (csBoard) csBoard.style.display = 'flex';
+        // When entering CS, default to the list tab
+        switchCsTab('list');
     }
     else if (viewName === 'implantacoes' && btnViewImplantacoes) {
         if (btnViewImplantacoes) btnViewImplantacoes.classList.add('active');
@@ -3019,11 +3019,6 @@ function switchView(viewName) {
         configBoard.style.display = 'block';
         if (typeof renderUserAdminList === 'function') renderUserAdminList();
     }
-    else if (viewName === 'csinteligencia') {
-        if (btnViewCSIntelligence) btnViewCSIntelligence.classList.add('active');
-        if (csinteligenciaBoard) csinteligenciaBoard.style.display = 'block';
-        if (typeof renderCSIntelligence === 'function') renderCSIntelligence();
-    }
 
     // Show/Hide Kanban columns based on view if Kanban is visible
     if (kanbanBoard.style.display !== 'none') {
@@ -3049,16 +3044,32 @@ if (btnViewCSMaintenance) btnViewCSMaintenance.addEventListener('click', (e) => 
 if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); switchView('concluidas'); });
 if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); switchView('relatorios'); });
 if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); switchView('config'); });
-if (btnViewCSIntelligence) btnViewCSIntelligence.addEventListener('click', (e) => { e.preventDefault(); switchView('csinteligencia'); });
 
-// General Navbar Button Listener for new panels
-document.querySelectorAll('.nav-btn[data-target]').forEach(btn => {
+// Internal Tab Logic
+function switchCsTab(tabName) {
+    const tabs = document.querySelectorAll('.sub-tab-btn');
+    tabs.forEach(btn => {
+        if (btn.dataset.tab === tabName) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+
+    if (tabName === 'list') {
+        if (csListView) csListView.style.display = 'block';
+        if (csAnalyticsView) csAnalyticsView.style.display = 'none';
+        renderCSBoard();
+    } else if (tabName === 'analytics') {
+        if (csListView) csListView.style.display = 'none';
+        if (csAnalyticsView) csAnalyticsView.style.display = 'block';
+        renderCSIntelligence();
+    }
+}
+
+// Sub-tabs listeners
+document.querySelectorAll('.sub-tab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.preventDefault();
-        const target = btn.getAttribute('data-target');
-        if (target === 'csinteligenciaBoard') {
-            switchView('csinteligencia');
-        }
+        const tab = btn.dataset.tab;
+        switchCsTab(tab);
     });
 });
 
