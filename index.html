@@ -338,6 +338,59 @@
                 </div>
             </div>
 
+            <!-- Dashboard Inteligência CS -->
+            <div id="csinteligenciaBoard"
+                style="display: none; padding: 2rem; width: 100%; box-sizing: border-box; flex: 1; overflow-y: auto; padding-bottom: 4rem;">
+
+                <div class="header-titles" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="color: var(--text-primary); font-size: 1.75rem;">Inteligência de Health Score CS</h2>
+                        <p style="color: var(--text-muted);" id="csInsightText">Carregando insights macro da carteira de Customer Success...</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Matriz de Priorização ("Quem Atender") -->
+                    <div class="chart-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); grid-column: span 2;">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem;">🚨 Matriz de Priorização (Ação Imediata)</h3>
+                        <div class="table-container" style="overflow-x: auto; max-height: 350px;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead style="position: sticky; top: 0; background: var(--bg-secondary); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <tr>
+                                        <th style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Cliente</th>
+                                        <th style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Score</th>
+                                        <th style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Prob. Churn</th>
+                                        <th style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Tendência</th>
+                                        <th style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Gatilho</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csPriorityBody">
+                                    <tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">Carregando matriz de risco...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                    <!-- Gráfico 1: "Estamos melhorando?" (Distribuição de Saúde) -->
+                    <div class="chart-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem; text-align: center;">📈 Distribuição de Saúde (%)</h3>
+                        <div style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="csHealthDistChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráfico 2: "Onde estamos falhando?" (Radar de Média de Fatores) -->
+                    <div class="chart-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.1rem; text-align: center;">🎯 Fatores Críticos (Média 1-5)</h3>
+                        <div style="position: relative; height: 250px; width: 100%;">
+                            <canvas id="csFactorsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Maintenance Board (Preventivas) -->
             <div class="cs-board" id="maintenanceBoard"
                 style="display: none; padding: 2rem; overflow-y: auto; flex: 1; flex-direction: column;">

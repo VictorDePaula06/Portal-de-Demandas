@@ -665,6 +665,152 @@ async function processNetworkReport(networkId, customRecipient = null) {
     return { success: true, status: 'sent', taskCount: openTasks.length };
 }
 
+/**
+ * Rota API para Analytics do Módulo de Customer Success
+ */
+app.get('/api/cs/analytics', async (req, res) => {
+    if (!db) return res.status(503).json({ error: 'Firebase Admin não configurado.' });
+
+    try {
+        const clientsSnap = await db.collection('csClients').get();
+        let clients = [];
+        clientsSnap.forEach(doc => {
+            const data = doc.data();
+            // Pega os analytics do frontend ou calcula um básico se não tiver
+            if (data.analytics) clients.push(data);
+        });
+
+        const totalClients = clients.length;
+        if (totalClients === 0) return res.json({ total: 0 });
+
+        // 1. Distribuição de Saúde
+        const distCount = { 'Saudável': 0, 'Estável': 0, 'Médio Risco': 0, 'Alto Risco': 0 };
+        // 2. Análise de Fatores Críticos (Médias)
+        const medCount = { interacao: 0, grow: 0, engage: 0, reclamacao: 0 };
+        // 3. Matriz de Priorização (Quem atender agora)
+        const priorityList = [];
+
+        clients.forEach(c => {
+            const a = c.analytics;
+            
+            // Dist
+            distCount[a.classificacao] = (distCount[a.classificacao] || 0) + 1;
+            
+            // Averages
+            medCount.interacao += (a.interacao_num || 3);
+            medCount.grow += (a.grow_num || 3);
+            medCount.engage += (a.engage_num || 3);
+            medCount.reclamacao += (a.reclamacao_num || 5);
+
+            // Priority Logic (Algoritmo Matriz)
+            if (a.score <= 40 || a.churn_probability > 60 || a.alerta) {
+                priorityList.push({
+                    id: c.id,
+                    name: c.name,
+                    score: a.score,
+                    prob: a.churn_probability,
+                    tendencia: a.tendencia,
+                    motivo: a.alerta ? 'Alerta Crítico' : (a.score <= 40 ? 'Score Baixo' : 'Alta Prob. Churn'),
+                    mrr_simulated: Math.floor(Math.random() * 5000) + 500 // Como não temos MRR na base, usamos um mock para ordenação (Ideal seria ter o campo mensalidade na base)
+                });
+            }
+        });
+
+        // Calculando percentuais da distribuição
+        const distribuicao = {
+            'Saudável': parseFloat(((distCount['Saudável'] / totalClients) * 100).toFixed(1)),
+            'Estável': parseFloat(((distCount['Estável'] / totalClients) * 100).toFixed(1)),
+            'Médio Risco': parseFloat(((distCount['Médio Risco'] / totalClients) * 100).toFixed(1)),
+            'Alto Risco': parseFloat(((distCount['Alto Risco'] / totalClients) * 100).toFixed(1))
+        };
+
+        // Calculando médias dos fatores (Escala 1 a 5)
+        const averages = {
+            interacao: parseFloat((medCount.interacao / totalClients).toFixed(1)),
+            grow: parseFloat((medCount.grow / totalClients).toFixed(1)),
+            engage: parseFloat((medCount.engage / totalClients).toFixed(1)),
+            reclamacao: parseFloat((medCount.reclamacao / totalClients).toFixed(1))
+        };
+
+        // Encontrar Pior Fator Crítico
+        const lowestAvg = Math.min(averages.interacao, averages.grow, averages.engage, averages.reclamacao);
+        let piorFator = '';
+        if (lowestAvg === averages.reclamacao) piorFator = 'Reclamação';
+        else if (lowestAvg === averages.engage) piorFator = 'Engage (Satisfação)';
+        else if (lowestAvg === averages.grow) piorFator = 'Grow (Evolução)';
+        else piorFator = 'Interação';
+
+        const insight = `O principal detrator da saúde da carteira atualmente é a variável ${piorFator}.`;
+
+        // Ordenando Matriz (Prioriza maior Probabilidade -> Menor Score -> Maior MRR mock)
+        priorityList.sort((a, b) => {
+            if (b.prob !== a.prob) return b.prob - a.prob;
+            if (a.score !== b.score) return a.score - b.score;
+            return b.mrr_simulated - a.mrr_simulated;
+        });
+
+        res.json({
+            total: totalClients,
+            distribuicao,
+            fatores_criticos: averages,
+            insight_principal: insight,
+            priorizacao: priorityList.slice(0, 15) // Top 15 críticos
+        });
+
+    } catch (e) {
+        console.error('Erro na API Analytics CS:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+/**
+ * Rota Cron para Salvar Snapshot Diário do Health Score (Pode rodar 1x por dia ou semana)
+ * Necessário para o gráfico de Tendência e Evolução
+ */
+app.get('/api/cron/cs-health-snapshot', async (req, res) => {
+    if (!db) return res.status(503).json({ error: 'Firebase Admin não configurado.' });
+
+    try {
+        const clientsSnap = await db.collection('csClients').get();
+        let recordsAdded = 0;
+
+        const batch = db.batch();
+
+        clientsSnap.forEach(doc => {
+            const data = doc.data();
+            const a = data.analytics;
+            
+            if (a) {
+                // Prepara inserção na timeline histórica
+                const historyRef = db.collection('health_scores').doc();
+                batch.set(historyRef, {
+                    client_id: doc.id,
+                    score: a.score,
+                    interacao: a.interacao_num,
+                    grow: a.grow_num,
+                    engage: a.engage_num,
+                    reclamacao: a.reclamacao_num,
+                    trend: a.trend,
+                    churn_probability: a.churn_probability,
+                    classificacao: a.classificacao,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() // Timestamp do snapshot
+                });
+                recordsAdded++;
+            }
+        });
+
+        // Executar lote no banco
+        if (recordsAdded > 0) {
+            await batch.commit();
+        }
+
+        res.json({ success: true, message: `Snapshot diário concluído. ${recordsAdded} registros salvos no histórico.` });
+    } catch (e) {
+        console.error('Erro no Snapshot Cron CS:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     app.listen(PORT, () => {
         console.log(`✅ Servidor rodando na porta ${PORT}`);

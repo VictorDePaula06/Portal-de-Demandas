@@ -2113,43 +2113,77 @@ taskForm.addEventListener('submit', (e) => {
 });
 
 // Save CS Client
-function calculateCSRisk(clientData) {
-    let riskPoints = 0;
+// Save CS Client & Analytics Core
+function calculateCSMetrics(clientData) {
+    // 1. Variáveis Qualitativas para Quantitativas
+    let interacaoVal = 3, growVal = 3, engageVal = 3, reclamacaoVal = 5;
 
-    // Interacao logic
-    if (clientData.interacao === 'Resistência') riskPoints += 3;
-    else if (clientData.interacao === 'Baixo') riskPoints += 1;
+    // Interação
+    if (clientData.interacao === 'Ótimo') interacaoVal = 5;
+    else if (clientData.interacao === 'Baixo') interacaoVal = 1;
+    else if (clientData.interacao === 'Resistência') interacaoVal = 1; // Ajustado conforme prompt original (Resistencia 3 mas interpret. como ruim, usando 1 pra manter pior nota se for resistencia severa, ou vamos seguir o prompt estrito: Baixo=1, Resist=3, Otimo=5). Corrigindo pra prompt estrito:
+    
+    if (clientData.interacao === 'Baixo') interacaoVal = 1;
+    else if (clientData.interacao === 'Resistência') interacaoVal = 3;
+    else if (clientData.interacao === 'Ótimo') interacaoVal = 5;
 
-    // Grow logic
-    if (clientData.grow === 'Estagnado/Sem contato') riskPoints += 2;
+    // Grow
+    if (clientData.grow === 'Estagnado/Sem contato' || clientData.grow === 'Estagnado') growVal = 1;
+    else if (clientData.grow === 'Em andamento') growVal = 3;
+    else if (clientData.grow === 'Concluído' || clientData.grow === 'Concluido') growVal = 5;
 
-    // Engage logic
-    if (clientData.engage === 'Em risco') riskPoints += 3;
-    else if (clientData.engage === 'Neutro') riskPoints += 1;
+    // Engage
+    if (clientData.engage === 'Em risco') engageVal = 1;
+    else if (clientData.engage === 'Neutro') engageVal = 3;
+    else if (clientData.engage === 'Satisfeito' || clientData.engage === 'Promotor') engageVal = 5;
 
-    // Reclamacoes
-    if (clientData.reclamacoes === 'S') riskPoints += 3;
+    // Reclamação
+    if (clientData.reclamacoes === 'S' || clientData.reclamacoes === 'Sim') reclamacaoVal = 1;
+    else reclamacaoVal = 5;
 
-    // Avaliacoes
-    const avGrow = parseInt(clientData.avaliacaoGrow);
-    if (!isNaN(avGrow)) {
-        if (avGrow <= 1) riskPoints += 2;
-        else if (avGrow === 2) riskPoints += 1;
-    }
+    // 2. Health Score Algorithm
+    // Score = ((Interacao * 0.15) + (Grow * 0.20) + (Engage * 0.35) + (Reclamacao * 0.30)) * 20
+    const rawScore = ((interacaoVal * 0.15) + (growVal * 0.20) + (engageVal * 0.35) + (reclamacaoVal * 0.30)) * 20;
+    const score = Math.min(100, Math.max(0, parseFloat(rawScore.toFixed(1))));
 
-    const avEngage = parseInt(clientData.avaliacaoEngage);
-    if (!isNaN(avEngage)) {
-        if (avEngage <= 1) riskPoints += 2;
-        else if (avEngage === 2) riskPoints += 1;
-    }
+    // 3. Classificação de Risco de Churn
+    let classificacao = 'Saudável';
+    let cor = 'green';
+    if (score <= 40) { classificacao = 'Alto Risco'; cor = 'red'; }
+    else if (score <= 60) { classificacao = 'Médio Risco'; cor = 'orange'; }
+    else if (score <= 80) { classificacao = 'Estável'; cor = 'yellow'; }
 
-    if (riskPoints >= 5 || clientData.engage === 'Em risco' || clientData.interacao === 'Resistência') {
-        return 'Alto';
-    } else if (riskPoints >= 3) {
-        return 'Médio';
-    } else {
-        return 'Baixo';
-    }
+    // 4. Sistema de Alertas
+    const alerta = (score <= 40 || engageVal === 1 || reclamacaoVal === 1);
+
+    // 5. Trend Score (Trend simulado para a lógica de form, o real virá do banco/cron)
+    // Se o cliente já tem um trendScore salvo e estamos apenas atualizando, mantemos a diferença do lastScore, senão assumimos 0
+    let trend = clientData.trend || 0; 
+    let tendencia = 'Estável';
+    if (trend < -15) tendencia = 'Queda acelerada';
+    else if (trend > 5) tendencia = 'Melhorando';
+
+    // 6. Churn Probability
+    // ChurnProbability = (100 - Score)*0.5 + (TrendNegativo * 2) + (ReclamacaoFlag * 20)
+    const trendNegativo = trend < 0 ? Math.abs(trend) : 0;
+    const reclamacaoFlag = reclamacaoVal === 1 ? 1 : 0;
+    let prob = ((100 - score) * 0.5) + (trendNegativo * 2) + (reclamacaoFlag * 20);
+    prob = Math.min(100, Math.max(0, parseFloat(prob.toFixed(1))));
+
+    return {
+        score,
+        classificacao,
+        cor,
+        alerta,
+        trend,
+        tendencia,
+        churn_probability: prob,
+        interacao_num: interacaoVal,
+        grow_num: growVal,
+        engage_num: engageVal,
+        reclamacao_num: reclamacaoVal,
+        timestamp: new Date().toISOString()
+    };
 }
 
 csForm.addEventListener('submit', (e) => {
@@ -2172,28 +2206,65 @@ csForm.addEventListener('submit', (e) => {
     const avaliacaoEngage = document.getElementById('csAvaliacaoEngage').value;
 
     const obs = document.getElementById('csObs').value;
-
     const isNew = !document.getElementById('csId').value;
 
-    const clientData = {
+    // Recupera dados antigos para calcular Trend (simplificado no frontend, ideal é no backend chron)
+    const oldData = csClients.find(c => c.id === id);
+    let lastScore = oldData && oldData.analytics ? oldData.analytics.score : null;
+
+    let clientData = {
         id, name, cnpj, contact, dateImpl, dateStart,
         dateLastContact, dateDue, interacao, grow, engage,
         reclamacoes, avaliacaoGrow, avaliacaoEngage, obs
     };
 
-    clientData.risk = calculateCSRisk(clientData);
-
-    if (isNew) {
-        db.collection('csClients').doc(clientData.id).set(clientData).then(() => {
-            showToast('Cliente CS cadastrado com sucesso!');
-        });
-    } else {
-        db.collection('csClients').doc(id).set(clientData).then(() => {
-            showToast('Cliente CS atualizado!');
-        });
+    // Calcula as métricas complexas de CS
+    const analytics = calculateCSMetrics({
+        ...clientData, 
+        trend: oldData && oldData.analytics ? oldData.analytics.trend : 0 
+    });
+    
+    // Se temos histórico, atualiza o trend local provisoriamente
+    if (lastScore !== null && lastScore !== analytics.score) {
+        analytics.trend = parseFloat((analytics.score - lastScore).toFixed(1));
+        // Re-ajusta classificação do trend e churn probability baseado no novo trend
+        const trendNegativo = analytics.trend < 0 ? Math.abs(analytics.trend) : 0;
+        const reclamacaoFlag = analytics.reclamacao_num === 1 ? 1 : 0;
+        let prob = ((100 - analytics.score) * 0.5) + (trendNegativo * 2) + (reclamacaoFlag * 20);
+        analytics.churn_probability = Math.min(100, Math.max(0, parseFloat(prob.toFixed(1))));
+        
+        if (analytics.trend < -15) analytics.tendencia = 'Queda acelerada';
+        else if (analytics.trend > 5) analytics.tendencia = 'Melhorando';
+        else analytics.tendencia = 'Estável';
     }
 
-    closeCsModal();
+    // Assumir Risk antigo como a nova classificação por segurança de visualização antiga
+    clientData.risk = analytics.classificacao;
+    clientData.analytics = analytics;
+
+    const savePromise = db.collection('csClients').doc(clientData.id).set(clientData, {merge: true});
+
+    // Grava também na coleção oficial de histórico
+    const historyPromise = db.collection('health_scores').add({
+        client_id: clientData.id,
+        score: analytics.score,
+        interacao: analytics.interacao_num,
+        grow: analytics.grow_num,
+        engage: analytics.engage_num,
+        reclamacao: analytics.reclamacao_num,
+        trend: analytics.trend,
+        churn_probability: analytics.churn_probability,
+        classificacao: analytics.classificacao,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    Promise.all([savePromise, historyPromise]).then(() => {
+        showToast(isNew ? 'Cliente CS cadastrado com sucesso!' : 'Cliente CS atualizado!');
+        closeCsModal();
+    }).catch(err => {
+        console.error("Erro ao salvar CS:", err);
+        showToast('Erro ao salvar dados.', 'critical');
+    });
 });
 
 // Relatórios (Geração de PDF)
@@ -2875,6 +2946,7 @@ const dashboardBoard = document.getElementById('dashboardBoard');
 const relatoriosBoard = document.getElementById('relatoriosBoard');
 const configBoard = document.getElementById('configBoard');
 const maintenanceBoard = document.getElementById('maintenanceBoard');
+const csinteligenciaBoard = document.getElementById('csinteligenciaBoard');
 
 function switchView(viewName) {
     // Update active class on nav
@@ -2893,6 +2965,7 @@ function switchView(viewName) {
     if (relatoriosBoard) relatoriosBoard.style.display = 'none';
     if (configBoard) configBoard.style.display = 'none';
     if (maintenanceBoard) maintenanceBoard.style.display = 'none';
+    if (csinteligenciaBoard) csinteligenciaBoard.style.display = 'none';
     if (demandasFilterBar) demandasFilterBar.style.display = 'none';
 
     if (viewName === 'demandas' && btnViewDemandas) {
@@ -2945,6 +3018,13 @@ function switchView(viewName) {
         configBoard.style.display = 'block';
         if (typeof renderUserAdminList === 'function') renderUserAdminList();
     }
+    else if (viewName === 'csinteligencia') {
+        // Find the generic nav-btn that triggered this via data-target
+        const btn = document.querySelector('.nav-btn[data-target="csinteligenciaBoard"]');
+        if (btn) btn.classList.add('active');
+        if (csinteligenciaBoard) csinteligenciaBoard.style.display = 'block';
+        if (typeof renderCSIntelligence === 'function') renderCSIntelligence();
+    }
 
     // Show/Hide Kanban columns based on view if Kanban is visible
     if (kanbanBoard.style.display !== 'none') {
@@ -2971,10 +3051,23 @@ if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.pr
 if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); switchView('relatorios'); });
 if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); switchView('config'); });
 
+// General Navbar Button Listener for new panels
+document.querySelectorAll('.nav-btn[data-target]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = btn.getAttribute('data-target');
+        if (target === 'csinteligenciaBoard') {
+            switchView('csinteligencia');
+        }
+    });
+});
+
 // Chart instances
 let volDemandasChartInst = null;
 let topClientesChartInst = null;
 let tiposDemandasChartInst = null;
+let csHealthDistChartInst = null;
+let csFactorsChartInst = null;
 
 // Dashboard Render Logic
 function renderDashboard() {
@@ -3171,6 +3264,134 @@ function renderDashboard() {
                 }
             }
         });
+    }
+}
+// ---------------------------------------------------------
+// CS INTELLIGENCE RENDER LOGIC
+// ---------------------------------------------------------
+async function renderCSIntelligence() {
+    if (!window.Chart) {
+        console.warn("Chart.js não carregado.");
+        return;
+    }
+
+    const priorityBody = document.getElementById('csPriorityBody');
+    const insightText = document.getElementById('csInsightText');
+
+    try {
+        const response = await fetch('/api/cs/analytics');
+        const data = await response.json();
+
+        if (data.total === 0) {
+            if (priorityBody) priorityBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Nenhum cliente CS cadastrado com dados analíticos.</td></tr>';
+            return;
+        }
+
+        // 1. Atualizar Insights
+        if (insightText) insightText.innerHTML = `<b>Insight:</b> ${data.insight_principal}`;
+
+        // 2. Renderizar Matriz de Priorização
+        if (priorityBody) {
+            let html = '';
+            data.priorizacao.forEach(p => {
+                const trendColor = p.tendencia === 'Melhorando' ? '#10b981' : (p.tendencia.includes('Queda') ? '#ef4444' : 'var(--text-muted)');
+                const scoreColor = p.score <= 40 ? '#ef4444' : (p.score <= 60 ? '#f59e0b' : '#10b981');
+                
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 0.75rem;"><span style="font-weight: 500;">${p.name}</span></td>
+                        <td style="padding: 0.75rem;"><span style="color: ${scoreColor}; font-weight: bold;">${p.score}</span></td>
+                        <td style="padding: 0.75rem;">${p.prob}%</td>
+                        <td style="padding: 0.75rem;"><span style="color: ${trendColor}; font-size: 0.75rem;">${p.tendencia}</span></td>
+                        <td style="padding: 0.75rem;"><span class="sync-badge updated" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: none; font-size: 0.65rem;">${p.motivo}</span></td>
+                    </tr>
+                `;
+            });
+            priorityBody.innerHTML = html || '<tr><td colspan="5" style="text-align: center; padding: 1rem;">Nenhum risco imediato detectado.</td></tr>';
+        }
+
+        // Estilos para os gráficos
+        const rootStyles = getComputedStyle(document.body);
+        const colorSuccess = '#10b981';
+        const colorWarning = '#f59e0b';
+        const colorOrange = '#ea580c';
+        const colorCritical = '#ef4444';
+        const colorTextMuted = rootStyles.getPropertyValue('--text-muted').trim() || '#94a3b8';
+
+        // 3. Gráfico de Distribuição de Saúde
+        const ctxDist = document.getElementById('csHealthDistChart');
+        if (ctxDist) {
+            if (csHealthDistChartInst) csHealthDistChartInst.destroy();
+            csHealthDistChartInst = new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Saudável', 'Estável', 'Médio Risco', 'Alto Risco'],
+                    datasets: [{
+                        data: [
+                            data.distribuicao['Saudável'],
+                            data.distribuicao['Estável'],
+                            data.distribuicao['Médio Risco'],
+                            data.distribuicao['Alto Risco']
+                        ],
+                        backgroundColor: [colorSuccess, '#facc15', colorOrange, colorCritical],
+                        borderWidth: 0,
+                        spacing: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // 4. Gráfico de Fatores Críticos
+        const ctxFactors = document.getElementById('csFactorsChart');
+        if (ctxFactors) {
+            if (csFactorsChartInst) csFactorsChartInst.destroy();
+            csFactorsChartInst = new Chart(ctxFactors, {
+                type: 'radar',
+                data: {
+                    labels: ['Interação', 'Evolução (Grow)', 'Engage', 'Qualidade (Recl.)'],
+                    datasets: [{
+                        label: 'Média da Carteira',
+                        data: [
+                            data.fatores_criticos.interacao,
+                            data.fatores_criticos.grow,
+                            data.fatores_criticos.engage,
+                            data.fatores_criticos.reclamacao
+                        ],
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        borderColor: '#a78bfa',
+                        pointBackgroundColor: '#a78bfa',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 5,
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            angleLines: { color: 'rgba(255,255,255,0.05)' },
+                            pointLabels: { color: colorTextMuted, font: { size: 10 } },
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+    } catch (err) {
+        console.error("Erro ao carregar Analytics CS:", err);
+        if (insightText) insightText.innerText = "Erro ao carregar dados do servidor.";
     }
 }
 
