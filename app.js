@@ -15,6 +15,7 @@ const db = firebase.firestore();
 let tasks = [];
 let csClients = [];
 let implantacoes = [];
+let networks = [];
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
