@@ -605,7 +605,13 @@ async function processNetworkReport(networkId, customRecipient = null) {
                 displayStatus = 'Em andamento';
             }
             if (t.etapa) {
-                displayStatus += ` (${t.etapa})`;
+                const statusNormalized = displayStatus.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const etapaNormalized = t.etapa.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                
+                // Only append if it's not redundant (e.g. "Analise (Análise)" or "Em andamento (Pending)" where 'pending' means 'em andamento')
+                if (!statusNormalized.includes(etapaNormalized) && !etapaNormalized.includes(statusNormalized) && etapaNormalized !== 'pending') {
+                    displayStatus += ` (${t.etapa})`;
+                }
             }
 
             tasksHtml += `
