@@ -67,10 +67,12 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // O parâmetro correto para paginação é "offset" (ex: offset=100).
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
         // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
-        const [openTI, closedTI1, closedTI2, openGeneral, closedGeneral] = await Promise.all([
+        const [openTI, closedTI1, closedTI2, openWeb, closedWeb, openGeneral, closedGeneral] = await Promise.all([
             axios.get(`${TIFLUX_API_URL}/tickets?limit=200&desk_id=67231`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=200`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
         ]);
@@ -78,11 +80,13 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         let ticketsTI_O = openTI.data?.data || openTI.data || [];
         let ticketsTI_C1 = closedTI1.data?.data || closedTI1.data || [];
         let ticketsTI_C2 = closedTI2.data?.data || closedTI2.data || [];
+        let ticketsWeb_O = openWeb.data?.data || openWeb.data || [];
+        let ticketsWeb_C = closedWeb.data?.data || closedWeb.data || [];
         let ticketsGen_O = openGeneral.data?.data || openGeneral.data || [];
         let ticketsGen_C = closedGeneral.data?.data || closedGeneral.data || [];
 
         // Combinar todos removendo duplicatas por ticket_number
-        const allRaw = [...ticketsTI_O, ...ticketsTI_C1, ...ticketsTI_C2, ...ticketsGen_O, ...ticketsGen_C];
+        const allRaw = [...ticketsTI_O, ...ticketsTI_C1, ...ticketsTI_C2, ...ticketsWeb_O, ...ticketsWeb_C, ...ticketsGen_O, ...ticketsGen_C];
         const uniqueMap = new Map();
         allRaw.forEach(t => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
@@ -154,13 +158,18 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 finalStatus = ticket.stage?.name || 'Outros';
             }
 
+            // Proteção contra status nulo ou em formato de objeto
+            const statusStr = typeof ticket.status === 'string' ? ticket.status : (ticket.status?.name || '');
+
             // Se o chamado estiver fechado no TiFlux, ajustamos o status para a aba de concluídos
-            const isActuallyClosed = ticket.is_closed ||
-                (ticket.closed_at) ||
+            const isActuallyClosed = ticket.is_closed === true || 
+                ticket.is_closed === 1 ||
+                ticket.closed_at ||
                 rawStage.includes('concluido') ||
                 rawStage.includes('fechado') ||
                 rawStage.includes('finalizado') ||
-                rawStage.includes('encerrado');
+                rawStage.includes('encerrado') ||
+                (statusStr && (statusStr.toLowerCase().includes('fechado') || statusStr.toLowerCase().includes('concluido')));
 
             if (isActuallyClosed) {
                 if (finalStatus === 'Analise') finalStatus = 'Analise Concluida';
