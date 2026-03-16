@@ -1762,6 +1762,7 @@ function openModal() {
     document.getElementById('taskObs').value = '';
     document.getElementById('taskInfo').value = '';
     document.getElementById('taskHasUpdate').checked = false;
+    if (document.getElementById('taskLastDevCheck')) document.getElementById('taskLastDevCheck').value = '';
 
     if (btnResendEmail) btnResendEmail.style.display = 'none';
     if (emailStatusSelect) {
@@ -1818,6 +1819,9 @@ function openEditModal(id) {
         if (taskObs) taskObs.value = task.obs || '';
         document.getElementById('taskInfo').value = task.info || '';
         document.getElementById('taskHasUpdate').checked = task.hasUpdate || false;
+        if (document.getElementById('taskLastDevCheck')) {
+            document.getElementById('taskLastDevCheck').value = task.lastDevCheck || '';
+        }
 
         // Ocultar campos admin para clientes
         const isClientUser = localStorage.getItem('portalCS_isClient') === 'true';
@@ -2092,18 +2096,19 @@ taskForm.addEventListener('submit', (e) => {
     const obs = document.getElementById('taskObs').value;
     const info = document.getElementById('taskInfo').value;
     const hasUpdate = document.getElementById('taskHasUpdate').checked;
+    const lastDevCheck = document.getElementById('taskLastDevCheck') ? document.getElementById('taskLastDevCheck').value : '';
 
     const isNew = !document.getElementById('taskId').value;
 
     if (isNew) {
         const finalResponsavel = responsavel || currentUser;
-        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs, info, hasUpdate, slaUpdated: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        const taskDataNew = { id, number, quality, cliente, contato, solicitante, responsavel: finalResponsavel, prioridade, desc, createdAt, date, status, obs, info, hasUpdate, lastDevCheck, slaUpdated: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
         db.collection('tasks').doc(taskDataNew.id).set(taskDataNew).then(() => {
             showToast('Demanda criada com sucesso!');
         });
     } else {
         const taskObj = tasks.find(t => t.id === id) || {};
-        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs, info, hasUpdate, slaUpdated: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        const updatedTask = { ...taskObj, number, quality, cliente, contato, solicitante, responsavel, prioridade, desc, createdAt, date, status, obs, info, hasUpdate, lastDevCheck, slaUpdated: true, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
         db.collection('tasks').doc(id).set(updatedTask).then(() => {
             showToast('Demanda atualizada!');
         });
@@ -2396,7 +2401,7 @@ if (btnGeneratePDF) {
         if (reportFormat === 'analytical') {
             tableColumn = ["Demanda / TiFlux #", "Detalhes (Cliente / Resp / Venc)", "Descricao / Descritivo"];
             tableRows = reportData.map(t => {
-                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${formatDate(t.date)}\nPrior: ${t.prioridade || 'Normal'}`;
+                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${formatDate(t.date)}\nPrior: ${t.prioridade || 'Normal'}${t.lastDevCheck ? '\nVerif. Dev: ' + formatDate(t.lastDevCheck) : ''}`;
                 return [
                     `${sanitizeForPDF(t.status)}\n#${t.number || 'N/A'}`,
                     sanitizeForPDF(details),
@@ -2413,16 +2418,17 @@ if (btnGeneratePDF) {
                 }
             };
         } else {
-            tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsavel", "Vencimento", "Prioridade"];
+            tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsavel", "Vencimento", "Verif. Dev", "Prioridade"];
             tableRows = reportData.map(t => [
                 sanitizeForPDF(t.status),
                 t.number || 'N/A',
                 sanitizeForPDF(t.cliente || 'Desconhecido'),
                 sanitizeForPDF(t.responsavel || '-'),
                 formatDate(t.date),
+                t.lastDevCheck ? formatDate(t.lastDevCheck) : '-',
                 sanitizeForPDF(t.prioridade || 'Normal')
             ]);
-            tableStyles = { fontSize: 10, cellPadding: 3 };
+            tableStyles = { fontSize: 9, cellPadding: 3 }; // Reduced font slightly to fit column
         }
 
         // Desenhar a Tabela Usando AutoTable
@@ -3537,15 +3543,16 @@ function renderBoard() {
                     ${task.cliente || 'Cliente não informado'} ${contatoTexto}
                     ${getNetworkNameByClient(task.cliente) ? `<span class="network-badge">${getNetworkNameByClient(task.cliente)}</span>` : ''}
                 </div>
-                <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 2px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
                     Data Abertura: ${createdDisplay}
                 </div>
+                ${task.lastDevCheck ? `
+                <div style="font-size: 0.70rem; color: #a78bfa; margin-top: -4px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; font-weight: 500;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
+                    </svg>
+                    Verif. Dev: ${formatDate(task.lastDevCheck)}
+                </div>
+                ` : ''}
                 <div class="task-desc">${task.desc}</div>
                 ${obsHtml}
                 ${(isCompleted && (task.resolvedValidator || task.resolvedDesc)) ? `

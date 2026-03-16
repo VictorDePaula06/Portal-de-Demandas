@@ -586,6 +586,7 @@ async function processNetworkReport(networkId, customRecipient = null) {
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Posto</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Descrição</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Vencimento</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Última Verif. Dev</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb;">Status / Etapa</th>
                     </tr>
                 </thead>
@@ -620,6 +621,7 @@ async function processNetworkReport(networkId, customRecipient = null) {
                     <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.cliente}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.desc}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; ${statusStyle}">${formattedDueDate} ${isOverdue ? '⏰' : ''}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.lastDevCheck ? t.lastDevCheck.split('-').reverse().join('/') : '-'}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb;">${displayStatus}</td>
                 </tr>
             `;
