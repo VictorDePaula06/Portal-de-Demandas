@@ -2940,6 +2940,7 @@ const btnViewConcluidas = document.getElementById('btnViewConcluidas');
 const btnViewCSMaintenance = document.getElementById('btnViewCSMaintenance');
 const btnViewRelatorios = document.getElementById('btnViewRelatorios');
 const btnViewConfig = document.getElementById('btnViewConfig');
+const btnViewCSIntelligence = document.getElementById('btnViewCSIntelligence');
 
 const demandasFilterBar = document.getElementById('demandasFilterBar');
 const dashboardBoard = document.getElementById('dashboardBoard');
@@ -2950,7 +2951,7 @@ const csinteligenciaBoard = document.getElementById('csinteligenciaBoard');
 
 function switchView(viewName) {
     // Update active class on nav
-    [btnViewDemandas, btnViewDashboard, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes].forEach(btn => {
+    [btnViewDemandas, btnViewDashboard, btnViewCS, btnViewConcluidas, btnViewCSMaintenance, btnViewRelatorios, btnViewConfig, btnViewImplantacoes, btnViewCSIntelligence].forEach(btn => {
         if (btn) btn.classList.remove('active');
     });
 
@@ -3019,9 +3020,7 @@ function switchView(viewName) {
         if (typeof renderUserAdminList === 'function') renderUserAdminList();
     }
     else if (viewName === 'csinteligencia') {
-        // Find the generic nav-btn that triggered this via data-target
-        const btn = document.querySelector('.nav-btn[data-target="csinteligenciaBoard"]');
-        if (btn) btn.classList.add('active');
+        if (btnViewCSIntelligence) btnViewCSIntelligence.classList.add('active');
         if (csinteligenciaBoard) csinteligenciaBoard.style.display = 'block';
         if (typeof renderCSIntelligence === 'function') renderCSIntelligence();
     }
@@ -3050,6 +3049,7 @@ if (btnViewCSMaintenance) btnViewCSMaintenance.addEventListener('click', (e) => 
 if (btnViewConcluidas) btnViewConcluidas.addEventListener('click', (e) => { e.preventDefault(); switchView('concluidas'); });
 if (btnViewRelatorios) btnViewRelatorios.addEventListener('click', (e) => { e.preventDefault(); switchView('relatorios'); });
 if (btnViewConfig) btnViewConfig.addEventListener('click', (e) => { e.preventDefault(); switchView('config'); });
+if (btnViewCSIntelligence) btnViewCSIntelligence.addEventListener('click', (e) => { e.preventDefault(); switchView('csinteligencia'); });
 
 // General Navbar Button Listener for new panels
 document.querySelectorAll('.nav-btn[data-target]').forEach(btn => {
@@ -3737,6 +3737,13 @@ function renderCSBoard() {
         const engageBadge = client.engage ? `<span class="cs-badge ${getBadgeClass(client.engage, 'engage')}">${client.engage}</span>` : '-';
         const riskBadge = client.risk ? `<span class="cs-badge ${getBadgeClass(client.risk, 'risk')}">${client.risk}</span>` : '-';
 
+        const hs = client.analytics?.score || '-';
+        const cp = client.analytics?.churn_probability ? `${client.analytics.churn_probability}%` : '-';
+        
+        let hsColor = 'var(--text-muted)';
+        if (typeof hs === 'number') {
+            hsColor = hs <= 40 ? 'var(--status-critical)' : (hs <= 60 ? 'var(--status-warning)' : 'var(--status-normal)');
+        }
 
         tr.innerHTML = `
             <td style="padding: 1rem; color: var(--text-primary); font-weight: 500; font-size: 0.875rem;">${client.name}</td>
@@ -3746,6 +3753,8 @@ function renderCSBoard() {
             <td style="padding: 1rem;">${interacaoBadge}</td>
             <td style="padding: 1rem;">${growBadge}</td>
             <td style="padding: 1rem;">${engageBadge}</td>
+            <td style="padding: 1rem;"><span style="color: ${hsColor}; font-weight: bold;">${hs}</span></td>
+            <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.8rem;">${cp}</td>
             <td style="padding: 1rem;">${riskBadge}</td>
             <td style="padding: 1rem; font-size: 0.75rem; color: var(--text-muted); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${client.obs || ''}">${client.obs || '-'}</td>
             <td style="padding: 1rem; white-space: nowrap;">
