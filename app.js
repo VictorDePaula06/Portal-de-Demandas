@@ -959,7 +959,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Auth Logic
 // Variaveis e Funções para Custom Admin Users (Configurações)
 let customUsers = [];
-let networks = [];
 
 function fetchCustomUsers() {
     db.collection('customUsers').onSnapshot((snapshot) => {

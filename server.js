@@ -130,12 +130,6 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
-            // Log profundo para o ticket de teste específico
-            if (String(ticket.ticket_number) === '26191') {
-                console.log('--- DEBUG TICKET 26191 FULL OBJECT ---');
-                console.log(JSON.stringify(ticket, null, 2));
-                console.log('---------------------------------------');
-            }
 
             const rawStage = (ticket.stage?.name || '').toLowerCase();
             const rawTitle = (ticket.title || '').toLowerCase();
@@ -237,28 +231,10 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             ['Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
 
-        /**
- * Rota de Debug para ver os dados crus do TiFlux
- */
-        app.get('/api/debug/ticket/:id', async (req, res) => {
-            try {
-                const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
-                const response = await axios.get(`${TIFLUX_API_URL}/tickets/${req.params.id}`, { headers });
-                res.json(response.data);
-            } catch (error) {
-                res.status(500).json({ error: error.message });
-            }
-        });
-
         return res.json(filteredDemands);
-
-    } catch (error) {
-        if (error.response) {
-            console.error('Erro na resposta do TiFlux:', error.response.status, JSON.stringify(error.response.data));
-        } else {
-            console.error('Erro na requisição ao TiFlux:', error.message);
-        }
-        res.status(500).json({ error: 'Falha ao buscar demandas', details: error.message });
+    } catch (e) {
+        console.error('Erro na API:', e);
+        res.status(500).json({ error: e.message });
     }
 });
 
