@@ -1992,6 +1992,7 @@ function openImplantationModal(id = null) {
     if (id) {
         const imp = implantacoes.find(i => i.id === id);
         if (imp) {
+            document.getElementById('impId').value = imp.id;
             document.getElementById('impRede').value = imp.rede || '';
             document.getElementById('impUnidade').value = imp.unidade || '';
             document.getElementById('impCnpj').value = imp.cnpj || '';
