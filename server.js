@@ -531,10 +531,22 @@ async function processNetworkReport(networkId, customRecipient = null) {
     const openTasks = [];
     
     tasksSnap.forEach(doc => {
-        const task = doc.data();
-        const isClosed = task.status && task.status.toLowerCase().includes('concluido');
-        if (!isClosed && clientNames.includes(task.cliente)) {
-            openTasks.push({ id: doc.id, ...task });
+        const t = doc.data();
+        const statusNormalized = (t.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const isClosed = statusNormalized.includes('concluido') || 
+                         statusNormalized.includes('concluida') || 
+                         statusNormalized.includes('fechado') ||
+                         statusNormalized.includes('finalizado');
+
+        // Flexible client matching
+        const taskClientNormalized = (t.cliente || '').toLowerCase().trim();
+        const isMatch = clientNames.filter(cn => cn).some(cn => {
+            const cnNormalized = cn.toLowerCase().trim();
+            return taskClientNormalized.includes(cnNormalized) || cnNormalized.includes(taskClientNormalized);
+        });
+
+        if (!isClosed && isMatch) {
+            openTasks.push({ id: doc.id, ...t });
         }
     });
 

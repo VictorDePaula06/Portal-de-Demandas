@@ -2816,6 +2816,48 @@ function reopenTask(id) {
     }
 }
 
+function sendManualEmail(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) {
+        showToast('Demanda não encontrada.', 'critical');
+        return;
+    }
+
+    const recipient = getNetworkEmailByClient(task.cliente);
+    if (!recipient) {
+        showToast(`E-mail não configurado para o cliente: ${task.cliente}`, 'warning');
+        return;
+    }
+
+    showConfirmModal(
+        'Enviar E-mail',
+        `Deseja enviar um e-mail de atualização para ${recipient}?`,
+        () => {
+            showToast('Enviando e-mail...');
+            fetch('/api/send-overdue-emails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    tasks: [task]
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('E-mail enviado com sucesso!');
+                } else {
+                    showToast('Erro ao enviar e-mail.', 'warning');
+                    console.error('Email error:', data.error);
+                }
+            })
+            .catch(err => {
+                showToast('Erro de rede ao enviar e-mail.', 'critical');
+                console.error('Network error:', err);
+            });
+        }
+    );
+}
+
 function closeResolveModal() {
     resolveModal.classList.remove('active');
     pendingCompleteTaskId = null;
@@ -3584,6 +3626,11 @@ function renderBoard() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         </button>
                         ` : ''}
+                        <button class="btn-email" onclick="${isClientUser ? "void(0)" : `sendManualEmail('${task.id}')`}" 
+                                title="${isClientUser ? "Acesso restrito" : "Enviar E-mail de Atualização"}" 
+                                style="background: none; border: none; cursor: ${isClientUser ? "not-allowed" : "pointer"}; color: var(--accent-primary); opacity: ${isClientUser ? "0.4" : "1"};">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        </button>
                         <button class="btn-delete" onclick="${isClientUser ? "void(0)" : `deleteTask('${task.id}')`}" 
                                 title="${isClientUser ? "Acesso restrito" : "Excluir"}" 
                                 style="background: none; border: none; cursor: ${isClientUser ? "not-allowed" : "pointer"}; color: var(--status-critical); opacity: ${isClientUser ? "0.4" : "1"};">
