@@ -174,8 +174,8 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 else if (finalStatus === 'Adhoc') finalStatus = 'Adhoc Concluida';
             }
 
-            // Extracao Dinamica do Num. da Quality (Ex: [QP 33230] ou Análise Webposto - 27403)
-            const titleMatch = rawTitle.match(/\[?(?:qp|quality|an[áa]lise(?:.*?-)?)\s*(\d+)\]?/i);
+            // Extracao Dinamica do Num. da Quality (Ex: [QP 33230] ou Análise Webposto - 27403 ou ADHOC #28785)
+            const titleMatch = rawTitle.match(/(?:(?:qp|quality|an[áa]lise|adhoc)(?:.*?[#\-])?|[#])\s*(\d+)/i);
             const numQuality = titleMatch ? titleMatch[1] : '';
 
             // Calc SLA Date (Usando Dias Úteis)

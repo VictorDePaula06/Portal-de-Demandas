@@ -1799,7 +1799,7 @@ function openEditModal(id) {
         // Fallback extraction for older tasks stored without the new backend quality field
         let extractedQuality = task.quality || '';
         if (!extractedQuality && task.desc) {
-            const qpMatch = task.desc.match(/\[?(?:qp|quality|an[áa]lise)(?:.*?-)?\s*(\d+)\]?/i);
+            const qpMatch = task.desc.match(/(?:(?:qp|quality|an[áa]lise|adhoc)(?:.*?[#\-])?|[#])\s*(\d+)/i);
             if (qpMatch) extractedQuality = qpMatch[1];
         }
 
@@ -3539,7 +3539,7 @@ function renderBoard() {
         // Fallback extraction for older tasks stored without the quality field
         let displayQuality = task.quality || '';
         if (!displayQuality && task.desc) {
-            const qpMatch = task.desc.match(/\[?(?:qp|quality|an[áa]lise)(?:.*?-)?\s*(\d+)\]?/i);
+            const qpMatch = task.desc.match(/(?:(?:qp|quality|an[áa]lise|adhoc)(?:.*?[#\-])?|[#])\s*(\d+)/i);
             if (qpMatch) displayQuality = qpMatch[1];
         }
 
@@ -3730,7 +3730,7 @@ function sendWhatsappCobrança(id) {
 
     let extractedQuality = task.quality || '';
     if (!extractedQuality && task.desc) {
-        const qpMatch = task.desc.match(/\[?(?:qp|quality|an[áa]lise)(?:.*?-)?\s*(\d+)\]?/i);
+        const qpMatch = task.desc.match(/(?:(?:qp|quality|an[áa]lise|adhoc)(?:.*?[#\-])?|[#])\s*(\d+)/i);
         if (qpMatch) extractedQuality = qpMatch[1];
     }
 
