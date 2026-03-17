@@ -1854,8 +1854,10 @@ function openEditModal(id) {
         if (btnResendEmail) {
             // Fallback para e-mail da rede se o e-mail do cliente estiver vazio
             const networkEmail = getNetworkEmailByClient(task.cliente);
-            const effectiveEmail = networkEmail || task.clientEmail;
-            const hasValidEmail = effectiveEmail && emailRegex.test(effectiveEmail);
+            const effectiveEmail = (networkEmail || task.clientEmail || '').trim();
+            
+            // Validação mais flexível para permitir múltiplos e-mails (separados por ; , ou espaço)
+            const hasValidEmail = effectiveEmail && effectiveEmail.split(/[,;\s]+/).every(email => email.trim() === '' || emailRegex.test(email.trim())) && effectiveEmail.includes('@');
             
             btnResendEmail.style.display = hasValidEmail ? 'block' : 'none';
             btnResendEmail.disabled = isClientUser || !hasValidEmail;
@@ -3632,11 +3634,6 @@ function renderBoard() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         </button>
                         ` : ''}
-                        <button class="btn-email" onclick="${isClientUser ? "void(0)" : `sendManualEmail('${task.id}')`}" 
-                                title="${isClientUser ? "Acesso restrito" : "Enviar E-mail de Atualização"}" 
-                                style="background: none; border: none; cursor: ${isClientUser ? "not-allowed" : "pointer"}; color: var(--accent-primary); opacity: ${isClientUser ? "0.4" : "1"};">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                        </button>
                         <button class="btn-delete" onclick="${isClientUser ? "void(0)" : `deleteTask('${task.id}')`}" 
                                 title="${isClientUser ? "Acesso restrito" : "Excluir"}" 
                                 style="background: none; border: none; cursor: ${isClientUser ? "not-allowed" : "pointer"}; color: var(--status-critical); opacity: ${isClientUser ? "0.4" : "1"};">
