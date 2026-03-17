@@ -331,7 +331,13 @@ async function fetchDemandasDaAPI() {
                     const taskRef = db.collection('tasks').doc(apiTask.id);
                     batch.set(taskRef, apiTask);
                     hasChanges = true;
-                    syncdItems.push({ number: apiTask.number || 'N/A', type: 'Novo', client: apiTask.cliente });
+                    syncdItems.push({ 
+                        number: apiTask.number || 'N/A', 
+                        type: 'Novo', 
+                        client: apiTask.cliente,
+                        status: apiTask.status,
+                        desc: apiTask.desc
+                    });
                 } else {
                     // Proteção contra sobrescrita de demandas já concluídas localmente
                     const isLocalCompleted = localTask.status && localTask.status.includes('Concluida');
@@ -382,6 +388,8 @@ async function fetchDemandasDaAPI() {
                             number: apiTask.number || 'N/A', 
                             type: 'Atu.', 
                             client: apiTask.cliente,
+                            status: apiTask.status,
+                            desc: apiTask.desc,
                             changes: changes,
                             isTransitionToClosed: becomesCompleted,
                             isReopened: becomesReopened
@@ -574,14 +582,19 @@ function showSyncResultsModal(newCount, updatedCount, items) {
         let statusBadge = '';
         let reopendNotice = '';
         
+        const isPreventiva = item.status && item.status.includes('Preventiva');
+        const showCompletionBtn = item.isTransitionToClosed && !isPreventiva;
+        
         if (item.isTransitionToClosed) {
-            statusBadge = `<span class="sync-badge updated" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">FECHADO NO TIFLUX</span>`;
-            actionBtn = `
-                <button type="button" class="btn btn-primary btn-sync-complete" data-id="${item.id}" 
-                    style="margin-top: 8px; padding: 6px 12px; font-size: 0.75rem; background: #10b981; border-color: #10b981; width: fit-content;">
-                    Concluir e Notificar
-                </button>
-            `;
+            statusBadge = `<span class="sync-badge updated" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">${isPreventiva ? 'PREVENTIVA CONCLUÍDA' : 'FECHADO NO TIFLUX'}</span>`;
+            if (showCompletionBtn) {
+                actionBtn = `
+                    <button type="button" class="btn btn-primary btn-sync-complete" data-id="${item.id}" 
+                        style="margin-top: 8px; padding: 6px 12px; font-size: 0.75rem; background: #10b981; border-color: #10b981; width: fit-content;">
+                        Concluir e Notificar
+                    </button>
+                `;
+            }
         } else if (item.isReopened) {
             statusBadge = `<span class="sync-badge updated" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">REABERTO</span>`;
             reopendNotice = `
@@ -590,7 +603,12 @@ function showSyncResultsModal(newCount, updatedCount, items) {
                     Reaberto no TiFlux e movido para a coluna original.
                 </div>
             `;
+        } else if (item.type === 'Novo') {
+            const statusColor = isPreventiva ? 'var(--status-warning)' : 'var(--accent-primary)';
+            statusBadge = `<span class="sync-badge" style="background: rgba(255,255,255,0.1); color: ${statusColor}; border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem;">${item.status || 'Novo'}</span>`;
         }
+
+        const descText = item.desc ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-style: italic; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; opacity: 0.8;">${item.desc}</div>` : '';
 
         return `
         <div class="sync-item ${item.type === 'Novo' ? 'new' : 'updated'}">
@@ -600,6 +618,7 @@ function showSyncResultsModal(newCount, updatedCount, items) {
                     ${statusBadge}
                 </div>
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${item.client}</span>
+                ${descText}
                 <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
                     ${changesHtml}
                 </div>
