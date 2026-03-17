@@ -148,6 +148,8 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 finalStatus = 'Analise';
             } else if (rawTitle.includes('preventiva')) {
                 finalStatus = 'Preventiva';
+            } else if (rawStage.includes('adhoc') || rawTitle.includes('adhoc')) {
+                finalStatus = 'Adhoc';
             } else {
                 finalStatus = ticket.stage?.name || 'Outros';
             }
@@ -170,6 +172,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 else if (finalStatus === 'QP - Melhoria') finalStatus = 'QP - Melhoria Concluida';
                 else if (finalStatus === 'QP - Correção') finalStatus = 'QP - Correção Concluida';
                 else if (finalStatus === 'Preventiva') finalStatus = 'Preventiva Concluida';
+                else if (finalStatus === 'Adhoc') finalStatus = 'Adhoc Concluida';
             }
 
             // Extracao Dinamica do Num. da Quality (Ex: [QP 33230] ou Análise Webposto - 27403)
@@ -228,7 +231,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // O usuário pediu especificamente "QP", "Análise" e agora incluir "Preventiva" para controle
         // Incluímos as versões "Concluida" para que o app.js possa atualizar o status local se o ticket fechar no TiFlux
         const filteredDemands = demands.filter(d =>
-            ['Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
+            ['Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Adhoc', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
 
         return res.json(filteredDemands);
