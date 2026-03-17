@@ -136,20 +136,19 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             let finalStatus = 'Analise'; // Default fallback
 
             // Mapeamento Rígido Analisando Título e Estágio
-            // Se tiver "Melhoria" ou "QP" no título/estágio, consideramos como QP (Melhoria ou Correção)
-            if (rawStage.includes('qp') || rawTitle.includes('qp') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
+            if (rawStage.includes('adhoc') || rawTitle.includes('adhoc')) {
+                finalStatus = 'Adhoc';
+            } else if (rawStage.includes('qp') || rawTitle.includes('qp') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
                 // Tenta diferenciar Melhoria de Correção por palavras-chave no título
                 if (rawTitle.includes('[m]') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
                     finalStatus = 'QP - Melhoria';
                 } else {
                     finalStatus = 'QP - Correção';
                 }
-            } else if (rawStage.includes('nális') || rawStage.includes('nalis') || rawStage.includes('analise') || rawTitle.includes('análise') || rawTitle.includes('analise')) {
+            } else if (rawStage.includes('nális') || rawStage.includes('nalis') || (rawStage === 'analise') || rawTitle.includes('análise ') || rawTitle.includes(' analise')) {
                 finalStatus = 'Analise';
             } else if (rawTitle.includes('preventiva')) {
                 finalStatus = 'Preventiva';
-            } else if (rawStage.includes('adhoc') || rawTitle.includes('adhoc')) {
-                finalStatus = 'Adhoc';
             } else {
                 finalStatus = ticket.stage?.name || 'Outros';
             }
