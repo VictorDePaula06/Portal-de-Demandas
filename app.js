@@ -982,13 +982,19 @@ function getNetworkNameByClient(clientName) {
 
 function getNetworkEmailByClient(clientName) {
     if (!clientName || !networks || networks.length === 0) return '';
-    const nameLower = clientName.toLowerCase().trim();
+    
+    // Normalização (remover acentos e lowercase)
+    const normalize = (str) => (str || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    const nameNormalized = normalize(clientName);
+    
     const network = networks.find(n => 
         n.clients && n.clients.some(c => {
-            const cName = (typeof c === 'string' ? c : (c.name || '')).toLowerCase().trim();
+            const cName = normalize(typeof c === 'string' ? c : (c.name || ''));
             if (!cName) return false;
-            // Comparação exata ou se o nome do cliente na rede é o nome completo do cliente
-            return nameLower === cName;
+            
+            // Comparação flexível: se um contém o outro
+            return nameNormalized.includes(cName) || cName.includes(nameNormalized);
         })
     );
     const email = network ? (network.reportEmail || '') : '';

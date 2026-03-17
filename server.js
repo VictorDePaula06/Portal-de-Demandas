@@ -539,9 +539,11 @@ async function processNetworkReport(networkId, customRecipient = null) {
                          statusNormalized.includes('finalizado');
 
         // Flexible client matching
-        const taskClientNormalized = (t.cliente || '').toLowerCase().trim();
+        const normalize = (str) => (str || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const taskClientNormalized = normalize(t.cliente);
+        
         const isMatch = clientNames.filter(cn => cn).some(cn => {
-            const cnNormalized = cn.toLowerCase().trim();
+            const cnNormalized = normalize(cn);
             return taskClientNormalized.includes(cnNormalized) || cnNormalized.includes(taskClientNormalized);
         });
 
