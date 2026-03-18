@@ -141,21 +141,28 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             // Mapeamento Rígido Analisando Título e Estágio
             if (rawStage.includes('adhoc') || rawTitle.includes('adhoc')) {
                 finalStatus = 'Adhoc';
-            } else if (rawStage.includes('qp') || rawTitle.includes('qp') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
+            } else if (rawStage.includes('qp') || rawTitle.includes('qp') || rawTitle.includes('quality') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
                 // Tenta diferenciar Melhoria de Correção por palavras-chave no título
                 if (rawTitle.includes('[m]') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
                     finalStatus = 'QP - Melhoria';
                 } else {
                     finalStatus = 'QP - Correção';
                 }
-            } else if (rawStage.includes('nális') || rawStage.includes('nalis') || (rawStage === 'analise') || rawTitle.includes('análise ') || rawTitle.includes(' analise')) {
+            } else if (rawStage.includes('analis') || rawStage.includes('anális') || rawTitle.includes('analise') || rawTitle.includes('análise')) {
                 finalStatus = 'Analise';
             } else if (rawStage.includes('preventiva')) {
                 finalStatus = 'Preventiva';
             } else if (rawStage.includes('backlog')) {
                 finalStatus = 'Backlog';
             } else {
-                finalStatus = ticket.stage?.name || 'Outros';
+                // Fallback dinâmico: se o título contiver QP ou Análise, respeita o título
+                if (rawTitle.includes('qp') || rawTitle.includes('quality')) {
+                    finalStatus = 'QP - Correção';
+                } else if (rawTitle.includes('analise') || rawTitle.includes('análise')) {
+                    finalStatus = 'Analise';
+                } else {
+                    finalStatus = ticket.stage?.name || 'Outros';
+                }
             }
 
             // Se for Backlog, precisamos inferir qual o "Status de Exibição" (Coluna) para que não suma no portal
