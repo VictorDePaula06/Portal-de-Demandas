@@ -1892,8 +1892,19 @@ function openEditModal(id) {
 
             if (emailStatusSelect) {
                 emailStatusSelect.style.display = hasValidEmail ? 'block' : 'none';
-                emailStatusSelect.value = 'Em andamento';
+                emailStatusSelect.value = task.status === 'Backlog' ? 'Backlog' : 'Em andamento';
                 emailStatusSelect.disabled = isClientUser;
+
+                // Sincronizar com o status principal quando alterado
+                emailStatusSelect.onchange = () => {
+                    if (emailStatusSelect.value === 'Backlog') {
+                        document.getElementById('taskStatus').value = 'Backlog';
+                    } else if (emailStatusSelect.value === 'Em andamento') {
+                        // Se voltar para em andamento, talvez devesse voltar para o anterior?
+                        // Mas não sabemos o anterior facilmente aqui. 
+                        // Vamos apenas deixar como está, o usuário decide o estágio.
+                    }
+                };
             }
 
             // Remove listener anterior para não acumular
@@ -3169,6 +3180,7 @@ function renderDashboard() {
     let closedTasks = 0;
     
     let typesCounter = {
+        'Backlog': 0,
         'Analise': 0,
         'QP - Melhoria': 0,
         'QP - Correção': 0,
