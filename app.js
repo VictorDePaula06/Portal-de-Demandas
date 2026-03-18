@@ -3714,7 +3714,10 @@ function renderBoard() {
             </div>
         `;
 
-        const targetCol = document.getElementById(`col-${task.kanbanStatus || task.status}`);
+        // Se a tarefa está concluída, priorizamos o task.status (que contém '... Concluida')
+        // para garantir que caia na coluna certa do dashboard de concluídas.
+        const columnStatus = isCompleted ? task.status : (task.kanbanStatus || task.status);
+        const targetCol = document.getElementById(`col-${columnStatus}`);
         if (targetCol) {
             targetCol.insertAdjacentHTML('beforeend', cardHTML);
         }
