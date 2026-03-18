@@ -351,7 +351,14 @@ async function fetchDemandasDaAPI() {
                     // Se no TiFlux o chamado agora está concluído, mas no portal ainda está aberto
                     // nós permitimos a atualização para que ele mova para a aba de concluídos.
                     const changes = [];
-                    if (apiTask.status !== localTask.status) changes.push('Status');
+                    
+                    // Proteção Backlog: Não detectar mudança de status se estiver em Backlog no local e não estiver concluído na API
+                    const shouldProtectBacklog = localTask.status === 'Backlog' && !isApiTaskCompleted;
+                    
+                    if (apiTask.status !== localTask.status && !shouldProtectBacklog) {
+                        changes.push('Status');
+                    }
+                    
                     if (apiTask.desc !== localTask.desc) changes.push('Descrição');
                     if (apiTask.prioridade !== localTask.prioridade) changes.push('Prioridade');
                     if (apiTask.responsavel !== localTask.responsavel) changes.push('Responsável');
@@ -365,6 +372,11 @@ async function fetchDemandasDaAPI() {
                         // Proteção: Não sobrescrever a data de vencimento (SLA) se ela já existe localmente
                         // EXCETO se o status mudou (ex: de Analise para QP), onde o prazo deve ser recalculado
                         const taskUpdate = { ...apiTask };
+                        
+                        if (shouldProtectBacklog) {
+                            taskUpdate.status = 'Backlog';
+                        }
+                        
                         if (localTask.date && apiTask.status === localTask.status) {
                             taskUpdate.date = localTask.date;
                         }
