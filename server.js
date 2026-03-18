@@ -67,48 +67,43 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // O TiFlux V2 retorna erro HTTP 400 se as queries de listagem limitarem mais que 100 por conta.
         // O parâmetro correto para paginação é "offset" (ex: offset=100).
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
-        // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
-        const [openTI, closedTI1, closedTI2, openWeb, closedWeb, openGeneral, closedGeneral] = await Promise.all([
+        // Expandindo busca para capturar chamados reabertos antigos que saíram da 1ª página.
+        // Buscamos 3 páginas de 100 (offsets 0, 100, 200) para cada mesa principal e busca geral.
+        const [
+            oTI1, oTI2, oTI3,  // Suporte TI (67231)
+            oWeb1, oWeb2, oWeb3, // webPosto (67230)
+            oGen1, oGen2, oGen3  // Geral
+        ] = await Promise.all([
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231&offset=200`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230&offset=200`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&offset=200`, { headers })
         ]);
 
-        let ticketsTI_O = openTI.data?.data || openTI.data || [];
-        let ticketsTI_C1 = closedTI1.data?.data || closedTI1.data || [];
-        let ticketsTI_C2 = closedTI2.data?.data || closedTI2.data || [];
-        let ticketsWeb_O = openWeb.data?.data || openWeb.data || [];
-        let ticketsWeb_C = closedWeb.data?.data || closedWeb.data || [];
-        let ticketsGen_O = openGeneral.data?.data || openGeneral.data || [];
-        let ticketsGen_C = closedGeneral.data?.data || closedGeneral.data || [];
-
-        // Combinar todos removendo duplicatas por ticket_number
-        const allRaw = [...ticketsTI_O, ...ticketsTI_C1, ...ticketsTI_C2, ...ticketsWeb_O, ...ticketsWeb_C, ...ticketsGen_O, ...ticketsGen_C];
-        
-        // DEBUG: Procurar 28324 para espelhamento visual no 19233
-        let debug28324Info = 'Não encontrado na lista bruta.';
-        const dTarget = allRaw.find(t => t && (t.ticket_number == 28324 || String(t.ticket_number).includes('28324')));
-        if (dTarget) {
-            debug28324Info = `ENCONTRADO! Desk: ${dTarget.desk_id} (${dTarget.desk?.name}) | Stage: ${dTarget.stage?.name} | Status: ${dTarget.status?.name || dTarget.status}`;
-        }
-        console.log(`[DEBUG] 28324 Info: ${debug28324Info}`);
+        const extract = r => r.data?.data || r.data || [];
+        const allRaw = [
+            ...extract(oTI1), ...extract(oTI2), ...extract(oTI3),
+            ...extract(oWeb1), ...extract(oWeb2), ...extract(oWeb3),
+            ...extract(oGen1), ...extract(oGen2), ...extract(oGen3)
+        ];
 
         const uniqueMap = new Map();
         allRaw.forEach(t => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
         });
 
-        // --- BUSCA INDIVIDUAL DE CHAMADOS ABERTOS NÃO ENCONTRADOS ---
+        // --- BUSCA INDIVIDUAL DE CHAMADOS MONITORADOS NÃO ENCONTRADOS ---
         const openTicketsIds = req.body && req.body.openTickets ? req.body.openTickets : [];
         if (openTicketsIds.length > 0) {
             const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
             if (missingIds.length > 0) {
-                console.log(`[SYNC] Buscando ${missingIds.length} chamados abertos/recentes faltantes individualmente:`, missingIds.slice(0, 10));
-                // Limitar a 100 por motivos de segurança contra rate limit da API
+                console.log(`[SYNC] Buscando ${missingIds.length} chamados monitorados faltantes individualmente:`, missingIds.slice(0, 5));
+                // Limitar a 100 por segurança
                 const idsToFetch = missingIds.slice(0, 100);
                 const individualPromises = idsToFetch.map(id => 
                     axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
@@ -251,9 +246,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                     ticket.contact_email ||
                     (ticket.requestor_email) ||
                     '',
-                desc: (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233'))
-                    ? `[DBG 28324: ${debug28324Info}] ${ticket.title}`
-                    : (ticket.title || 'Descrição Ausente'),
+                desc: ticket.title || 'Descrição Ausente',
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
                 createdAt: createdAtFormatted,

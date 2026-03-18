@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const TIFLUX_API_TOKEN = process.env.TIFLUX_API_TOKEN;
-const TIFLUX_API_URL = 'https://api.tiflux.com.br/api/v2';
+const TIFLUX_API_URL = 'https://api.tiflux.com/api/v2';
 const TICKET_NUMBER = '28324';
 
 async function checkTicket() {
@@ -19,10 +19,8 @@ async function checkTicket() {
             console.log('Número:', ticket.ticket_number);
             console.log('Título:', ticket.title);
             console.log('Status:', ticket.status?.name || ticket.status);
-            console.log('Estágio:', ticket.stage?.name || ticket.stage);
-            console.log('Desk ID:', ticket.desk_id);
-            console.log('Desk Name:', ticket.desk?.name);
-            console.log('Is Closed:', ticket.is_closed);
+            console.log('Desk:', JSON.stringify(ticket.desk, null, 2));
+            console.log('Desk ID (top level):', ticket.desk_id);
             console.log('Created At:', ticket.created_at);
             console.log('Updated At:', ticket.updated_at);
             console.log('------------------------');
