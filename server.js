@@ -162,8 +162,9 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // Mapear a resposta definitiva de acordo com o Payload da API V2 do TiFlux
         const demands = rawTickets.map(ticket => {
 
-            const rawStage = (ticket.stage?.name || '').toLowerCase();
-            const rawTitle = (ticket.title || '').toLowerCase();
+            const normalize = (s) => (s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const rawStage = normalize(ticket.stage?.name || '');
+            const rawTitle = normalize(ticket.title || '');
             let finalStatus = 'Analise'; // Default fallback
 
             // Mapeamento Rígido Analisando Título e Estágio
@@ -303,7 +304,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         }
 
         const filteredDemands = demands.filter(d =>
-            ['Backlog', 'Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Adhoc', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
+            ['Backlog', 'Analise', 'Análise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Adhoc', 'Analise Concluida', 'Análise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
 
         const finallyFound28324 = filteredDemands.find(d => d.number === '28324');
