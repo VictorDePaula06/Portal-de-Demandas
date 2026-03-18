@@ -103,22 +103,6 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
         });
 
-        // NOVO: Busca Individual Forçada (para chamados que "somem" da listagem geral)
-        const forceTicket = req.body && req.body.forceTicket ? String(req.body.forceTicket) : null;
-        if (forceTicket) {
-            console.log(`[SYNC] Puxada MANUAL forçada para ticket: ${forceTicket}`);
-            try {
-                const resIndiv = await axios.get(`${TIFLUX_API_URL}/tickets/${forceTicket}`, { headers });
-                const tIndiv = resIndiv.data?.data || resIndiv.data;
-                if (tIndiv && tIndiv.ticket_number) {
-                    uniqueMap.set(String(tIndiv.ticket_number), tIndiv);
-                    console.log(`[SYNC] Ticket ${forceTicket} recuperado com sucesso individualmente.`);
-                }
-            } catch (eIndiv) {
-                console.warn(`[SYNC] Falha ao puxar ticket ${forceTicket} individualmente:`, eIndiv.message);
-            }
-        }
-
         // --- BUSCA INDIVIDUAL DE CHAMADOS MONITORADOS NÃO ENCONTRADOS ---
         const openTicketsIds = req.body && req.body.openTickets ? req.body.openTickets : [];
         if (openTicketsIds.length > 0) {
