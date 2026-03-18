@@ -143,6 +143,11 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             const isAnalise = /analis/i.test(rawTitle) || /analis/i.test(rawStage);
             const isAdhoc = /adhoc/i.test(rawTitle) || /adhoc/i.test(rawStage);
 
+            if (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233')) {
+                console.log(`[DEBUG 19233] rawTitle: "${rawTitle}"`);
+                console.log(`[DEBUG 19233] isQP: ${isQP}, isAnalise: ${isAnalise}`);
+            }
+
             if (isAdhoc) {
                 finalStatus = 'Adhoc';
             } else if (isQP) {
@@ -236,7 +241,9 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                     ticket.contact_email ||
                     (ticket.requestor_email) ||
                     '',
-                desc: ticket.title || 'Descrição Ausente',
+                desc: (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233')) 
+                    ? `${ticket.title} [DBG: title="${rawTitle}", isQP=${isQP}, fStat=${finalStatus}, stage=${rawStage}]` 
+                    : (ticket.title || 'Descrição Ausente'),
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
                 createdAt: createdAtFormatted,
