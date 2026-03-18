@@ -97,9 +97,9 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         if (openTicketsIds.length > 0) {
             const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
             if (missingIds.length > 0) {
-                console.log(`[SYNC] Buscando ${missingIds.length} chamados abertos faltantes individualmente:`, missingIds.slice(0, 10));
-                // Limitar a 30 por motivos de segurança contra rate limit da API
-                const idsToFetch = missingIds.slice(0, 30);
+                console.log(`[SYNC] Buscando ${missingIds.length} chamados abertos/recentes faltantes individualmente:`, missingIds.slice(0, 10));
+                // Limitar a 100 por motivos de segurança contra rate limit da API
+                const idsToFetch = missingIds.slice(0, 100);
                 const individualPromises = idsToFetch.map(id => 
                     axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
                 );

@@ -282,11 +282,19 @@ async function fetchDemandasDaAPI() {
         const currentTasksMap = new Map();
         const openTicketsIds = [];
         
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
         currentSnap.forEach(doc => {
             const data = doc.data();
             currentTasksMap.set(doc.id, data);
-            // Identifica chamados abertos válidos para forçar a verificação de novidades/fechamento
-            if (data.status && !data.status.includes('Concluida') && data.number && data.number !== 'N/A' && data.number !== 'undefined') {
+            
+            // Identifica chamados rastreados (abertos ou concluídos recentemente)
+            const isTracked = data.number && data.number !== 'N/A' && data.number !== 'undefined';
+            const isRecent = data.createdAt && new Date(data.createdAt) > ninetyDaysAgo;
+            const isAlwaysTracked = data.status && !data.status.includes('Concluida');
+
+            if (isTracked && (isAlwaysTracked || isRecent)) {
                 openTicketsIds.push(data.number);
             }
         });
