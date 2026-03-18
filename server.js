@@ -103,27 +103,44 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
         });
 
+        // NOVO: Busca Individual Forçada (para chamados que "somem" da listagem geral)
+        const forceTicket = req.body && req.body.forceTicket ? String(req.body.forceTicket) : null;
+        if (forceTicket) {
+            console.log(`[SYNC] Puxada MANUAL forçada para ticket: ${forceTicket}`);
+            try {
+                const resIndiv = await axios.get(`${TIFLUX_API_URL}/tickets/${forceTicket}`, { headers });
+                const tIndiv = resIndiv.data?.data || resIndiv.data;
+                if (tIndiv && tIndiv.ticket_number) {
+                    uniqueMap.set(String(tIndiv.ticket_number), tIndiv);
+                    console.log(`[SYNC] Ticket ${forceTicket} recuperado com sucesso individualmente.`);
+                }
+            } catch (eIndiv) {
+                console.warn(`[SYNC] Falha ao puxar ticket ${forceTicket} individualmente:`, eIndiv.message);
+            }
+        }
+
         // --- BUSCA INDIVIDUAL DE CHAMADOS MONITORADOS NÃO ENCONTRADOS ---
         const openTicketsIds = req.body && req.body.openTickets ? req.body.openTickets : [];
         if (openTicketsIds.length > 0) {
             const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
             if (missingIds.length > 0) {
-                console.log(`[SYNC] Buscando ${missingIds.length} chamados monitorados faltantes individualmente:`, missingIds.slice(0, 5));
-                // Limitar a 100 por segurança
-                const idsToFetch = missingIds.slice(0, 100);
-                const individualPromises = idsToFetch.map(id => 
-                    axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
-                );
-                
-                const individualResults = await Promise.all(individualPromises);
+                console.log(`[SYNC] Buscando ${missingIds.length} chamados monitorados ausentes no lote...`);
+                // Limita a busca individual para evitar excesso de requisições (Max 100)
+                const toFetch = missingIds.slice(0, 100);
                 let addedCount = 0;
-                individualResults.forEach(res => {
-                    const ticket = res && (res.data?.data || res.data);
-                    if (ticket && ticket.ticket_number) {
-                        uniqueMap.set(String(ticket.ticket_number), ticket);
-                        addedCount++;
+
+                await Promise.all(toFetch.map(async (id) => {
+                    try {
+                        const resIndiv = await axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers });
+                        const tIndiv = resIndiv.data?.data || resIndiv.data;
+                        if (tIndiv && tIndiv.ticket_number) {
+                            uniqueMap.set(String(tIndiv.ticket_number), tIndiv);
+                            addedCount++;
+                        }
+                    } catch (eIndiv) {
+                        // Silencioso se falhar busca individual
                     }
-                });
+                }));
                 console.log(`[SYNC] Recuperados ${addedCount} chamados individualmente.`);
             }
         }
