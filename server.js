@@ -1,4 +1,4 @@
-// Force redeploy - Update: 2026-03-18 11:41
+// Force redeploy - Update: 2026-03-18 11:43 - Investigating 28324 Tracking
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
@@ -83,13 +83,20 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&offset=100`, { headers })       // Geral Página 2
         ]);
 
-        const extract = r => r.data?.data || r.data || [];
+        const extract = r => {
+            const list = r.data?.data || r.data || [];
+            return Array.isArray(list) ? list : (list.data ? list.data : []);
+        };
         const allRaw = [
             ...extract(sAnalise), ...extract(sQPMelhoria), ...extract(sQPCorrecao),
             ...extract(sBacklog), ...extract(sAdhoc), ...extract(sRetorno),
             ...extract(sPreventiva),
             ...extract(oGen1), ...extract(oGen2)
         ];
+
+        // LOG AUDITORIA 28324
+        const found28324Raw = allRaw.find(t => t && String(t.ticket_number) === '28324');
+        console.log(`[AUDIT 28324] Encontrado no raw: ${!!found28324Raw}`);
 
         const uniqueMap = new Map();
         allRaw.forEach(t => {
@@ -272,9 +279,18 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
         // O usuário pediu especificamente "QP", "Análise" e agora incluir "Preventiva" para controle
         // Incluímos as versões "Concluida" para que o app.js possa atualizar o status local se o ticket fechar no TiFlux
+        // LOG AUDITORIA 28324 FINAL
+        const mapped28324 = demands.find(d => d.number === '28324');
+        if (mapped28324) {
+            console.log(`[AUDIT 28324] Mapeado com sucesso! Status: ${mapped28324.status}`);
+        }
+
         const filteredDemands = demands.filter(d =>
             ['Backlog', 'Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Adhoc', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
+
+        const finallyFound28324 = filteredDemands.find(d => d.number === '28324');
+        console.log(`[AUDIT 28324] Presente no retorno final para o app: ${!!finallyFound28324}`);
 
         return res.json(filteredDemands);
     } catch (e) {
