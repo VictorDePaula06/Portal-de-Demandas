@@ -67,14 +67,15 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // O parâmetro correto para paginação é "offset" (ex: offset=100).
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
         // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
-        const [openTI, closedTI1, closedTI2, openWeb, closedWeb, openGeneral, closedGeneral] = await Promise.all([
+        const [openTI, closedTI1, closedTI2, openWeb, closedWeb, openGeneral, closedGeneral, pointingRes] = await Promise.all([
             axios.get(`${TIFLUX_API_URL}/tickets?limit=200&desk_id=67231`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=200`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/times?limit=200&order_by=id&order_direction=desc`, { headers })
         ]);
 
         let ticketsTI_O = openTI.data?.data || openTI.data || [];
@@ -117,6 +118,16 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             }
         }
 
+        // --- MAPEAMENTO DE APONTAMENTOS ---
+        const pointingList = pointingRes.data?.data || pointingRes.data || [];
+        const pointingMap = new Map(); // ticket_number -> latest pointing
+        pointingList.forEach(p => {
+            const ticketNum = String(p.ticket_number);
+            if (!pointingMap.has(ticketNum)) {
+                pointingMap.set(ticketNum, p);
+            }
+        });
+
         const rawTickets = Array.from(uniqueMap.values());
 
         if (rawTickets.length > 0) {
@@ -147,10 +158,31 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 }
             } else if (rawStage.includes('nális') || rawStage.includes('nalis') || (rawStage === 'analise') || rawTitle.includes('análise ') || rawTitle.includes(' analise')) {
                 finalStatus = 'Analise';
-            } else if (rawTitle.includes('preventiva')) {
+            } else if (rawStage.includes('preventiva')) {
                 finalStatus = 'Preventiva';
+            } else if (rawStage.includes('backlog')) {
+                finalStatus = 'Backlog';
             } else {
                 finalStatus = ticket.stage?.name || 'Outros';
+            }
+
+            // Se for Backlog, precisamos inferir qual o "Status de Exibição" (Coluna) para que não suma no portal
+            let displayStatus = finalStatus;
+            if (finalStatus === 'Backlog') {
+                // Tenta descobrir se é QP ou Analise pelo título
+                if (rawTitle.includes('qp') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar') || rawTitle.includes('correção') || rawTitle.includes('correcao')) {
+                    if (rawTitle.includes('[m]') || rawTitle.includes('melhoria')) {
+                        displayStatus = 'QP - Melhoria';
+                    } else {
+                        displayStatus = 'QP - Correção';
+                    }
+                } else if (rawTitle.includes('análise') || rawTitle.includes('analise')) {
+                    displayStatus = 'Analise';
+                } else if (rawTitle.includes('adhoc')) {
+                    displayStatus = 'Adhoc';
+                } else {
+                    displayStatus = 'Analise'; // Fallback
+                }
             }
 
             // Proteção contra status nulo ou em formato de objeto
@@ -211,9 +243,13 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 createdAt: createdAtFormatted,
                 date: formattedDate,
                 slaUpdated: true,
-                status: finalStatus,
+                status: finalStatus, // "Backlog" se for o caso
+                kanbanStatus: displayStatus, // Coluna onde deve aparecer (QP ou Análise)
                 etapa: ticket.stage?.name || '',
-                obs: '', // Adicionando campo de obs para evitar undefined no frontend vindo do sync
+                obs: '',
+                info: pointingMap.get(String(ticket.ticket_number))?.description || '',
+                lastDevCheck: pointingMap.get(String(ticket.ticket_number))?.date_start ? 
+                    pointingMap.get(String(ticket.ticket_number)).date_start.split(' ')[0] : '',
                 closedAt: ticket.closed_at ? ticket.closed_at.split('T')[0].split(' ')[0] : (
                     ticket.is_closed ||
                         ticket.stage?.name?.toLowerCase().includes('concluido') ||
@@ -230,7 +266,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // O usuário pediu especificamente "QP", "Análise" e agora incluir "Preventiva" para controle
         // Incluímos as versões "Concluida" para que o app.js possa atualizar o status local se o ticket fechar no TiFlux
         const filteredDemands = demands.filter(d =>
-            ['Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Adhoc', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
+            ['Backlog', 'Analise', 'QP - Melhoria', 'QP - Correção', 'Preventiva', 'Adhoc', 'Analise Concluida', 'QP - Melhoria Concluida', 'QP - Correção Concluida', 'Adhoc Concluida', 'Preventiva Concluida'].includes(d.status)
         );
 
         return res.json(filteredDemands);

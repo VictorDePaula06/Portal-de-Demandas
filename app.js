@@ -364,8 +364,10 @@ async function fetchDemandasDaAPI() {
                     if (apiTask.responsavel !== localTask.responsavel) changes.push('Responsável');
                     if (apiTask.cliente !== localTask.cliente) changes.push('Cliente');
                     if (apiTask.quality !== localTask.quality) changes.push('Quality');
+                    if (apiTask.info !== localTask.info) changes.push('Informativo');
+                    if (apiTask.lastDevCheck !== localTask.lastDevCheck) changes.push('Verif. Dev');
 
-                    if (changes.length > 0) {
+                    if (changes.length > 0 || shouldProtectBacklog) {
                         updatedTasksCount++;
                         const taskRef = db.collection('tasks').doc(apiTask.id);
 
@@ -375,6 +377,7 @@ async function fetchDemandasDaAPI() {
                         
                         if (shouldProtectBacklog) {
                             taskUpdate.status = 'Backlog';
+                            // Mantém o kanbanStatus vindo da API para saber onde renderizar
                         }
                         
                         if (localTask.date && apiTask.status === localTask.status) {
@@ -3694,7 +3697,7 @@ function renderBoard() {
             </div>
         `;
 
-        const targetCol = document.getElementById(`col-${task.status}`);
+        const targetCol = document.getElementById(`col-${task.kanbanStatus || task.status}`);
         if (targetCol) {
             targetCol.insertAdjacentHTML('beforeend', cardHTML);
         }
