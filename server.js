@@ -68,12 +68,12 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
         // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
         const [openTI, closedTI1, closedTI2, openWeb, closedWeb, openGeneral, closedGeneral] = await Promise.all([
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=200&desk_id=67231&order_by=updated_at&order_direction=desc`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231&order_by=updated_at&order_direction=desc`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&order_by=updated_at&order_direction=desc`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100&order_by=updated_at&order_direction=desc`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230&order_by=updated_at&order_direction=desc`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=200&order_by=updated_at&order_direction=desc`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&order_by=updated_at&order_direction=desc`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&order_by=updated_at&order_direction=desc`, { headers })
         ]);
 
