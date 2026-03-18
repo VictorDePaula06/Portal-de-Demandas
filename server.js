@@ -75,7 +75,11 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=200`, { headers }),
             axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/times?limit=200&order_by=id&order_direction=desc`, { headers })
+            // Fazemos o fetch de apontamentos ser opcional para não quebrar o sync se o endpoint falhar
+            axios.get(`${TIFLUX_API_URL}/times?limit=200&order_by=id&order_direction=desc`, { headers }).catch(err => {
+                console.error('[TIFLUX] Falha ao buscar apontamentos (Endpoint /times não encontrado ou sem acesso):', err.message);
+                return { data: { data: [] } };
+            })
         ]);
 
         let ticketsTI_O = openTI.data?.data || openTI.data || [];
