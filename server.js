@@ -242,7 +242,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                     (ticket.requestor_email) ||
                     '',
                 desc: (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233')) 
-                    ? `${ticket.title} [DBG: title="${rawTitle}", isQP=${isQP}, fStat=${finalStatus}, stage=${rawStage}]` 
+                    ? `[NUM:${ticket.ticket_number}] TI:"${ticket.title || ''}" SUB:"${ticket.subject || ''}" STG:"${ticket.stage?.name || ''}"` 
                     : (ticket.title || 'Descrição Ausente'),
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
