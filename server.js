@@ -92,29 +92,29 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
         });
 
-        // --- BUSCA INDIVIDUAL DE CHAMADOS (Debugging #19233) ---
+        // --- BUSCA INDIVIDUAL DE CHAMADOS ABERTOS NÃO ENCONTRADOS ---
         const openTicketsIds = req.body && req.body.openTickets ? req.body.openTickets : [];
-        const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
-        
-        // FORÇAR BUSCA DO 19233 se não estiver no mapa
-        if (!uniqueMap.has('19233')) {
-            missingIds.push('19233');
-        }
-
-        if (missingIds.length > 0) {
-            console.log(`[SYNC] Buscando ${missingIds.length} chamados faltantes individualmente:`, missingIds.slice(0, 10));
-            const idsToFetch = missingIds.slice(0, 30);
-            const individualPromises = idsToFetch.map(id => 
-                axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
-            );
-            
-            const individualResults = await Promise.all(individualPromises);
-            individualResults.forEach(res => {
-                const ticket = res && (res.data?.data || res.data);
-                if (ticket && ticket.ticket_number) {
-                    uniqueMap.set(String(ticket.ticket_number), ticket);
-                }
-            });
+        if (openTicketsIds.length > 0) {
+            const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
+            if (missingIds.length > 0) {
+                console.log(`[SYNC] Buscando ${missingIds.length} chamados abertos faltantes individualmente:`, missingIds.slice(0, 10));
+                // Limitar a 30 por motivos de segurança contra rate limit da API
+                const idsToFetch = missingIds.slice(0, 30);
+                const individualPromises = idsToFetch.map(id => 
+                    axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
+                );
+                
+                const individualResults = await Promise.all(individualPromises);
+                let addedCount = 0;
+                individualResults.forEach(res => {
+                    const ticket = res && (res.data?.data || res.data);
+                    if (ticket && ticket.ticket_number) {
+                        uniqueMap.set(String(ticket.ticket_number), ticket);
+                        addedCount++;
+                    }
+                });
+                console.log(`[SYNC] Recuperados ${addedCount} chamados individualmente.`);
+            }
         }
 
         // --- MAPEAMENTO DE APONTAMENTOS (DESATIVADO) ---
@@ -241,9 +241,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                     ticket.contact_email ||
                     (ticket.requestor_email) ||
                     '',
-                desc: (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233')) 
-                    ? `[NUM:${ticket.ticket_number}] TI:"${ticket.title || ''}" SUB:"${ticket.subject || ''}" STG:"${ticket.stage?.name || ''}"` 
-                    : (ticket.title || 'Descrição Ausente'),
+                desc: ticket.title || 'Descrição Ausente',
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
                 createdAt: createdAtFormatted,
