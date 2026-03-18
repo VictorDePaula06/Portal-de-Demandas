@@ -88,6 +88,15 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
         // Combinar todos removendo duplicatas por ticket_number
         const allRaw = [...ticketsTI_O, ...ticketsTI_C1, ...ticketsTI_C2, ...ticketsWeb_O, ...ticketsWeb_C, ...ticketsGen_O, ...ticketsGen_C];
+        
+        // DEBUG: Procurar 28324 para espelhamento visual no 19233
+        let debug28324Info = 'Não encontrado na lista bruta.';
+        const dTarget = allRaw.find(t => t && (t.ticket_number == 28324 || String(t.ticket_number).includes('28324')));
+        if (dTarget) {
+            debug28324Info = `ENCONTRADO! Desk: ${dTarget.desk_id} (${dTarget.desk?.name}) | Stage: ${dTarget.stage?.name} | Status: ${dTarget.status?.name || dTarget.status}`;
+        }
+        console.log(`[DEBUG] 28324 Info: ${debug28324Info}`);
+
         const uniqueMap = new Map();
         allRaw.forEach(t => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
@@ -242,7 +251,9 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                     ticket.contact_email ||
                     (ticket.requestor_email) ||
                     '',
-                desc: ticket.title || 'Descrição Ausente',
+                desc: (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233'))
+                    ? `[DBG 28324: ${debug28324Info}] ${ticket.title}`
+                    : (ticket.title || 'Descrição Ausente'),
                 prioridade: ticket.priority?.name === 'High' ? 'Alta' : (ticket.priority?.name === 'Normal' ? 'Normal' : 'Baixa'),
                 responsavel: ticket.responsible?.name || 'Não atribuído',
                 createdAt: createdAtFormatted,
