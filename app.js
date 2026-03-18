@@ -352,10 +352,8 @@ async function fetchDemandasDaAPI() {
                     // nós permitimos a atualização para que ele mova para a aba de concluídos.
                     const changes = [];
                     
-                    // Proteção Backlog: Não detectar mudança de status se estiver em Backlog no local e não estiver concluído na API
-                    const shouldProtectBacklog = localTask.status === 'Backlog' && !isApiTaskCompleted;
                     
-                    if (apiTask.status !== localTask.status && !shouldProtectBacklog) {
+                    if (apiTask.status !== localTask.status) {
                         changes.push('Status');
                     }
                     
@@ -367,7 +365,7 @@ async function fetchDemandasDaAPI() {
                     if (apiTask.info !== localTask.info) changes.push('Informativo');
                     if (apiTask.lastDevCheck !== localTask.lastDevCheck) changes.push('Verif. Dev');
 
-                    if (changes.length > 0 || shouldProtectBacklog) {
+                    if (changes.length > 0) {
                         updatedTasksCount++;
                         const taskRef = db.collection('tasks').doc(apiTask.id);
 
@@ -375,10 +373,6 @@ async function fetchDemandasDaAPI() {
                         // EXCETO se o status mudou (ex: de Analise para QP), onde o prazo deve ser recalculado
                         const taskUpdate = { ...apiTask };
                         
-                        if (shouldProtectBacklog) {
-                            taskUpdate.status = 'Backlog';
-                            // Mantém o kanbanStatus vindo da API para saber onde renderizar
-                        }
                         
                         if (localTask.date && apiTask.status === localTask.status) {
                             taskUpdate.date = localTask.date;
