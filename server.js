@@ -64,32 +64,31 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         // --- CÓDIGO DE INTEGRAÇÃO REAL (Comentado) ---
         // Adicionando limit=150 para que ele puxe mais chamados que possam estar em páginas anteriores do TiFlux
         // Dispara requisições em paralelo para otimizar o tempo de resposta
-        // O TiFlux V2 retorna erro HTTP 400 se as queries de listagem limitarem mais que 100 por conta.
-        // O parâmetro correto para paginação é "offset" (ex: offset=100).
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
-        // Expandindo busca para capturar chamados reabertos antigos que saíram da 1ª página.
-        // Buscamos 3 páginas de 100 (offsets 0, 100, 200) para cada mesa principal e busca geral.
+        // Sincronização Inteligente por Etapas Críticas (Kanban)
+        // Isso garante que capturamos TODOS os chamados nessas colunas, sem depender de data de criação.
         const [
-            oTI1, oTI2, oTI3,  // Suporte TI (67231)
-            oWeb1, oWeb2, oWeb3, // webPosto (67230)
-            oGen1, oGen2, oGen3  // Geral
+            sAnalise, sQPMelhoria, sQPCorrecao, sBacklog, sAdhoc, sRetorno, // Desk 67230
+            sPreventiva,                                                  // Desk 67231
+            oGen1, oGen2                                                  // Busca geral (novos/outros)
         ] = await Promise.all([
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231&offset=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231&offset=200`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230&offset=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230&offset=200`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&offset=100`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&offset=200`, { headers })
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=405766`, { headers }), // Análise
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=428638`, { headers }), // QP Melhoria
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=428637`, { headers }), // QP Correção
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=428640`, { headers }), // Backlog
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=428877`, { headers }), // ADHOC
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=406213`, { headers }), // Retorno
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&stage_id=428639`, { headers }), // Preventiva (67231)
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),                 // Geral Página 1
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&offset=100`, { headers })       // Geral Página 2
         ]);
 
         const extract = r => r.data?.data || r.data || [];
         const allRaw = [
-            ...extract(oTI1), ...extract(oTI2), ...extract(oTI3),
-            ...extract(oWeb1), ...extract(oWeb2), ...extract(oWeb3),
-            ...extract(oGen1), ...extract(oGen2), ...extract(oGen3)
+            ...extract(sAnalise), ...extract(sQPMelhoria), ...extract(sQPCorrecao),
+            ...extract(sBacklog), ...extract(sAdhoc), ...extract(sRetorno),
+            ...extract(sPreventiva),
+            ...extract(oGen1), ...extract(oGen2)
         ];
 
         const uniqueMap = new Map();
