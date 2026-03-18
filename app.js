@@ -342,9 +342,9 @@ async function fetchDemandasDaAPI() {
                     // Proteção contra sobrescrita de demandas já concluídas localmente
                     const isLocalCompleted = localTask.status && localTask.status.includes('Concluida');
 
-                    // Se já está concluído localmente, e no TiFlux também está, ignoramos.
-                    // MAS se no TiFlux ele foi REABERTO (agora não contém 'Concluida'), permitimos a atualização.
-                    if (isLocalCompleted && isApiTaskCompleted) {
+                    // Se já está concluído localmente, e no TiFlux também está, mas o status da categoria (Analise/QP) mudou, permitimos a atualização.
+                    // Isso resolve o problema de categorias erradas em chamados que já estão fechados.
+                    if (isLocalCompleted && isApiTaskCompleted && localTask.status === apiTask.status) {
                         return;
                     }
 
