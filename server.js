@@ -68,13 +68,13 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         const headers = { 'Authorization': `Bearer ${TIFLUX_API_TOKEN}` };
         // Para garantir que preventivas não sumam, buscamos especificamente o desk_id=67231 (Suporte TI).
         const [openTI, closedTI1, closedTI2, openWeb, closedWeb, openGeneral, closedGeneral] = await Promise.all([
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&order_by=updated_at&order_direction=desc`, { headers }),
-            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&order_by=updated_at&order_direction=desc`, { headers })
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67231`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67231&offset=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&desk_id=67230`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true&desk_id=67230`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100`, { headers }),
+            axios.get(`${TIFLUX_API_URL}/tickets?limit=100&is_closed=true`, { headers })
         ]);
 
         let ticketsTI_O = openTI.data?.data || openTI.data || [];
@@ -92,29 +92,29 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             if (t && t.ticket_number) uniqueMap.set(String(t.ticket_number), t);
         });
 
-        // --- BUSCA INDIVIDUAL DE CHAMADOS ABERTOS NÃO ENCONTRADOS ---
+        // --- BUSCA INDIVIDUAL DE CHAMADOS (Debugging #19233) ---
         const openTicketsIds = req.body && req.body.openTickets ? req.body.openTickets : [];
-        if (openTicketsIds.length > 0) {
-            const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
-            if (missingIds.length > 0) {
-                console.log(`[SYNC] Buscando ${missingIds.length} chamados abertos faltantes individualmente:`, missingIds.slice(0, 10));
-                // Limitar a 30 por motivos de segurança contra rate limit da API
-                const idsToFetch = missingIds.slice(0, 30);
-                const individualPromises = idsToFetch.map(id => 
-                    axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
-                );
-                
-                const individualResults = await Promise.all(individualPromises);
-                let addedCount = 0;
-                individualResults.forEach(res => {
-                    const ticket = res && res.data;
-                    if (ticket && ticket.ticket_number) {
-                        uniqueMap.set(String(ticket.ticket_number), ticket);
-                        addedCount++;
-                    }
-                });
-                console.log(`[SYNC] Recuperados ${addedCount} chamados individualmente.`);
-            }
+        const missingIds = openTicketsIds.filter(id => !uniqueMap.has(String(id)));
+        
+        // FORÇAR BUSCA DO 19233 se não estiver no mapa
+        if (!uniqueMap.has('19233')) {
+            missingIds.push('19233');
+        }
+
+        if (missingIds.length > 0) {
+            console.log(`[SYNC] Buscando ${missingIds.length} chamados faltantes individualmente:`, missingIds.slice(0, 10));
+            const idsToFetch = missingIds.slice(0, 30);
+            const individualPromises = idsToFetch.map(id => 
+                axios.get(`${TIFLUX_API_URL}/tickets/${id}`, { headers }).catch(e => null)
+            );
+            
+            const individualResults = await Promise.all(individualPromises);
+            individualResults.forEach(res => {
+                const ticket = res && (res.data?.data || res.data);
+                if (ticket && ticket.ticket_number) {
+                    uniqueMap.set(String(ticket.ticket_number), ticket);
+                }
+            });
         }
 
         // --- MAPEAMENTO DE APONTAMENTOS (DESATIVADO) ---
