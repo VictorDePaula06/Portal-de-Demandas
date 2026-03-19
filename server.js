@@ -155,6 +155,7 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
             const isQP = /qp|quality|melhoria|melhorar/i.test(rawTitle) || /qp/i.test(rawStage);
             const isAnalise = /analis/i.test(rawTitle) || /analis/i.test(rawStage);
             const isAdhoc = /adhoc/i.test(rawTitle) || /adhoc/i.test(rawStage);
+            const isPreventiva = /preventiva/i.test(rawTitle) || /preventiva/i.test(rawStage);
 
             if (ticket.ticket_number == 19233 || String(ticket.ticket_number).includes('19233')) {
                 console.log(`[DEBUG 19233] rawTitle: "${rawTitle}"`);
@@ -163,6 +164,8 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
 
             if (isAdhoc) {
                 finalStatus = 'Adhoc';
+            } else if (isPreventiva) {
+                finalStatus = 'Preventiva';
             } else if (isQP) {
                 // Tenta diferenciar Melhoria de Correção por palavras-chave no título
                 if (rawTitle.includes('[m]') || rawTitle.includes('melhoria') || rawTitle.includes('melhorar')) {
@@ -172,8 +175,6 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
                 }
             } else if (isAnalise) {
                 finalStatus = 'Analise';
-            } else if (rawStage.includes('preventiva')) {
-                finalStatus = 'Preventiva';
             } else if (rawStage.includes('backlog')) {
                 finalStatus = 'Backlog';
             } else {
