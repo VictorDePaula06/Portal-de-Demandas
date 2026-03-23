@@ -2710,8 +2710,10 @@ if (btnGenerateImplantacoesPDF) {
             const status = normalize(imp.status || 'Pendente');
             const filter = normalize(statusFilter);
 
-            if (filter === 'pendente' && status === 'concluido') return;
-            if (filter === 'concluido' && status !== 'concluido') return;
+            const isConcluido = status.startsWith('concluid');
+
+            if (filter === 'pendente' && isConcluido) return;
+            if (filter === 'concluido' && !isConcluido) return;
 
             reportRows.push([
                 sanitizeForPDF(imp.rede || '-'),
