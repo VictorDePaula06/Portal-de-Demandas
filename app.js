@@ -2700,14 +2700,18 @@ if (btnGenerateImplantacoesPDF) {
 
 
         // Filtrar implantações
+        const normalize = (s) => (s || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        
         getFilteredItems(implantacoes, 'implantacao').forEach(imp => {
             // Filtro de Mês (previsao: "YYYY-MM-DD")
             if (imp.previsao && !imp.previsao.startsWith(monthFilter)) return;
 
             // Filtro de Status
-            const status = (imp.status || 'Pendente').toLowerCase();
-            if (statusFilter === 'pendente' && status === 'concluido') return;
-            if (statusFilter === 'concluido' && status !== 'concluido') return;
+            const status = normalize(imp.status || 'Pendente');
+            const filter = normalize(statusFilter);
+
+            if (filter === 'pendente' && status === 'concluido') return;
+            if (filter === 'concluido' && status !== 'concluido') return;
 
             reportRows.push([
                 sanitizeForPDF(imp.rede || '-'),
