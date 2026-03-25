@@ -653,7 +653,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Chamado</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Posto</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Descrição</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${title.includes('Concluída') ? 'Conclusão' : 'Vencimento'}</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${title.toLowerCase().normalize("NFD").includes('concluid') ? 'Conclusão' : 'Vencimento'}</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Status / Etapa</th>
                     </tr>
                 </thead>
@@ -661,7 +661,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
         `;
 
         taskList.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
-            const isCompleted = title.includes('Concluída');
+            const isCompleted = title.toLowerCase().normalize("NFD").includes('concluid');
             const isOverdue = !isCompleted && t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
             const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
             
@@ -675,7 +675,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
             const formattedDisplayDate = rawDate ? rawDate.split('T')[0].split(' ')[0].split('-').reverse().join('/') : 'S/D';
             
             let displayStatus = t.status;
-            if (title.includes('Concluída')) {
+            if (isCompleted) {
                 displayStatus = 'Concluída';
             } else if (t.status && t.status.includes('QP')) {
                 displayStatus = 'Em andamento';
