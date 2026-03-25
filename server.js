@@ -653,7 +653,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Chamado</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Posto</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Descrição</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Vencimento</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${title.includes('Concluída') ? 'Conclusão' : 'Vencimento'}</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Status / Etapa</th>
                     </tr>
                 </thead>
@@ -661,9 +661,18 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
         `;
 
         taskList.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
-            const isOverdue = !title.includes('Concluída') && t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
+            const isCompleted = title.includes('Concluída');
+            const isOverdue = !isCompleted && t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
             const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
-            const formattedDueDate = t.date ? t.date.split('-').reverse().join('/') : 'S/D';
+            
+            // Determinar data a ser exibida (Vencimento ou Conclusão)
+            let rawDate = t.date;
+            if (isCompleted) {
+                rawDate = t.closedAt || t.updatedAt;
+                if (rawDate && typeof rawDate.toDate === 'function') rawDate = rawDate.toDate().toISOString();
+                else if (rawDate && rawDate._seconds) rawDate = new Date(rawDate._seconds * 1000).toISOString();
+            }
+            const formattedDisplayDate = rawDate ? rawDate.split('T')[0].split(' ')[0].split('-').reverse().join('/') : 'S/D';
             
             let displayStatus = t.status;
             if (title.includes('Concluída')) {
@@ -684,7 +693,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">#${t.number}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${t.cliente}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${t.desc}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px; ${statusStyle}">${formattedDueDate} ${isOverdue ? '⏰' : ''}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px; ${statusStyle}">${formattedDisplayDate} ${isOverdue ? '⏰' : ''}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${displayStatus}</td>
                 </tr>
             `;
