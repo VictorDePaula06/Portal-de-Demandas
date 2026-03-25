@@ -521,7 +521,7 @@ app.post('/api/send-completion-email', async (req, res) => {
 app.post('/api/send-network-report', async (req, res) => {
     if (!db) return res.status(503).json({ error: 'Firebase Admin não configurado.' });
 
-    const { networkId } = req.body;
+    const { networkId, includeClosed } = req.body;
     if (!networkId) return res.status(400).json({ error: 'ID da rede não fornecido.' });
 
     const networkSnap = await db.collection('networks').doc(networkId).get();
@@ -532,7 +532,7 @@ app.post('/api/send-network-report', async (req, res) => {
     const recipient = network.reportEmail.toString().replace(/;/g, ',');
 
     try {
-        const result = await processNetworkReport(networkId, recipient); // Pass recipient to processNetworkReport
+        const result = await processNetworkReport(networkId, recipient, includeClosed); 
         res.json(result);
     } catch (error) {
         console.error('Erro ao processar relatório de rede:', error);
@@ -573,7 +573,7 @@ app.get('/api/cron/network-reports', async (req, res) => {
 /**
  * Função Nucleo para Gerar e Enviar Relatório de Rede
  */
-async function processNetworkReport(networkId, customRecipient = null) {
+async function processNetworkReport(networkId, customRecipient = null, includeClosed = false) {
     const networkSnap = await db.collection('networks').doc(networkId).get();
     if (!networkSnap.exists) throw new Error('Rede não encontrada.');
     
@@ -588,11 +588,10 @@ async function processNetworkReport(networkId, customRecipient = null) {
 
     if (clientNames.length === 0) return { success: true, status: 'skipped', reason: 'Nenhum posto ativo na rede.' };
 
-    // 2. Buscar demandas abertas para estes postos
-    // Firestore não suporta "IN" com muitos itens (>30), então buscamos todas as abertas e filtramos em memória
-    // ou fazemos múltiplas queries. Como o volume de demandas abertas costuma ser controlado, filtramos em memória.
+    // 2. Buscar demandas para estes postos
     const tasksSnap = await db.collection('tasks').get();
     const openTasks = [];
+    const closedTasks = [];
     
     tasksSnap.forEach(doc => {
         const t = doc.data();
@@ -611,8 +610,12 @@ async function processNetworkReport(networkId, customRecipient = null) {
             return taskClientNormalized.includes(cnNormalized) || cnNormalized.includes(taskClientNormalized);
         });
 
-        if (!isClosed && isMatch) {
-            openTasks.push({ id: doc.id, ...t });
+        if (isMatch) {
+            if (!isClosed) {
+                openTasks.push({ id: doc.id, ...t });
+            } else if (includeClosed) {
+                closedTasks.push({ id: doc.id, ...t });
+            }
         }
     });
 
@@ -639,62 +642,63 @@ async function processNetworkReport(networkId, customRecipient = null) {
     const dateStr = new Date().toLocaleDateString('pt-BR');
     let tasksHtml = '';
     
-    if (openTasks.length > 0) {
-        // Agrupar por status ou apenas listar
-        tasksHtml = `
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: sans-serif;">
+    const renderTable = (taskList, title, color) => {
+        if (taskList.length === 0) return '';
+        
+        let html = `
+            <h3 style="color: ${color}; margin-top: 30px; border-bottom: 2px solid ${color}; padding-bottom: 5px;">${title}</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-family: sans-serif;">
                 <thead>
                     <tr style="background-color: #f3f4f6; text-align: left;">
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Chamado</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Posto</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Descrição</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Vencimento</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Última Verif. Dev</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb;">Status / Etapa</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Chamado</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Posto</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Descrição</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Vencimento</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Status / Etapa</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        openTasks.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
-            const isOverdue = t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
+        taskList.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
+            const isOverdue = !title.includes('Concluída') && t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
             const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
-            
-            // Formatar data para PT-BR
             const formattedDueDate = t.date ? t.date.split('-').reverse().join('/') : 'S/D';
             
-            // Mapear status amigável (se for QP, mostra Em andamento + etapa)
             let displayStatus = t.status;
             if (t.status && t.status.includes('QP')) {
-                displayStatus = 'Em andamento';
+                displayStatus = title.includes('Concluída') ? 'Concluída' : 'Em andamento';
             }
-            if (t.etapa) {
+            if (t.etapa && !title.includes('Concluída')) {
                 const statusNormalized = displayStatus.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const etapaNormalized = t.etapa.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                
-                // Only append if it's not redundant (e.g. "Analise (Análise)" or "Em andamento (Pending)" where 'pending' means 'em andamento')
                 if (!statusNormalized.includes(etapaNormalized) && !etapaNormalized.includes(statusNormalized) && etapaNormalized !== 'pending') {
                     displayStatus += ` (${t.etapa})`;
                 }
             }
 
-            tasksHtml += `
+            html += `
                 <tr>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb;">#${t.number}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.cliente}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.desc}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb; ${statusStyle}">${formattedDueDate} ${isOverdue ? '⏰' : ''}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${t.lastDevCheck ? t.lastDevCheck.split('-').reverse().join('/') : '-'}</td>
-                    <td style="padding: 10px; border: 1px solid #e5e7eb;">${displayStatus}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">#${t.number}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${t.cliente}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${t.desc}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px; ${statusStyle}">${formattedDueDate} ${isOverdue ? '⏰' : ''}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${displayStatus}</td>
                 </tr>
             `;
         });
 
-        tasksHtml += `</tbody></table>`;
+        html += `</tbody></table>`;
+        return html;
+    };
+
+    if (openTasks.length > 0 || closedTasks.length > 0) {
+        tasksHtml = renderTable(openTasks, 'Demandas em Aberto', '#2563eb');
+        tasksHtml += renderTable(closedTasks, 'Demandas Recém Concluídas', '#10b981');
     } else {
         tasksHtml = `
             <div style="padding: 20px; background-color: #f0fdf4; color: #166534; border-radius: 8px; margin-top: 20px; text-align: center;">
-                <strong>Excelente!</strong> Não existem demandas abertas para os postos desta rede no momento.
+                <strong>Excelente!</strong> Não existem demandas pendentes para os postos desta rede no momento.
             </div>
         `;
     }
@@ -707,7 +711,7 @@ async function processNetworkReport(networkId, customRecipient = null) {
             </div>
             <div style="padding: 30px; background-color: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
                 <p>Olá,</p>
-                <p>Segue abaixo a listagem consolidada de todas as demandas que encontram-se <strong>abertas</strong> no portal para os postos da rede <strong>${network.name}</strong>.</p>
+                <p>Segue abaixo a listagem consolidada das demandas para os postos da rede <strong>${network.name}</strong>.</p>
                 
                 ${tasksHtml}
 
@@ -720,14 +724,16 @@ async function processNetworkReport(networkId, customRecipient = null) {
     `;
 
     // 5. Enviar e-mail
+    const subjectPrefix = (openTasks.length > 0 && closedTasks.length > 0) ? '[RELATÓRIO CONSOLIDADO]' : (openTasks.length > 0 ? '[RELATÓRIO] Demandas Abertas' : '[RELATÓRIO] Demandas Concluídas');
+    
     await transporter.sendMail({
         from: `"${emailSettings.senderName || 'GTHolding Suporte'}" <${emailSettings.senderEmail || emailSettings.smtpUser}>`,
         to: recipient,
-        subject: `[RELATÓRIO] Demandas Abertas - Rede ${network.name} - ${dateStr}`,
+        subject: `${subjectPrefix} - Rede ${network.name} - ${dateStr}`,
         html: fullHtml
     });
 
-    return { success: true, status: 'sent', taskCount: openTasks.length };
+    return { success: true, status: 'sent', openCount: openTasks.length, closedCount: closedTasks.length };
 }
 
 /**

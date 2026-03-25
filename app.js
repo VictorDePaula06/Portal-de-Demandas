@@ -42,18 +42,31 @@ const formatDate = (dateStr) => {
 };
 
 // --- Custom Modal System ---
-function showConfirmModal(title, message, onConfirm, isCritical = false) {
+function showConfirmModal(title, message, onConfirm, isCritical = false, options = null) {
     const modal = document.getElementById('customConfirmModal');
     const titleEl = document.getElementById('confirmTitle');
     const messageEl = document.getElementById('confirmMessage');
     const btnAccept = document.getElementById('btnAcceptConfirm');
     const btnCancel = document.getElementById('btnCancelConfirm');
     const iconContainer = document.getElementById('confirmIcon');
+    const confirmOptions = document.getElementById('confirmOptions');
+    const confirmCheckbox = document.getElementById('confirmCheckbox');
+    const confirmCheckboxLabel = document.getElementById('confirmCheckboxLabel');
 
     if (!modal || !titleEl || !messageEl || !btnAccept || !btnCancel) return;
 
     titleEl.textContent = title;
     messageEl.textContent = message;
+
+    // Gerenciar opções extras
+    if (options && options.checkboxLabel) {
+        confirmOptions.style.display = 'block';
+        confirmCheckboxLabel.textContent = options.checkboxLabel;
+        confirmCheckbox.checked = options.checkboxChecked || false;
+    } else {
+        confirmOptions.style.display = 'none';
+        confirmCheckbox.checked = false;
+    }
 
     // Ajustar cores baseadas na criticidade
     if (isCritical) {
@@ -75,7 +88,11 @@ function showConfirmModal(title, message, onConfirm, isCritical = false) {
     }
 
     const handleConfirm = () => {
-        onConfirm();
+        const result = {
+            confirmed: true,
+            checkbox: confirmCheckbox.checked
+        };
+        onConfirm(result);
         closeCustomConfirm();
     };
 
@@ -83,6 +100,8 @@ function showConfirmModal(title, message, onConfirm, isCritical = false) {
         modal.classList.remove('active');
         btnAccept.removeEventListener('click', handleConfirm);
         btnCancel.removeEventListener('click', closeCustomConfirm);
+        // Reset checkbox for next time
+        confirmOptions.style.display = 'none';
     };
 
     btnAccept.addEventListener('click', handleConfirm);
@@ -1369,15 +1388,18 @@ window.sendNetworkReport = async function(networkId) {
 
     showConfirmModal(
         'Enviar Relatório',
-        `Deseja enviar o relatório de demandas abertas para o e-mail: ${network.reportEmail}?`,
-        async () => {
+        `Deseja enviar o relatório de demandas para o e-mail: ${network.reportEmail}?`,
+        async (res) => {
             showToast('Gerando e enviando relatório...');
 
             try {
                 const response = await fetch('/api/send-network-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ networkId: networkId })
+                    body: JSON.stringify({ 
+                        networkId: networkId,
+                        includeClosed: res.checkbox 
+                    })
                 });
 
                 const result = await response.json();
@@ -1390,7 +1412,9 @@ window.sendNetworkReport = async function(networkId) {
                 console.error('Erro ao disparar relatório:', error);
                 showToast('Erro de conexão com o servidor.', 'critical');
             }
-        }
+        },
+        false, // not critical
+        { checkboxLabel: 'Incluir demandas concluídas junto com as abertas' }
     );
 }
 
@@ -1911,7 +1935,15 @@ function openEditModal(id) {
 
             if (emailStatusSelect) {
                 emailStatusSelect.style.display = hasValidEmail ? 'block' : 'none';
-                emailStatusSelect.value = task.status === 'Backlog' ? 'Backlog' : 'Em andamento';
+                
+                // Se a demanda já possui status de concluída, sincroniza o dropdown de e-mail
+                const isConcluidoStatus = (task.status || '').toLowerCase().includes('concluid');
+                if (isConcluidoStatus) {
+                    emailStatusSelect.value = 'Concluído';
+                } else {
+                    emailStatusSelect.value = task.status === 'Backlog' ? 'Backlog' : 'Em andamento';
+                }
+                
                 emailStatusSelect.disabled = isClientUser;
 
                 // Sincronizar com o status principal quando alterado
