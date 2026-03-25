@@ -654,7 +654,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Posto</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Descrição</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Solicitado</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${title.toLowerCase().normalize("NFD").includes('concluid') ? 'Conclusão' : 'Previsão'}</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${/concluid/i.test(title.normalize("NFD").replace(/[\u0300-\u036f]/g, "")) ? 'Conclusão' : 'Previsão'}</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Status / Etapa</th>
                     </tr>
                 </thead>
@@ -662,7 +662,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
         `;
 
         taskList.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
-            const isCompleted = title.toLowerCase().normalize("NFD").includes('concluid');
+            const isCompleted = /concluid/i.test(title.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
             
             // Determinar Status de Exibição
             let displayStatus = t.status;

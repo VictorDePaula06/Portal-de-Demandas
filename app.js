@@ -3688,7 +3688,7 @@ function renderBoard() {
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    Data Abertura: ${createdDisplay}
+                    Abertura: ${createdDisplay} ${isCompleted ? ` | Conclusão: ${formatDate(task.closedAt || task.updatedAt)}` : ''}
                 </div>
                 <div style="font-size: 0.70rem; color: var(--text-muted); margin-top: 2px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 10px;">
                     <div style="display: flex; align-items: center; gap: 4px;">
