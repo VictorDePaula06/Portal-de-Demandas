@@ -653,7 +653,8 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Chamado</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Posto</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Descrição</th>
-                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${title.toLowerCase().normalize("NFD").includes('concluid') ? 'Conclusão' : 'Vencimento'}</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Solicitado</th>
+                        <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">${title.toLowerCase().normalize("NFD").includes('concluid') ? 'Conclusão' : 'Previsão'}</th>
                         <th style="padding: 12px; border: 1px solid #e5e7eb; font-size: 13px;">Status / Etapa</th>
                     </tr>
                 </thead>
@@ -662,25 +663,15 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
 
         taskList.sort((a,b) => (a.date || '').localeCompare(b.date || '')).forEach(t => {
             const isCompleted = title.toLowerCase().normalize("NFD").includes('concluid');
-            const isOverdue = !isCompleted && t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
-            const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
             
-            // Determinar data a ser exibida (Vencimento ou Conclusão)
-            let rawDate = t.date;
-            if (isCompleted) {
-                rawDate = t.closedAt || t.updatedAt;
-                if (rawDate && typeof rawDate.toDate === 'function') rawDate = rawDate.toDate().toISOString();
-                else if (rawDate && rawDate._seconds) rawDate = new Date(rawDate._seconds * 1000).toISOString();
-            }
-            const formattedDisplayDate = rawDate ? rawDate.split('T')[0].split(' ')[0].split('-').reverse().join('/') : 'S/D';
-            
+            // Determinar Status de Exibição
             let displayStatus = t.status;
             if (isCompleted) {
                 displayStatus = 'Concluída';
             } else if (t.status && t.status.includes('QP')) {
                 displayStatus = 'Em andamento';
             }
-            if (t.etapa && !title.includes('Concluída')) {
+            if (t.etapa && !isCompleted) {
                 const statusNormalized = displayStatus.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const etapaNormalized = t.etapa.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 if (!statusNormalized.includes(etapaNormalized) && !etapaNormalized.includes(statusNormalized) && etapaNormalized !== 'pending') {
@@ -688,11 +679,36 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                 }
             }
 
+            const isOverdue = !isCompleted && t.date && displayStatus !== 'Backlog' && new Date(t.date) < new Date().setHours(0,0,0,0);
+            const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
+            
+            // Data Solicitado (createdAt)
+            let rawSolicitado = t.createdAt;
+            if (rawSolicitado && typeof rawSolicitado.toDate === 'function') rawSolicitado = rawSolicitado.toDate().toISOString();
+            else if (rawSolicitado && rawSolicitado._seconds) rawSolicitado = new Date(rawSolicitado._seconds * 1000).toISOString();
+            const formattedSolicitadoDate = rawSolicitado ? rawSolicitado.split('T')[0].split(' ')[0].split('-').reverse().join('/') : (t.date ? t.date.split('-').reverse().join('/') : 'S/D');
+
+            // Determinar data a ser exibida (Previsão ou Conclusão)
+            let rawDate = t.date;
+            if (isCompleted) {
+                rawDate = t.closedAt || t.updatedAt;
+                if (rawDate && typeof rawDate.toDate === 'function') rawDate = rawDate.toDate().toISOString();
+                else if (rawDate && rawDate._seconds) rawDate = new Date(rawDate._seconds * 1000).toISOString();
+            }
+            
+            let formattedDisplayDate = 'S/D';
+            if (displayStatus === 'Backlog') {
+                formattedDisplayDate = '-';
+            } else if (rawDate) {
+                formattedDisplayDate = rawDate.split('T')[0].split(' ')[0].split('-').reverse().join('/');
+            }
+
             html += `
                 <tr>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">#${t.number}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${t.cliente}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${t.desc}</td>
+                    <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${formattedSolicitadoDate}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px; ${statusStyle}">${formattedDisplayDate} ${isOverdue ? '⏰' : ''}</td>
                     <td style="padding: 10px; border: 1px solid #e5e7eb; font-size: 12px;">${displayStatus}</td>
                 </tr>
