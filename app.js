@@ -4179,6 +4179,21 @@ function renderImplantacoesBoard() {
         tr.className = 'cs-table-row';
         tr.style.borderBottom = '1px solid var(--border-color)';
 
+        // Status color logic
+        let statusClass = 'badge-neutral';
+        const st = (imp.status || '').toLowerCase();
+        if (st.includes('concluido')) statusClass = 'badge-success';
+        else if (st.includes('andamento')) statusClass = 'badge-warning';
+        else if (st.includes('contrato')) statusClass = 'badge-neutral';
+        else if (st.includes('base')) statusClass = 'badge-critical';
+
+        // Quality color logic
+        let qualityClass = 'badge-neutral';
+        const q = (imp.qualidade || '').toUpperCase();
+        if (q === 'EXCELENTE') qualityClass = 'badge-success';
+        else if (q === 'BOM' || q === 'REGULAR') qualityClass = 'badge-warning';
+        else if (q === 'RUIM') qualityClass = 'badge-critical';
+
         tr.innerHTML = `
             <td style="padding: 1.2rem 1rem; color: var(--text-primary); font-weight: 600;">${imp.rede || '-'}</td>
             <td style="padding: 1.2rem 1rem; color: var(--text-primary); font-weight: 500;">${imp.unidade || '-'}</td>
@@ -4187,8 +4202,8 @@ function renderImplantacoesBoard() {
             <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.tipo || '-'}</td>
             <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.contrato || '-'}</td>
             <td style="padding: 1.2rem 1rem; color: var(--text-secondary); font-size: 0.85rem;">${imp.implantador || '-'}</td>
-            <td style="padding: 1.2rem 1rem;"><span class="cs-badge badge-neutral">${imp.status || 'Pendente'}</span></td>
-            <td style="padding: 1.2rem 1rem;"><span class="cs-badge badge-success">${imp.qualidade || '-'}</span></td>
+            <td style="padding: 1.2rem 1rem;"><span class="cs-badge ${statusClass}">${imp.status || 'Pendente'}</span></td>
+            <td style="padding: 1.2rem 1rem;"><span class="cs-badge ${qualityClass}">${imp.qualidade || '-'}</span></td>
             <td style="padding: 1.2rem 1rem; white-space: nowrap;">
                 <button class="btn-icon" onclick="window.editImplantation('${imp.id}')" title="Editar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
