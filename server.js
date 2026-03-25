@@ -666,8 +666,10 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
             const formattedDueDate = t.date ? t.date.split('-').reverse().join('/') : 'S/D';
             
             let displayStatus = t.status;
-            if (t.status && t.status.includes('QP')) {
-                displayStatus = title.includes('Concluída') ? 'Concluída' : 'Em andamento';
+            if (title.includes('Concluída')) {
+                displayStatus = 'Concluída';
+            } else if (t.status && t.status.includes('QP')) {
+                displayStatus = 'Em andamento';
             }
             if (t.etapa && !title.includes('Concluída')) {
                 const statusNormalized = displayStatus.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
