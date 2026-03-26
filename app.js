@@ -330,7 +330,8 @@ async function fetchDemandasDaAPI() {
             response = await fetch('/demandas', fetchOptions);
         }
         if (!response.ok) {
-            throw new Error('Falha ao buscar demandas do servidor');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Falha ao buscar demandas do servidor');
         }
         const apiTasks = await response.json();
 
@@ -457,7 +458,7 @@ async function fetchDemandasDaAPI() {
         }
     } catch (error) {
         console.error('Erro de integração:', error);
-        showToast('Erro ao sincronizar com TiFlux (Servidor offline?)');
+        showToast(`Erro ao sincronizar: ${error.message}`, 'critical');
         if (lastSyncLabel) lastSyncLabel.innerText = 'Erro ao sincronizar';
     } finally {
         // Visual Feedback: Stop Rotation & Enable Button

@@ -298,7 +298,13 @@ app.all(['/api/demandas', '/demandas', '/'], async (req, res) => {
         return res.json(filteredDemands);
     } catch (e) {
         console.error('Erro na API:', e);
-        res.status(500).json({ error: e.message });
+        let message = e.message;
+        if (e.response && e.response.status === 401) {
+            message = "TiFlux: Erro de Autorização (401). Verifique se o token de API está ativo e se a conta possui licença de API.";
+        } else if (e.response && e.response.data && e.response.data.message) {
+            message = `TiFlux: ${e.response.data.message}`;
+        }
+        res.status(500).json({ error: message });
     }
 });
 
