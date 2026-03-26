@@ -331,7 +331,7 @@ async function fetchDemandasDaAPI() {
         }
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Falha ao buscar demandas do servidor');
+            throw new Error(errorData.error || `O servidor retornou um erro (Status ${response.status})`);
         }
         const apiTasks = await response.json();
 
