@@ -325,10 +325,15 @@ async function fetchDemandasDaAPI() {
         };
 
         let response = await fetch('/api/demandas', fetchOptions);
-        if (!response.ok) {
-            // Fallback para caso a Vercel esteja limpando o prefixo /api
-            response = await fetch('/demandas', fetchOptions);
+        
+        // Se falhou e foi 404, tenta o fallback sem o prefixo /api
+        if (!response.ok && response.status === 404) {
+            const fallbackResponse = await fetch('/demandas', fetchOptions).catch(() => null);
+            if (fallbackResponse && fallbackResponse.ok) {
+                response = fallbackResponse;
+            }
         }
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || `O servidor retornou um erro (Status ${response.status})`);
