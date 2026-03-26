@@ -373,7 +373,9 @@ app.post('/api/send-overdue-emails', async (req, res) => {
                             <strong style="display: block; margin-bottom: 5px; color: #1e293b;">#${task.number} - ${task.desc}</strong>
                             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
                             <p style="margin: 0; font-size: 14px;"><strong>Status Atual:</strong> <span style="color: #2563eb;">${task.emailStatus || task.status}</span></p>
+                            ${!( (task.emailStatus || task.status || '').toLowerCase().includes('backlog') || (task.etapa || '').toLowerCase().includes('backlog') ) ? `
                             <p style="margin: 5px 0 0 0; font-size: 14px;"><strong>Previsão/Vencimento:</strong> ${taskDateBR}</p>
+                            ` : ''}
                         </div>
 
                         ${(task.info || task.obs) ? `
@@ -679,7 +681,8 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
                 }
             }
 
-            const isOverdue = !isCompleted && t.date && displayStatus !== 'Backlog' && new Date(t.date) < new Date().setHours(0,0,0,0);
+            const isBacklog = (t.status || '').toLowerCase().includes('backlog') || (t.etapa || '').toLowerCase().includes('backlog');
+            const isOverdue = !isCompleted && !isBacklog && t.date && new Date(t.date) < new Date().setHours(0,0,0,0);
             const statusStyle = isOverdue ? 'color: #ef4444; font-weight: bold;' : '';
             
             // Data Solicitado (createdAt)
@@ -697,7 +700,7 @@ async function processNetworkReport(networkId, customRecipient = null, includeCl
             }
             
             let formattedDisplayDate = 'S/D';
-            if (displayStatus === 'Backlog') {
+            if (isBacklog) {
                 formattedDisplayDate = '-';
             } else if (rawDate) {
                 formattedDisplayDate = rawDate.split('T')[0].split(' ')[0].split('-').reverse().join('/');

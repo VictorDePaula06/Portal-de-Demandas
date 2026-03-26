@@ -2490,7 +2490,9 @@ if (btnGeneratePDF) {
         if (reportFormat === 'analytical') {
             tableColumn = ["Demanda / TiFlux #", "Detalhes (Cliente / Resp / Venc)", "Descricao / Descritivo"];
             tableRows = reportData.map(t => {
-                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${formatDate(t.date)}\nPrior: ${t.prioridade || 'Normal'}${t.lastDevCheck ? '\nVerif. Dev: ' + formatDate(t.lastDevCheck) : ''}`;
+                const isBacklog = (t.status || '').toLowerCase().includes('backlog') || (t.etapa || '').toLowerCase().includes('backlog');
+                const vencDisplay = isBacklog ? '-' : formatDate(t.date);
+                const details = `Cliente: ${t.cliente || 'Desconhecido'}\nResp: ${t.responsavel || '-'}\nVenc: ${vencDisplay}\nPrior: ${t.prioridade || 'Normal'}${t.lastDevCheck ? '\nVerif. Dev: ' + formatDate(t.lastDevCheck) : ''}`;
                 return [
                     `${sanitizeForPDF(t.status)}\n#${t.number || 'N/A'}`,
                     sanitizeForPDF(details),
@@ -2508,15 +2510,18 @@ if (btnGeneratePDF) {
             };
         } else {
             tableColumn = ["Status", "TiFlux #", "Cliente / Posto", "Responsavel", "Vencimento", "Verif. Dev", "Prioridade"];
-            tableRows = reportData.map(t => [
-                sanitizeForPDF(t.status),
-                t.number || 'N/A',
-                sanitizeForPDF(t.cliente || 'Desconhecido'),
-                sanitizeForPDF(t.responsavel || '-'),
-                formatDate(t.date),
-                t.lastDevCheck ? formatDate(t.lastDevCheck) : '-',
-                sanitizeForPDF(t.prioridade || 'Normal')
-            ]);
+            tableRows = reportData.map(t => {
+                const isBacklog = (t.status || '').toLowerCase().includes('backlog') || (t.etapa || '').toLowerCase().includes('backlog');
+                return [
+                    sanitizeForPDF(t.status),
+                    t.number || 'N/A',
+                    sanitizeForPDF(t.cliente || 'Desconhecido'),
+                    sanitizeForPDF(t.responsavel || '-'),
+                    isBacklog ? '-' : formatDate(t.date),
+                    t.lastDevCheck ? formatDate(t.lastDevCheck) : '-',
+                    sanitizeForPDF(t.prioridade || 'Normal')
+                ];
+            });
             tableStyles = { fontSize: 9, cellPadding: 3 }; // Reduced font slightly to fit column
         }
 
@@ -3618,7 +3623,8 @@ function renderBoard() {
     filteredTasks.forEach(task => {
         const sla = checkSLA(task.date);
 
-        let dateDisplay = formatDate(task.date);
+        const isBacklog = (task.status || '').toLowerCase().includes('backlog') || (task.etapa || '').toLowerCase().includes('backlog');
+        let dateDisplay = isBacklog ? '-' : formatDate(task.date);
 
         let createdDisplay = '-';
         const rawCreatedAt = task.createdAt || task.date;
