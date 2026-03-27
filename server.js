@@ -16,7 +16,8 @@ app.use(express.json());
 
 // API Key TiFlux (Configurar no arquivo .env)
 const TIFLUX_API_URL = process.env.TIFLUX_API_URL || 'https://api.tiflux.com/api/v2';
-const TIFLUX_API_TOKEN = process.env.TIFLUX_API_TOKEN || 'eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI1MWMwNDgwNS04ZDljLTQzNWUtYmMyZi0xOTQxZWE0ZTQ0ODIiLCJzdWIiOjEwMTUzODEsInNjcCI6InVzZXIiLCJhdWQiOm51bGwsImlhdCI6MTc3NDYxNDQ3NiwicmVxX2xpbWl0IjoxMjAsImV4cCI6MTgzNzcyODM4MH0.AuB96tqxGD_qzE4RUPQ6dnvJu_GbgYFLDl_U-MyqkjI';
+const TIFLUX_API_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI1MWMwNDgwNS04ZDljLTQzNWUtYmMyZi0xOTQxZWE0ZTQ0ODIiLCJzdWIiOjEwMTUzODEsInNjcCI6InVzZXIiLCJhdWQiOm51bGwsImlhdCI6MTc3NDYxNDQ3NiwicmVxX2xpbWl0IjoxMjAsImV4cCI6MTgzNzcyODM4MH0.AuB96tqxGD_qzE4RUPQ6dnvJu_GbgYFLDl_U-MyqkjI'; // Forçando token novo
+console.log('[DEBUG] Usando token fixo para resolver erro 401');
 
 // Inicializar Firebase Admin
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
